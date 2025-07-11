@@ -336,14 +336,11 @@ contains
 
 !  differentiation of sourceterms_block in reverse (adjoint) mode (with options noisize i4 dr8 r8):
 !   gradient     of useful results: uref pref *w *dw *(actuatorregions.force)
-!                *(actuatorregions.heat) actuatorregions.relaxstart
-!                actuatorregions.relaxend plocal
+!                *(actuatorregions.heat) plocal
 !   with respect to varying inputs: uref pref *w *dw *(actuatorregions.force)
-!                *(actuatorregions.heat) actuatorregions.relaxstart
-!                actuatorregions.relaxend plocal
+!                *(actuatorregions.heat) plocal
 !   rw status of diff variables: uref:incr pref:incr *w:incr *dw:in-out
 !                *(actuatorregions.force):incr *(actuatorregions.heat):incr
-!                actuatorregions.relaxstart:incr actuatorregions.relaxend:incr
 !                plocal:in-out
 !   plus diff mem management of: w:in dw:in actuatorregions.force:in
 !                actuatorregions.heat:in
@@ -366,10 +363,9 @@ contains
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
 &   ostart, oend
-    real(kind=realtype) :: vxd, vyd, vzd, fxd, fyd, fzd, qd, redimd, &
-&   factord, ostartd, oendd
-    real(kind=realtype) :: tempd
+    real(kind=realtype) :: vxd, vyd, vzd, fxd, fyd, fzd, qd, redimd
     real(kind=realtype) :: temp
+    real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tempd1
     integer :: branch
@@ -377,24 +373,23 @@ contains
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
     if (ordersconverged .lt. actuatorregions(iregion)%relaxstart) then
-      call pushcontrol2b(0)
+      call pushcontrol1b(0)
       factor = zero
     else if (ordersconverged .gt. actuatorregions(iregion)%relaxend) &
 &   then
-      call pushcontrol2b(1)
+      call pushcontrol1b(1)
       factor = one
     else
+      call pushcontrol1b(1)
 ! in between
       ostart = actuatorregions(iregion)%relaxstart
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
-      call pushcontrol2b(2)
     end if
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
     redimd = 0.0_8
-    factord = 0.0_8
 !$bwd-of ii-loop 
     do ii=istart,iend
 ! extract the cell id.
@@ -428,46 +423,30 @@ contains
         fzd = vz*tempd1
         qd = 0.0_8
       end if
-      tempd0 = actuatorregions(iregion)%force(3, ii)*fzd/pref
+      tempd = factor*fzd/pref
       temp = lref*lref*pref*uref
-      tempd = qd/temp
-      factord = factord + actuatorregions(iregion)%heat(ii)*tempd + &
-&       tempd0
+      tempd0 = factor*qd/temp
       actuatorregionsd(iregion)%heat(ii) = actuatorregionsd(iregion)%&
-&       heat(ii) + factor*tempd
-      tempd1 = -(lref**2*factor*actuatorregions(iregion)%heat(ii)*tempd/&
-&       temp)
-      prefd = prefd + uref*tempd1 - factor*tempd0/pref
+&       heat(ii) + tempd0
+      tempd1 = -(lref**2*actuatorregions(iregion)%heat(ii)*tempd0/temp)
+      prefd = prefd + uref*tempd1 - actuatorregions(iregion)%force(3, ii&
+&       )*tempd/pref
       urefd = urefd + pref*tempd1
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
       actuatorregionsd(iregion)%force(3, ii) = actuatorregionsd(iregion)&
-&       %force(3, ii) + factor*fzd/pref
+&       %force(3, ii) + tempd
+      tempd = factor*fyd/pref
       actuatorregionsd(iregion)%force(2, ii) = actuatorregionsd(iregion)&
-&       %force(2, ii) + factor*fyd/pref
-      tempd0 = actuatorregions(iregion)%force(2, ii)*fyd/pref
-      factord = factord + tempd0
-      prefd = prefd - factor*tempd0/pref
+&       %force(2, ii) + tempd
+      prefd = prefd - actuatorregions(iregion)%force(2, ii)*tempd/pref
+      tempd = factor*fxd/pref
       actuatorregionsd(iregion)%force(1, ii) = actuatorregionsd(iregion)&
-&       %force(1, ii) + factor*fxd/pref
-      tempd0 = actuatorregions(iregion)%force(1, ii)*fxd/pref
-      factord = factord + tempd0
-      prefd = prefd - factor*tempd0/pref
+&       %force(1, ii) + tempd
+      prefd = prefd - actuatorregions(iregion)%force(1, ii)*tempd/pref
     end do
-    call popcontrol2b(branch)
-    if (branch .ne. 0) then
-      if (branch .ne. 1) then
-        tempd = factord/(oend-ostart)
-        tempd0 = -((ordersconverged-ostart)*tempd/(oend-ostart))
-        ostartd = -tempd - tempd0
-        oendd = tempd0
-        actuatorregionsd(iregion)%relaxend = actuatorregionsd(iregion)%&
-&         relaxend + oendd
-        actuatorregionsd(iregion)%relaxstart = actuatorregionsd(iregion)&
-&         %relaxstart + ostartd
-      end if
-    end if
+    call popcontrol1b(branch)
     prefd = prefd + uref*redimd
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b

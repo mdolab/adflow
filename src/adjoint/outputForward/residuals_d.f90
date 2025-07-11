@@ -341,11 +341,9 @@ contains
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
 !   with respect to varying inputs: uref pref *w *dw *(actuatorregions.force)
-!                *(actuatorregions.heat) actuatorregions.relaxstart
-!                actuatorregions.relaxend plocal
+!                *(actuatorregions.heat) plocal
 !   rw status of diff variables: uref:in pref:in *w:in *dw:in-out
 !                *(actuatorregions.force):in *(actuatorregions.heat):in
-!                actuatorregions.relaxstart:in actuatorregions.relaxend:in
 !                plocal:in-out
 !   plus diff mem management of: w:in dw:in actuatorregions.force:in
 !                actuatorregions.heat:in
@@ -368,8 +366,7 @@ contains
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
 &   ostart, oend
-    real(kind=realtype) :: vxd, vyd, vzd, fxd, fyd, fzd, qd, redimd, &
-&   factord, ostartd, oendd
+    real(kind=realtype) :: vxd, vyd, vzd, fxd, fyd, fzd, qd, redimd
     real(kind=realtype) :: temp
     real(kind=realtype) :: temp0
     redimd = uref*prefd + pref*urefd
@@ -378,20 +375,14 @@ contains
 ! how far we are into the ramp:
     if (ordersconverged .lt. actuatorregions(iregion)%relaxstart) then
       factor = zero
-      factord = 0.0_8
     else if (ordersconverged .gt. actuatorregions(iregion)%relaxend) &
 &   then
       factor = one
-      factord = 0.0_8
     else
 ! in between
-      ostartd = actuatorregionsd(iregion)%relaxstart
       ostart = actuatorregions(iregion)%relaxstart
-      oendd = actuatorregionsd(iregion)%relaxend
       oend = actuatorregions(iregion)%relaxend
-      temp = (ordersconverged-ostart)/(oend-ostart)
-      factord = (-ostartd-temp*(oendd-ostartd))/(oend-ostart)
-      factor = temp
+      factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
@@ -402,18 +393,18 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      temp = factor/pref
-      fxd = temp*actuatorregionsd(iregion)%force(1, ii) + &
-&       actuatorregions(iregion)%force(1, ii)*(factord-temp*prefd)/pref
-      fx = actuatorregions(iregion)%force(1, ii)*temp
-      temp = factor/pref
-      fyd = temp*actuatorregionsd(iregion)%force(2, ii) + &
-&       actuatorregions(iregion)%force(2, ii)*(factord-temp*prefd)/pref
-      fy = actuatorregions(iregion)%force(2, ii)*temp
-      temp = factor/pref
-      fzd = temp*actuatorregionsd(iregion)%force(3, ii) + &
-&       actuatorregions(iregion)%force(3, ii)*(factord-temp*prefd)/pref
-      fz = actuatorregions(iregion)%force(3, ii)*temp
+      temp = actuatorregions(iregion)%force(1, ii)/pref
+      fxd = factor*(actuatorregionsd(iregion)%force(1, ii)-temp*prefd)/&
+&       pref
+      fx = factor*temp
+      temp = actuatorregions(iregion)%force(2, ii)/pref
+      fyd = factor*(actuatorregionsd(iregion)%force(2, ii)-temp*prefd)/&
+&       pref
+      fy = factor*temp
+      temp = actuatorregions(iregion)%force(3, ii)/pref
+      fzd = factor*(actuatorregionsd(iregion)%force(3, ii)-temp*prefd)/&
+&       pref
+      fz = factor*temp
       vxd = wd(i, j, k, ivx)
       vx = w(i, j, k, ivx)
       vyd = wd(i, j, k, ivy)
@@ -422,11 +413,10 @@ contains
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
       temp = lref*lref*pref*uref
-      temp0 = factor*actuatorregions(iregion)%heat(ii)/temp
-      qd = (actuatorregions(iregion)%heat(ii)*factord+factor*&
-&       actuatorregionsd(iregion)%heat(ii)-temp0*lref**2*(uref*prefd+&
-&       pref*urefd))/temp
-      q = temp0
+      temp0 = actuatorregions(iregion)%heat(ii)/temp
+      qd = factor*(actuatorregionsd(iregion)%heat(ii)-temp0*lref**2*(&
+&       uref*prefd+pref*urefd))/temp
+      q = factor*temp0
       if (res) then
 ! momentum residuals
         dwd(i, j, k, imx) = dwd(i, j, k, imx) - fxd
