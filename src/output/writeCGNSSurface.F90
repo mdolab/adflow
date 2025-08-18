@@ -325,10 +325,15 @@ contains
             write (intString, "(i4.4)") timeStepUnsteady + nTimeStepsRestart
             intString = adjustl(intString)
 
-            surfSolFileNames(1) = trim(surfaceSolFile)//"&
-                 &Timestep"//trim(intString)
+            ! Locate the file extension (.cgns) and insert the timestep before it
+            if (index(trim(surfaceSolFile), ".cgns") > 0) then
+                surfSolFileNames(1) = trim(surfaceSolFile(1:index(trim(surfaceSolFile), ".cgns")-1)) // &
+                                      "_Timestep" // trim(intString) // ".cgns"
+            else
+                ! If no .cgns is found, append normally
+                surfSolFileNames(1) = trim(surfaceSolFile) // "_Timestep" // trim(intString)
+            endif
 
-            !===============================================================
 
         case (timeSpectral)
 
