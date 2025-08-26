@@ -88,7 +88,7 @@ class ADFLOW(AeroSolver):
         # Load the compiled module using MExt, allowing multiple
         # imports
         try:
-            self.adflow
+            _ = self.adflow
         except AttributeError:
             curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
             self.adflow = MExt.MExt("libadflow", curDir, debug=debug)._module
@@ -457,8 +457,8 @@ class ADFLOW(AeroSolver):
         # Now we need to search each localX in X to find the corresponding D
         try:
             from scipy.spatial import KDTree
-        except ImportError:
-            raise Error("scipy must be available to use setDisplacements")
+        except ImportError as err:
+            raise Error("scipy must be available to use setDisplacements") from err
         tree = KDTree(numpy.array(X))
         d, index = tree.query(localX)
         for j in range(len(localX)):
@@ -3260,7 +3260,7 @@ class ADFLOW(AeroSolver):
 
         # See if the aeroProblem has adflowData already, if not, create.
         try:
-            aeroProblem.adflowData
+            _ = aeroProblem.adflowData
         except AttributeError:
             aeroProblem.adflowData = adflowFlowCase()
             aeroProblem.ptSetName = ptSetName
@@ -3452,7 +3452,7 @@ class ADFLOW(AeroSolver):
         # modified if they are different than the current option.
         AP = aeroProblem
         try:
-            AP.savedOptions
+            _ = AP.savedOptions
         except AttributeError:
             AP.savedOptions = {"adflow": {}}
 
