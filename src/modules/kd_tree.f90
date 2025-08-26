@@ -1446,11 +1446,11 @@ contains
         real(kind=realType), intent(in) :: x, amin, amax
 
         if (x > amax) then
-            res = (x - amax)**2; 
+            res = (x - amax)**2;
             return
         else
             if (x < amin) then
-                res = (amin - x)**2; 
+                res = (amin - x)**2;
                 return
             else
                 res = 0.0
@@ -1891,7 +1891,7 @@ contains
                     if (a(j)%dis < a(j + 1)%dis) j = j + 1
                 end if
                 if (value%dis < a(j)%dis) then
-                    a(i) = a(j); 
+                    a(i) = a(j);
                     i = j
                     j = j + j
                 else

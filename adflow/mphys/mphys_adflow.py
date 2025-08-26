@@ -43,9 +43,9 @@ def print_func_call(component):
         message += f" for {component.ap.name} problem"
 
     if component.comm.rank == 0:
-        print(f"\n{'='*len(message)}", flush=True)
+        print(f"\n{'=' * len(message)}", flush=True)
         print(message, flush=True)
-        print(f"{'='*len(message)}", flush=True)
+        print(f"{'=' * len(message)}", flush=True)
 
 
 def set_vol_coords(solver, inputs):

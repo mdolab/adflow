@@ -113,8 +113,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
         sfaced = 0.0_8
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
@@ -325,10 +325,10 @@ contains
             end do
           end do
         end do
-      case (turkel) 
+      case (turkel)
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle) 
+      case (choimerkle)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -556,8 +556,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do k=1,ke
@@ -666,10 +666,10 @@ contains
             end do
           end do
         end do
-      case (turkel) 
+      case (turkel)
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle) 
+      case (choimerkle)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -3089,4 +3089,3 @@ bocoloop:do mm=1,nbocos
 ! ----------------------------------------------------------------------
 
 end module solverutils_d
-

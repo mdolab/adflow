@@ -1612,7 +1612,7 @@ sepSensorKsPhi:
   desc: >
     This option is for KS based separation sensors, ``sepSensorKs`` and ``sepSensorKsArea`` cost function.
     This angle is used to compute the allowable flow deviation region with respect to the freestream projected direction on the desired surface.
-    For example, on a wing, the streamlines on the upper surface flows inboard direction . 
+    For example, on a wing, the streamlines on the upper surface flows inboard direction .
     And in some regions, it goes in the outboard directions.
     Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor.
     For instance, when the angle is ``90`` degrees, this approximately closes to the verge of separation.
@@ -1650,4 +1650,3 @@ meshMaxSkewness:
 useSkewnessCheck:
   desc: >
     When set to true, ADflow computes the `skewness` of each cell and throws an error if it is above ``meshMaxSkewness``. See also ``printBadlySkewedCells``.
-

@@ -122,4 +122,3 @@ subroutine computeCellWallPoint(level, sps)
     call wHalo1to1RealGeneric(3, level, sps, commPatternCell_2nd, internalCell_2nd)
 
 end subroutine computeCellWallPoint
-

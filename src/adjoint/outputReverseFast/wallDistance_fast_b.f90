@@ -5,7 +5,7 @@ module walldistance_fast_b
   use constants, only : inttype, realtype
   use walldistancedata
   implicit none
-  save 
+  save
 
 contains
   subroutine updatewalldistancesquickly(nn, level, sps)
@@ -71,4 +71,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module walldistance_fast_b
-

@@ -4,7 +4,7 @@
 module initializeflow_d
   use constants, only : inttype, realtype, maxstringlen
   implicit none
-  save 
+  save
 
 contains
 !  differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
@@ -166,12 +166,12 @@ contains
     if (nw .gt. nwf) then
       nuinfd = (muinfd-muinf*rhoinfd/rhoinf)/rhoinf
       nuinf = muinf/rhoinf
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         winfd(itu1) = sanuknowneddyratio_d(eddyvisinfratio, nuinf, &
 &         nuinfd, winf(itu1))
 !=============================================================
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         winfd(itu1) = turbintensityinf**2*1.5_realtype*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         temp0 = winf(itu1)/(eddyvisinfratio*nuinf)
@@ -179,7 +179,7 @@ contains
 &         eddyvisinfratio*nuinf)
         winf(itu2) = temp0
 !=============================================================
-      case (ktau) 
+      case (ktau)
         winfd(itu1) = turbintensityinf**2*1.5_realtype*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         temp0 = nuinf/winf(itu1)
@@ -187,7 +187,7 @@ contains
 &         itu1)
         winf(itu2) = eddyvisinfratio*temp0
 !=============================================================
-      case (v2f) 
+      case (v2f)
         winfd(itu1) = turbintensityinf**2*1.5_realtype*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         temp0 = winf(itu1)*winf(itu1)/(eddyvisinfratio*nuinf)
@@ -326,19 +326,19 @@ contains
 ! will accomplish the same thing.
     if (nw .gt. nwf) then
       nuinf = muinf/rhoinf
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         winf(itu1) = sanuknowneddyratio(eddyvisinfratio, nuinf)
 !=============================================================
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
 !=============================================================
-      case (ktau) 
+      case (ktau)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)
 !=============================================================
-      case (v2f) 
+      case (v2f)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)
         winf(itu3) = 0.666666_realtype*winf(itu1)
@@ -364,4 +364,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module initializeflow_d
-

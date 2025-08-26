@@ -5,7 +5,7 @@ module walldistance_d
   use constants, only : inttype, realtype
   use walldistancedata
   implicit none
-  save 
+  save
 
 contains
 !  differentiation of updatewalldistancesquickly in forward (tangent) mode (with options i4 dr8 r8):
@@ -162,4 +162,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module walldistance_d
-

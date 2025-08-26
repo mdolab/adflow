@@ -100,8 +100,8 @@ contains
 !
 ! ===========================================================
     call inviscidcentralflux()
-    select case  (discr) 
-    case (dissscalar) 
+    select case  (discr)
+    case (dissscalar)
 ! standard scalar dissipation scheme.
       if (finegrid) then
         if (.not.lumpeddiss) then
@@ -110,7 +110,7 @@ contains
           call invisciddissfluxscalarapprox()
         end if
       end if
-    case (dissmatrix) 
+    case (dissmatrix)
 !===========================================================
 ! matrix dissipation scheme.
       if (finegrid) then
@@ -120,7 +120,7 @@ contains
           call invisciddissfluxmatrixapprox()
         end if
       end if
-    case (upwind) 
+    case (upwind)
 !===========================================================
 ! dissipation via an upwind scheme.
       call inviscidupwindflux(finegrid)
@@ -385,7 +385,7 @@ myIntPtr = myIntPtr + 1
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=istart,iend
 ! extract the cell id.
       i = actuatorregions(iregion)%cellids(1, ii)
@@ -513,8 +513,8 @@ branch = myIntStack(myIntPtr)
 ! return immediately of no variables are in the range.
     if (varend .ge. varstart) then
 ! determine the equation mode and act accordingly.
-      select case  (equationmode) 
-      case (steady) 
+      select case  (equationmode)
+      case (steady)
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
@@ -607,8 +607,8 @@ branch = myIntStack(myIntPtr)
       return
     else
 ! determine the equation mode and act accordingly.
-      select case  (equationmode) 
-      case (steady) 
+      select case  (equationmode)
+      case (steady)
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
@@ -674,4 +674,3 @@ branch = myIntStack(myIntPtr)
 ! ----------------------------------------------------------------------
 
 end module residuals_fast_b
-

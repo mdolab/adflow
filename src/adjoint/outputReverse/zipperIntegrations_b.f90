@@ -134,7 +134,7 @@ contains
     refpointd = 0.0_8
     sfacecoordrefd = 0.0_8
     ttotd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
 ! if the ptvalid list is given, check if we should integrate
@@ -828,7 +828,7 @@ contains
     fpd = localvaluesd(ifp:ifp+2)
     normd = 0.0_8
     refpointd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
 ! get the nodes of triangle.
@@ -1130,4 +1130,3 @@ contains
   end subroutine wallintegrationzipper
 
 end module zipperintegrations_b
-

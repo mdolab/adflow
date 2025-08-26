@@ -97,23 +97,23 @@ bocoloop1:do mm=1,nviscbocos
       uslip => bcdata(mm)%uslip
 ! determine the grid face on which the subface is located
 ! and set some variables accordingly.
-      select case  (bcfaceid(mm)) 
-      case (imin) 
+      select case  (bcfaceid(mm))
+      case (imin)
         xface => x(1, :, :, :)
         xfaceold => xold(:, 1, :, :, :)
-      case (imax) 
+      case (imax)
         xface => x(il, :, :, :)
         xfaceold => xold(:, il, :, :, :)
-      case (jmin) 
+      case (jmin)
         xface => x(:, 1, :, :)
         xfaceold => xold(:, :, 1, :, :)
-      case (jmax) 
+      case (jmax)
         xface => x(:, jl, :, :)
         xfaceold => xold(:, :, jl, :, :)
-      case (kmin) 
+      case (kmin)
         xface => x(:, :, 1, :)
         xfaceold => xold(:, :, :, 1, :)
-      case (kmax) 
+      case (kmax)
         xface => x(:, :, kl, :)
         xfaceold => xold(:, :, :, kl, :)
       end select
@@ -499,4 +499,3 @@ recoverus:do mm=1,nviscbocos
 ! ----------------------------------------------------------------------
 
 end module aleutils_fast_b
-

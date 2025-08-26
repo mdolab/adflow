@@ -45,7 +45,7 @@ contains
       wwx = timeref*cgnsdoms(nbkglobal)%rotrate(1)
       wwy = timeref*cgnsdoms(nbkglobal)%rotrate(2)
       wwz = timeref*cgnsdoms(nbkglobal)%rotrate(3)
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*ny*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -65,7 +65,7 @@ contains
       end do
     end if
     sface = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,nx*ny*kl-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -163,7 +163,7 @@ branch = myIntStack(myIntPtr)
       wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 3)*vnpd
     end do
     sface = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, jl) + 1
@@ -263,7 +263,7 @@ branch = myIntStack(myIntPtr)
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
       j = mod(ii/il, ny) + 2
@@ -792,7 +792,7 @@ branch = myIntStack(myIntPtr)
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
 ! possibly zero, the previously stored value.
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -853,7 +853,7 @@ branch = myIntStack(myIntPtr)
           dss(i, j, k, 3) = -x3
         end if
       end do
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 !
 !       dissipative fluxes in the i-direction.
 !
@@ -1011,7 +1011,7 @@ branch = myIntStack(myIntPtr)
         fw(i+1, j, k, irhoe) = fw(i+1, j, k, irhoe) + fs
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 !
 !       dissipative fluxes in the j-direction.
 !
@@ -1170,7 +1170,7 @@ branch = myIntStack(myIntPtr)
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
       dssd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -1588,7 +1588,7 @@ branch = myIntStack(myIntPtr)
           dssd(i, j, k, 3) = dssd(i, j, k, 3) + y3d
         end if
       end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -2006,7 +2006,7 @@ branch = myIntStack(myIntPtr)
           dssd(i, j, k, 2) = dssd(i, j, k, 2) + y2d
         end if
       end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -2424,7 +2424,7 @@ branch = myIntStack(myIntPtr)
           dssd(i, j, k, 1) = dssd(i, j, k, 1) + y1d
         end if
       end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -3364,8 +3364,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3377,13 +3377,13 @@ branch = myIntStack(myIntPtr)
         ss = p
 !===============================================================
         call pushcontrol2b(1)
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
@@ -3395,7 +3395,7 @@ branch = myIntStack(myIntPtr)
       case default
         call pushcontrol2b(0)
       end select
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -3454,7 +3454,7 @@ myIntPtr = myIntPtr + 1
 ! only, because the halo values do not matter.
       if (associated(radkd)) radkd = 0.0_8
       dssd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -3602,7 +3602,7 @@ branch = myIntStack(myIntPtr)
         radkd(i, j, k+1) = radkd(i, j, k+1) + ppor*rradd
       end do
       if (associated(radjd)) radjd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -3750,7 +3750,7 @@ branch = myIntStack(myIntPtr)
         radjd(i, j+1, k) = radjd(i, j+1, k) + ppor*rradd
       end do
       if (associated(radid)) radid = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -3901,7 +3901,7 @@ branch = myIntStack(myIntPtr)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       ssd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -3978,7 +3978,7 @@ branch = myIntStack(myIntPtr)
         if (branch .eq. 1) then
           pd = pd + ssd
         else
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
           do ii=0,(ib+1)*(jb+1)*(kb+1)-1
             i = mod(ii, ib + 1)
             j = mod(ii/(ib+1), jb + 1)
@@ -4059,8 +4059,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -4071,7 +4071,7 @@ branch = myIntStack(myIntPtr)
 ! just copy all anyway.
         ss = p
 !===============================================================
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
@@ -5426,10 +5426,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
         call pushcontrol2b(1)
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5538,7 +5538,7 @@ myIntPtr = myIntPtr + 1
 ! scheme.
         end do
         call pushcontrol2b(2)
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -6093,15 +6093,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -6171,7 +6171,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -6348,11 +6348,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -6839,11 +6839,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -6992,17 +6992,17 @@ branch = myIntStack(myIntPtr)
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        case (turkel) 
+        case (turkel)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -7592,15 +7592,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused) 
-      case (nolimiter) 
+      select case  (limused)
+      case (nolimiter)
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda) 
+      case (vanalbeda)
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -7670,7 +7670,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod) 
+      case (minmod)
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7821,11 +7821,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused) 
-      case (roe) 
+      select case  (riemannused)
+      case (roe)
 ! determine the preconditioner used.
-        select case  (precond) 
-        case (noprecond) 
+        select case  (precond)
+        case (noprecond)
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -7974,17 +7974,17 @@ branch = myIntStack(myIntPtr)
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        case (turkel) 
+        case (turkel)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle) 
+        case (choimerkle)
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer) 
+      case (vanleer)
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv) 
+      case (ausmdv)
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -8120,7 +8120,7 @@ branch = myIntStack(myIntPtr)
       if (associated(vyd)) vyd = 0.0_8
       if (associated(vzd)) vzd = 0.0_8
       mued = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -8550,7 +8550,7 @@ branch = myIntStack(myIntPtr)
       mued = 0.0_8
       mue = zero
       mued = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -8983,7 +8983,7 @@ branch = myIntStack(myIntPtr)
 !
       mue = zero
       mued = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -10522,15 +10522,15 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations) 
-      case (eulerequations) 
+      select case  (equations)
+      case (eulerequations)
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
 !===============================================================
-      case (nsequations, ransequations) 
+      case (nsequations, ransequations)
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
@@ -11609,4 +11609,3 @@ branch = myIntStack(myIntPtr)
 ! ----------------------------------------------------------------------
 
 end module fluxes_fast_b
-

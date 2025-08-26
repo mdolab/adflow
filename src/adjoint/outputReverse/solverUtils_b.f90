@@ -111,10 +111,10 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
         call pushreal8(sface)
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do ii=0,ie*je*ke-1
@@ -220,9 +220,9 @@ contains
           end if
         end do
         call pushcontrol2b(1)
-      case (turkel) 
+      case (turkel)
         call pushcontrol2b(2)
-      case (choimerkle) 
+      case (choimerkle)
         call pushcontrol2b(3)
       case default
         call pushcontrol2b(0)
@@ -522,7 +522,7 @@ contains
           clim2d = 0.0_8
           sfaced = 0.0_8
           call popreal8(sface)
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
           do ii=0,ie*je*ke-1
             i = mod(ii, ie) + 1
             j = mod(ii/ie, je) + 1
@@ -921,8 +921,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond) 
-      case (noprecond) 
+      select case  (precond)
+      case (noprecond)
 !$ad ii-loop
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
@@ -1028,10 +1028,10 @@ contains
             radk(i, j, k) = rk
           end if
         end do
-      case (turkel) 
+      case (turkel)
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle) 
+      case (choimerkle)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -4397,4 +4397,3 @@ bocoloop:do mm=1,nbocos
 ! ----------------------------------------------------------------------
 
 end module solverutils_b
-

@@ -36,8 +36,8 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd0
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -83,8 +83,8 @@ contains
     integer(kind=inttype) :: i
     real(kind=realtype) :: govgm1, t, kin
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -92,7 +92,7 @@ contains
       kin = half*(u*u+v*v+w*w)
       ttot = t*(one+rho*kin/(govgm1*p))
 !===============================================================
-    case (cptempcurvefits) 
+    case (cptempcurvefits)
 ! cp is a function of the temperature. the formula used for
 ! constant cp is not valid anymore and a more complicated
 ! procedure must be followed.
@@ -122,8 +122,8 @@ contains
     integer(kind=inttype) :: i, ii, nn, start
     real(kind=realtype) :: cp, t2
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. set the values.
       do i=1,mm
         gamma(i) = gammaconstant
@@ -167,8 +167,8 @@ contains
     real(kind=realtype) :: tempd
 !
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -217,8 +217,8 @@ contains
     real(kind=realtype) :: intcport, intcportt, intcporttt
 !
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -257,7 +257,7 @@ contains
 ! determine if we need to correct for k
     correctfork = getcorrectfork()
     if (correctfork) then
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -274,7 +274,7 @@ contains
 &         twothird*ppd
       end do
     else
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -371,8 +371,8 @@ contains
     real(kind=realtype) :: tempd0
 !
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -383,7 +383,7 @@ contains
       ksize = kend - kstart + 1
       factk = ovgm1*(five*third-gammaconstant)
       if (correctfork) then
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do ii=0,isize*jsize*ksize-1
           i = mod(ii, isize) + istart
           j = mod(ii/isize, jsize) + jstart
@@ -404,7 +404,7 @@ contains
           wd(i, j, k, ivz) = wd(i, j, k, ivz) + 2*temp*tempd
         end do
       else
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do ii=0,isize*jsize*ksize-1
           i = mod(ii, isize) + istart
           j = mod(ii/isize, jsize) + jstart
@@ -456,8 +456,8 @@ contains
     intrinsic mod
 !
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -596,8 +596,8 @@ contains
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
     real(kind=realtype) :: tempd
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -646,8 +646,8 @@ contains
     integer(kind=inttype) :: i, nn, mm, ii, start
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -706,7 +706,7 @@ contains
     isize = iend - ibeg + 1
     jsize = jend - jbeg + 1
     ksize = kend - kbeg + 1
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,isize*jsize*ksize-1
       i = mod(ii, isize) + ibeg
       j = mod(ii/isize, jsize) + jbeg
@@ -817,8 +817,8 @@ contains
     intrinsic abs
     real(kind=realtype) :: abs0
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the relation
 ! eint = cv*t can be used and consequently the standard
 ! relation between pressure and internal energy is valid.
@@ -861,7 +861,7 @@ contains
           end do
         end do
       end if
-    case (cptempcurvefits) 
+    case (cptempcurvefits)
 !        ================================================================
 ! cp as function of the temperature is given via curve fits.
 ! store a scale factor when converting the nondimensional
@@ -911,7 +911,7 @@ contains
 ! first find the curve fit interval to be searched.
               ii = cpnparts
               start = 1
-     interval:do 
+     interval:do
 ! next guess for the interval.
                 nn = start + ii/2
 ! determine the situation we are having here.
@@ -929,7 +929,7 @@ contains
                   t = alp*cptrange(nn-1) + (one-alp)*cptrange(nn)
 ! the actual newton algorithm to compute the
 ! temperature.
-           newton:do 
+           newton:do
 ! compute the internal energy as well as the
 ! value of cv/r for the given temperature.
 ! cv/r = cp/r - 1.0
@@ -1066,7 +1066,7 @@ contains
         ssuthd = 0.0_8
         musuthd = 0.0_8
         tsuthd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do ii=0,isize*jsize*ksize-1
           i = mod(ii, isize) + ibeg
           j = mod(ii/isize, jsize) + jbeg
@@ -1103,7 +1103,7 @@ contains
         ssuthd = 0.0_8
         musuthd = 0.0_8
         tsuthd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do ii=0,isize*jsize*ksize-1
           i = mod(ii, isize) + ibeg
           j = mod(ii/isize, jsize) + jbeg
@@ -1745,20 +1745,20 @@ contains
     intrinsic cos
     intrinsic sin
 ! rotation about specified axis by specified angle
-    select case  (iaxis) 
-    case (1) 
+    select case  (iaxis)
+    case (1)
       xd = xpd
       angled = angled + (cos(angle)*z-sin(angle)*y)*ypd - (cos(angle)*y+&
 &       sin(angle)*z)*zpd
       yd = cos(angle)*ypd - sin(angle)*zpd
       zd = cos(angle)*zpd + sin(angle)*ypd
-    case (2) 
+    case (2)
       angled = angled + (cos(angle)*x-sin(angle)*z)*zpd - (sin(angle)*x+&
 &       cos(angle)*z)*xpd
       xd = sin(angle)*zpd + cos(angle)*xpd
       yd = ypd
       zd = cos(angle)*zpd - sin(angle)*xpd
-    case (3) 
+    case (3)
       xd = cos(angle)*xpd - sin(angle)*ypd
       yd = cos(angle)*ypd + sin(angle)*xpd
       zd = zpd
@@ -1791,19 +1791,19 @@ contains
     intrinsic cos
     intrinsic sin
 ! rotation about specified axis by specified angle
-    select case  (iaxis) 
-    case (1) 
+    select case  (iaxis)
+    case (1)
 ! rotation about the x-axis
       xp = 1.*x + 0.*y + 0.*z
       yp = 0.*x + cos(angle)*y + sin(angle)*z
       zp = 0.*x - sin(angle)*y + cos(angle)*z
 ! rotation about the y-axis
-    case (2) 
+    case (2)
       xp = cos(angle)*x + 0.*y - sin(angle)*z
       yp = 0.*x + 1.*y + 0.*z
       zp = sin(angle)*x + 0.*y + cos(angle)*z
 ! rotation about the z-axis
-    case (3) 
+    case (3)
       xp = cos(angle)*x + sin(angle)*y + 0.*z
       yp = -(sin(angle)*x) + cos(angle)*y + 0.*z
       zp = 0.*x + 0.*y + 1.*z
@@ -1862,7 +1862,7 @@ contains
     qx = zero
     qy = zero
     qz = zero
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! first part. contribution in the k-direction.
 ! the contribution is scattered to both the left and right node
 ! in k-direction.
@@ -1926,7 +1926,7 @@ contains
         qz(i, j, k) = qz(i, j, k) + a2*sz
       end if
     end do
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! second part. contribution in the j-direction.
 ! the contribution is scattered to both the left and right node
 ! in j-direction.
@@ -1990,7 +1990,7 @@ contains
         qz(i, j, k) = qz(i, j, k) + a2*sz
       end if
     end do
-!$fwd-of ii-loop 
+!$fwd-of ii-loop
 ! third part. contribution in the i-direction.
 ! the contribution is scattered to both the left and right node
 ! in i-direction.
@@ -2054,7 +2054,7 @@ contains
         qz(i, j, k) = qz(i, j, k) + a2*sz
       end if
     end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,il*jl*kl-1
       i = mod(ii, il) + 1
       j = mod(ii/il, jl) + 1
@@ -2096,7 +2096,7 @@ contains
       vold(i+1, j+1, k) = vold(i+1, j+1, k) + tempd
       vold(i+1, j+1, k+1) = vold(i+1, j+1, k+1) + tempd
     end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,ie*jl*kl-1
       i = mod(ii, ie) + 1
       j = mod(ii/ie, jl) + 1
@@ -2215,7 +2215,7 @@ contains
       sid(i, j, k+1, 1) = sid(i, j, k+1, 1) + sxd
       sid(i, j+1, k+1, 1) = sid(i, j+1, k+1, 1) + sxd
     end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,il*je*kl-1
       i = mod(ii, il) + 1
       j = mod(ii/il, je) + 1
@@ -2334,7 +2334,7 @@ contains
       sjd(i, j, k+1, 1) = sjd(i, j, k+1, 1) + sxd
       sjd(i+1, j, k+1, 1) = sjd(i+1, j, k+1, 1) + sxd
     end do
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,il*jl*ke-1
       i = mod(ii, il) + 1
       j = mod(ii/il, jl) + 1
@@ -2724,4 +2724,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module flowutils_b
-

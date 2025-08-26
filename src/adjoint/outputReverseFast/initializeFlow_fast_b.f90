@@ -4,7 +4,7 @@
 module initializeflow_fast_b
   use constants, only : inttype, realtype, maxstringlen
   implicit none
-  save 
+  save
 
 contains
   subroutine referencestate()
@@ -103,19 +103,19 @@ contains
 ! will accomplish the same thing.
     if (nw .gt. nwf) then
       nuinf = muinf/rhoinf
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         winf(itu1) = sanuknowneddyratio(eddyvisinfratio, nuinf)
 !=============================================================
-      case (komegawilcox, komegamodified, mentersst) 
+      case (komegawilcox, komegamodified, mentersst)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
 !=============================================================
-      case (ktau) 
+      case (ktau)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)
 !=============================================================
-      case (v2f) 
+      case (v2f)
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)
         winf(itu3) = 0.666666_realtype*winf(itu1)
@@ -141,4 +141,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module initializeflow_fast_b
-

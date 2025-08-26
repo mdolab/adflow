@@ -5,7 +5,7 @@ module walldistance_b
   use constants, only : inttype, realtype
   use walldistancedata
   implicit none
-  save 
+  save
 
 contains
 !  differentiation of updatewalldistancesquickly in reverse (adjoint) mode (with options noisize i4 dr8 r8):
@@ -37,7 +37,7 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd2
     xcd = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -191,4 +191,3 @@ contains
 ! ----------------------------------------------------------------------
 
 end module walldistance_b
-

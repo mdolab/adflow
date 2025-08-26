@@ -310,9 +310,9 @@ sepsensor:
 sepsensorks:
   desc: >
     The separation sensor value based on the KS aggregation for the given surface is provided by this cost function.
-    We first compute the deviation of the local velocity from the projected freestream on the desired surface. 
-    Then, we use a trigonometric function to compute the sensor by providing an allowable flow deviation angle from this projected vector. 
-    As a result, the sensor provides values ranging from ``-1`` to a positive number, which depends on `sepSensorKsPhi` angle selection. 
+    We first compute the deviation of the local velocity from the projected freestream on the desired surface.
+    Then, we use a trigonometric function to compute the sensor by providing an allowable flow deviation angle from this projected vector.
+    As a result, the sensor provides values ranging from ``-1`` to a positive number, which depends on `sepSensorKsPhi` angle selection.
     Any values that are greater than ``0`` are out of the allowable flow deviation.
     Thus, to constraint the separation, we use KS aggregation to find the maximum value in the sensor and can constraint it to be less than or equal to ``0``.
     See :cite:t:`Abdul-Kaiyoom2024a` and :cite:t:`Abdul-Kaiyoom2025`  for more details.

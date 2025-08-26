@@ -321,7 +321,7 @@ contains
         chi = eddyratio
       end if
 ! the actual newton algorithm.
-      do 
+      do
 ! compute the function value and the derivative.
         chi2 = chi*chi
         chi3 = chi*chi2
@@ -387,16 +387,16 @@ contains
     integer(kind=inttype) :: i, j, k, ii, jj, nn
     real(kind=realtype) :: oneoverdt, tmp
 ! determine the equation mode.
-    select case  (equationmode) 
-    case (steady) 
+    select case  (equationmode)
+    case (steady)
 ! steady computation. no time derivative present.
       return
 !===============================================================
-    case (unsteady) 
+    case (unsteady)
 ! the time deritvative term depends on the integration
 ! scheme used.
-      select case  (timeintegrationscheme) 
-      case (bdf) 
+      select case  (timeintegrationscheme)
+      case (bdf)
 ! backward difference formula is used as time
 ! integration scheme.
 ! store the inverse of the physical nondimensional
@@ -434,14 +434,14 @@ nadvloopunsteady:do ii=1,nadv
             end do
           end do
         end do nadvloopunsteady
-      case (explicitrk) 
+      case (explicitrk)
 !===========================================================
 ! explicit time integration scheme. the time derivative
 ! is handled differently.
         return
       end select
 !===============================================================
-    case (timespectral) 
+    case (timespectral)
 ! time spectral method.
 ! loop over the number of turbulent transport equations.
 nadvloopspectral:do ii=1,nadv
@@ -522,8 +522,8 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
-      select case  (turbmodel) 
-      case (spalartallmaras, spalartallmarasedwards) 
+      select case  (turbmodel)
+      case (spalartallmaras, spalartallmarasedwards)
         call saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
       end select
     end if
@@ -563,7 +563,7 @@ nadvloopspectral:do ii=1,nadv
     isize = iend - ibeg + 1
     jsize = jend - jbeg + 1
     ksize = kend - kbeg + 1
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do ii=0,isize*jsize*ksize-1
       i = mod(ii, isize) + ibeg
       j = mod(ii/isize, jsize) + jbeg
@@ -804,7 +804,7 @@ nadvloopspectral:do ii=1,nadv
     if (groundlevel .eq. 1_inttype .and. orderturb .eq. secondorder) &
 &     secondord = .true.
     qs = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
       j = mod(iii/nx, ny) + 2
@@ -825,7 +825,7 @@ nadvloopspectral:do ii=1,nadv
 ! or negative normal velocity.
       if (uu .gt. zero) then
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 100 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -925,7 +925,7 @@ nadvloopspectral:do ii=1,nadv
  100    continue
       else
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 110 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -1029,7 +1029,7 @@ nadvloopspectral:do ii=1,nadv
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + za*uud
     end do
     qs = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
       j = mod(iii/nx, ny) + 2
@@ -1050,7 +1050,7 @@ nadvloopspectral:do ii=1,nadv
 ! or negative normal velocity.
       if (uu .gt. zero) then
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 120 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -1150,7 +1150,7 @@ nadvloopspectral:do ii=1,nadv
  120    continue
       else
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 130 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -1256,7 +1256,7 @@ nadvloopspectral:do ii=1,nadv
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
     qs = zero
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
       j = mod(iii/nx, ny) + 2
@@ -1278,7 +1278,7 @@ nadvloopspectral:do ii=1,nadv
 ! or negative normal velocity.
       if (uu .gt. zero) then
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 140 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -1378,7 +1378,7 @@ nadvloopspectral:do ii=1,nadv
  140    continue
       else
         uud = 0.0_8
-!$bwd-of ii-loop 
+!$bwd-of ii-loop
         do 150 ii=1,nadv
 ! set the value of jj such that it corresponds to the
 ! turbulent entry in w.
@@ -2057,4 +2057,3 @@ nadvloopspectral:do ii=1,nadv
 ! ----------------------------------------------------------------------
 
 end module turbutils_fast_b
-
