@@ -309,7 +309,7 @@ class ADflowMesh(ExplicitComponent):
 
                 # Now go around the face and add a triangle for each adjacent pair
                 # of points. This assumes an ordered connectivity from the
-                # meshwarping
+                # mesh warping
                 for i in range(faceSize):
                     idx = faceNodes[i]
                     p0.append(avgPt)

@@ -3227,7 +3227,7 @@ class ADFLOW(AeroSolver):
 
         self._updateGeomInfo = True
         if self.mesh is None:
-            raise Error("Cannot set new surface coordinate locations without a meshwarping object present.")
+            raise Error("Cannot set new surface coordinate locations without a mesh warping object present.")
 
         # First get the surface coordinates of the meshFamily in case
         # the groupName is a subset, those values will remain unchanged.
