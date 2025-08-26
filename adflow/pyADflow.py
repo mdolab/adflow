@@ -1040,7 +1040,7 @@ class ADFLOW(AeroSolver):
         # Check that each of the functions are valid:
         for func in functions:
             if func not in self.adflowCostFunctions:
-                raise Error("Supplied  function %s to addUserFunction not know to ADflow" % func)
+                raise Error("Supplied  function %s to addUserFunction not known to ADflow" % func)
         self.adflowUserCostFunctions[funcName] = adflowUserFunc(funcName, functions, callBack)
 
         return funcName
