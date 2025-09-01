@@ -7,7 +7,7 @@
 ! setbcpointers are employed.
 module bcroutines_fast_b
   implicit none
-  save
+  save 
 
 contains
   subroutine applyallbc_block(secondhalo)
@@ -425,8 +425,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -497,8 +497,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -646,8 +646,8 @@ contains
     real(kind=realtype) :: max1
 ! determine the boundary treatment to be used.
     govgm1 = gammaconstant/(gammaconstant-one)
-    select case  (bcdata(nn)%subsonicinlettreatment)
-    case (totalconditions)
+    select case  (bcdata(nn)%subsonicinlettreatment) 
+    case (totalconditions) 
 !$ad ii-loop
 ! the total conditions have been prescribed.
 ! loop over the generic subface to set the state in the
@@ -745,8 +745,8 @@ contains
 ! this should call prhosubsonicinlet, but it doesnt' ad
 ! correctly, so just the constant cp model is used here.
 ! compute the pressure and density for these halo's.
-        select case  (cpmodel)
-        case (cpconstant)
+        select case  (cpmodel) 
+        case (cpconstant) 
 ! compute the static pressure from the total pressure
 ! and the temperature ratio. compute the density using
 ! the gas law.
@@ -756,7 +756,7 @@ contains
           ww1(i, j, irho) = ptot*ratio/(rgas*ts)
           if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
 &             irho)*ww1(i, j, itu1)
-        case (cptempcurvefits)
+        case (cptempcurvefits) 
           call terminate('bcroutines', 'not curve fits not implemented')
         end select
 ! set the viscosities in the halo to the viscosities
@@ -764,7 +764,7 @@ contains
         if (viscous) rlv1(i, j) = rlv2(i, j)
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
-    case (massflow)
+    case (massflow) 
 !$ad ii-loop
 !===========================================================
 ! density and velocity vector prescribed.
@@ -860,11 +860,11 @@ contains
 !  undivided pressure gradient accordingly. this gradient is
 !  temporarily stored in the halo pressure.
 !
-    select case  (walltreatment)
-    case (constantpressure)
+    select case  (walltreatment) 
+    case (constantpressure) 
 ! constant pressure. set the gradient to zero.
       grad = zero
-    case (linextrapolpressure)
+    case (linextrapolpressure) 
 !$ad ii-loop
 ! linear extrapolation.
       do ii=0,isize*jsize-1
@@ -872,7 +872,7 @@ contains
         k = ii/isize + jstart
         grad(j, k) = pp3(j, k) - pp2(j, k)
       end do
-    case (normalmomentum)
+    case (normalmomentum) 
 !$ad ii-loop
 ! pressure gradient is computed using the normal momentum
 ! equation. first set a couple of additional variables for
@@ -1214,11 +1214,11 @@ contains
     if (bctype(nn) .eq. supersonicoutflow) then
 ! a physical outflow face. set the weights depending
 ! on the input parameter.
-      select case  (outflowtreatment)
-      case (constantextrapol)
+      select case  (outflowtreatment) 
+      case (constantextrapol) 
         fw2 = one
         fw3 = zero
-      case (linextrapol)
+      case (linextrapol) 
         fw2 = two
         fw3 = -one
       end select
@@ -1286,8 +1286,8 @@ contains
     real(kind=realtype) :: intts, inttt, val
     intrinsic mod
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. compute the coefficient
 ! gamma/(gamma-1), which occurs in the isentropic expression
 ! for the total pressure.
@@ -1349,7 +1349,7 @@ contains
 ! the correct interval.
         ii = cpnparts
         start = 1
-interval:do
+interval:do 
 ! next guess for the interval.
           nn = start + ii/2
 ! determine the situation we are having here.
@@ -1397,8 +1397,8 @@ interval:do
     integer(kind=inttype) :: ii, i, j
     real(kind=realtype) :: ovgm1, factk
     intrinsic mod
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -1418,7 +1418,7 @@ interval:do
 &           j, irho)*ww(i, j, itu1)
         end if
       end do
-    case (cptempcurvefits)
+    case (cptempcurvefits) 
       call terminate('bcroutines', &
 &              'cptempcurvefits not implemented yet.')
     end select
@@ -1472,3 +1472,4 @@ interval:do
   end subroutine extrapolate2ndhalo
 
 end module bcroutines_fast_b
+

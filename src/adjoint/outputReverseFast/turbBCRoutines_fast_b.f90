@@ -32,8 +32,8 @@ bocos:do nn=1,nbocos
 ! loop over the faces and set the state in
 ! the turbulent halo cells.
       if (.not.wallfunctions) then
-        select case  (bcfaceid(nn))
-        case (imin)
+        select case  (bcfaceid(nn)) 
+        case (imin) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -45,7 +45,7 @@ bocos:do nn=1,nbocos
               end do
             end do
           end do
-        case (imax)
+        case (imax) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -57,7 +57,7 @@ bocos:do nn=1,nbocos
               end do
             end do
           end do
-        case (jmin)
+        case (jmin) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -69,7 +69,7 @@ bocos:do nn=1,nbocos
               end do
             end do
           end do
-        case (jmax)
+        case (jmax) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -81,7 +81,7 @@ bocos:do nn=1,nbocos
               end do
             end do
           end do
-        case (kmin)
+        case (kmin) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -93,7 +93,7 @@ bocos:do nn=1,nbocos
               end do
             end do
           end do
-        case (kmax)
+        case (kmax) 
           do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
             do i=bcdata(nn)%icbeg,bcdata(nn)%icend
               do l=nt1,nt2
@@ -148,38 +148,38 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j
 ! determine the face id on which the subface and copy
-    select case  (bcfaceid(nn))
-    case (imin)
+    select case  (bcfaceid(nn)) 
+    case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(1, i, j) = rev(2, i, j)
         end do
       end do
-    case (imax)
+    case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(ie, i, j) = rev(il, i, j)
         end do
       end do
-    case (jmin)
+    case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, 1, j) = rev(i, 2, j)
         end do
       end do
-    case (jmax)
+    case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, je, j) = rev(i, jl, j)
         end do
       end do
-    case (kmin)
+    case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, j, 1) = rev(i, j, 2)
         end do
       end do
-    case (kmax)
+    case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, j, ke) = rev(i, j, kl)
@@ -209,38 +209,38 @@ bocos:do nn=1,nbocos
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.
-    select case  (bcfaceid(nn))
-    case (imin)
+    select case  (bcfaceid(nn)) 
+    case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(1, i, j) = -rev(2, i, j)
         end do
       end do
-    case (imax)
+    case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(ie, i, j) = -rev(il, i, j)
         end do
       end do
-    case (jmin)
+    case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, 1, j) = -rev(i, 2, j)
         end do
       end do
-    case (jmax)
+    case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, je, j) = -rev(i, jl, j)
         end do
       end do
-    case (kmin)
+    case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, j, 1) = -rev(i, j, 2)
         end do
       end do
-    case (kmax)
+    case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           rev(i, j, ke) = -rev(i, j, kl)
@@ -287,36 +287,36 @@ bocos:do nn=1,nbocos
 ! outflow. simply extrapolation or zero neumann bc
 ! of the turbulent variables.
           do l=nt1,nt2
-            select case  (bcfaceid(nn))
-            case (imin)
+            select case  (bcfaceid(nn)) 
+            case (imin) 
               bmti1(i, j, l, l) = -one
-            case (imax)
+            case (imax) 
               bmti2(i, j, l, l) = -one
-            case (jmin)
+            case (jmin) 
               bmtj1(i, j, l, l) = -one
-            case (jmax)
+            case (jmax) 
               bmtj2(i, j, l, l) = -one
-            case (kmin)
+            case (kmin) 
               bmtk1(i, j, l, l) = -one
-            case (kmax)
+            case (kmax) 
               bmtk2(i, j, l, l) = -one
             end select
           end do
         else
 ! inflow. turbulent variables are prescribed.
           do l=nt1,nt2
-            select case  (bcfaceid(nn))
-            case (imin)
+            select case  (bcfaceid(nn)) 
+            case (imin) 
               bvti1(i, j, l) = winf(l)
-            case (imax)
+            case (imax) 
               bvti2(i, j, l) = winf(l)
-            case (jmin)
+            case (jmin) 
               bvtj1(i, j, l) = winf(l)
-            case (jmax)
+            case (jmax) 
               bvtj2(i, j, l) = winf(l)
-            case (kmin)
+            case (kmin) 
               bvtk1(i, j, l) = winf(l)
-            case (kmax)
+            case (kmax) 
               bvtk2(i, j, l) = winf(l)
             end select
           end do
@@ -353,23 +353,23 @@ bocos:do nn=1,nbocos
       do i=bcdata(nn)%icbeg,bcdata(nn)%icend
 ! loop over the number of turbulent variables.
         do l=nt1,nt2
-          select case  (bcfaceid(nn))
-          case (imin)
+          select case  (bcfaceid(nn)) 
+          case (imin) 
             bvti1(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmti1(i, j, l, l) = one
-          case (imax)
+          case (imax) 
             bvti2(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmti2(i, j, l, l) = one
-          case (jmin)
+          case (jmin) 
             bvtj1(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmtj1(i, j, l, l) = one
-          case (jmax)
+          case (jmax) 
             bvtj2(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmtj2(i, j, l, l) = one
-          case (kmin)
+          case (kmin) 
             bvtk1(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmtk1(i, j, l, l) = one
-          case (kmax)
+          case (kmax) 
             bvtk2(i, j, l) = two*bcdata(nn)%turbinlet(i, j, l)
             bmtk2(i, j, l, l) = one
           end select
@@ -402,18 +402,18 @@ bocos:do nn=1,nbocos
     do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
       do i=bcdata(nn)%icbeg,bcdata(nn)%icend
         do l=nt1,nt2
-          select case  (bcfaceid(nn))
-          case (imin)
+          select case  (bcfaceid(nn)) 
+          case (imin) 
             bvti1(i, j, l) = w(1, i, j, l)
-          case (imax)
+          case (imax) 
             bvti2(i, j, l) = w(ie, i, j, l)
-          case (jmin)
+          case (jmin) 
             bvtj1(i, j, l) = w(i, 1, j, l)
-          case (jmax)
+          case (jmax) 
             bvtj2(i, j, l) = w(i, je, j, l)
-          case (kmin)
+          case (kmin) 
             bvtk1(i, j, l) = w(i, j, 1, l)
-          case (kmax)
+          case (kmax) 
             bvtk2(i, j, l) = w(i, j, ke, l)
           end select
         end do
@@ -453,18 +453,18 @@ bocos:do nn=1,nbocos
     do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
       do i=bcdata(nn)%icbeg,bcdata(nn)%icend
         do l=nt1,nt2
-          select case  (bcfaceid(nn))
-          case (imin)
+          select case  (bcfaceid(nn)) 
+          case (imin) 
             bmti1(i, j, l, l) = -one
-          case (imax)
+          case (imax) 
             bmti2(i, j, l, l) = -one
-          case (jmin)
+          case (jmin) 
             bmtj1(i, j, l, l) = -one
-          case (jmax)
+          case (jmax) 
             bmtj2(i, j, l, l) = -one
-          case (kmin)
+          case (kmin) 
             bmtk1(i, j, l, l) = -one
-          case (kmax)
+          case (kmax) 
             bmtk2(i, j, l, l) = -one
           end select
         end do
@@ -499,18 +499,18 @@ bocos:do nn=1,nbocos
     do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
       do i=bcdata(nn)%icbeg,bcdata(nn)%icend
         do l=nt1,nt2
-          select case  (bcfaceid(nn))
-          case (imin)
+          select case  (bcfaceid(nn)) 
+          case (imin) 
             bmti1(i, j, l, l) = -one
-          case (imax)
+          case (imax) 
             bmti2(i, j, l, l) = -one
-          case (jmin)
+          case (jmin) 
             bmtj1(i, j, l, l) = -one
-          case (jmax)
+          case (jmax) 
             bmtj2(i, j, l, l) = -one
-          case (kmin)
+          case (kmin) 
             bmtk1(i, j, l, l) = -one
-          case (kmax)
+          case (kmax) 
             bmtk2(i, j, l, l) = -one
           end select
         end do
@@ -581,27 +581,27 @@ bocos:do nn=1,nbocos
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
-      select case  (bctype(nn))
-      case (nswalladiabatic, nswallisothermal)
+      select case  (bctype(nn)) 
+      case (nswalladiabatic, nswallisothermal) 
 ! viscous wall. there is no difference between an adiabatic
 ! and an isothermal wall for the turbulent equations.
 ! set the implicit treatment of the wall boundary conditions.
         call bcturbwall(nn)
 !=============================================================
 !=============================================================
-      case (symm, symmpolar, eulerwall)
+      case (symm, symmpolar, eulerwall) 
 ! symmetry, polar symmetry or inviscid wall. treatment of
 ! the turbulent equations is identical.
         call bcturbsymm(nn)
 !=============================================================
-      case (farfield)
+      case (farfield) 
 ! farfield. the kind of boundary condition to be applied,
 ! inflow or outflow, depends on the local conditions.
         call bcturbfarfield(nn)
 !=============================================================
       case (slidinginterface, oversetouterbound, domaininterfaceall, &
 &     domaininterfacerhouvw, domaininterfacep, domaininterfacerho, &
-&     domaininterfacetotal)
+&     domaininterfacetotal) 
 ! sliding mesh interface, overset outer boudaries, and
 ! domain interface with another code are not really boundary
 ! condition and therefore the values are kept.
@@ -653,42 +653,42 @@ bocos:do nn=1,nbocos
 ! determine the turbulence model used and loop over the faces
 ! of the subface and set the values of bmt and bvt for an
 ! implicit treatment.
-    select case  (turbmodel)
-    case (spalartallmaras, spalartallmarasedwards)
+    select case  (turbmodel) 
+    case (spalartallmaras, spalartallmarasedwards) 
 ! spalart-allmaras type of model. value at the wall is zero,
 ! so simply negate the internal value.
-      select case  (bcfaceid(nn))
-      case (imin)
+      select case  (bcfaceid(nn)) 
+      case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmti1(i, j, itu1, itu1) = one
           end do
         end do
-      case (imax)
+      case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmti2(i, j, itu1, itu1) = one
           end do
         end do
-      case (jmin)
+      case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtj1(i, j, itu1, itu1) = one
           end do
         end do
-      case (jmax)
+      case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtj2(i, j, itu1, itu1) = one
           end do
         end do
-      case (kmin)
+      case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtk1(i, j, itu1, itu1) = one
           end do
         end do
-      case (kmax)
+      case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtk2(i, j, itu1, itu1) = one
@@ -696,7 +696,7 @@ bocos:do nn=1,nbocos
         end do
       end select
 !        ================================================================
-    case (komegawilcox, komegamodified, mentersst)
+    case (komegawilcox, komegamodified, mentersst) 
 ! k-omega type of models. k is zero on the wall and thus the
 ! halo value is the negative of the first internal cell.
 ! for omega the situation is a bit more complicated.
@@ -707,8 +707,8 @@ bocos:do nn=1,nbocos
 ! distance. due to the usage of the dd2wall pointer and the
 ! fact that the original d2wall array starts at 2, there is
 ! an offset of -1 present in dd2wall.
-      select case  (bcfaceid(nn))
-      case (imin)
+      select case  (bcfaceid(nn)) 
+      case (imin) 
         iimax = jl
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -740,7 +740,7 @@ bocos:do nn=1,nbocos
             bvti1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
-      case (imax)
+      case (imax) 
         iimax = jl
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -772,7 +772,7 @@ bocos:do nn=1,nbocos
             bvti2(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
-      case (jmin)
+      case (jmin) 
         iimax = il
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -804,7 +804,7 @@ bocos:do nn=1,nbocos
             bvtj1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
-      case (jmax)
+      case (jmax) 
         iimax = il
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -836,7 +836,7 @@ bocos:do nn=1,nbocos
             bvtj2(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
-      case (kmin)
+      case (kmin) 
         iimax = il
         jjmax = jl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -868,7 +868,7 @@ bocos:do nn=1,nbocos
             bvtk1(i, j, itu2) = two*60.0_realtype*nu*tmpd
           end do
         end do
-      case (kmax)
+      case (kmax) 
         iimax = il
         jjmax = jl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -902,46 +902,46 @@ bocos:do nn=1,nbocos
         end do
       end select
 !        ================================================================
-    case (ktau)
+    case (ktau) 
 ! k-tau model. both k and tau are zero at the wall, so the
 ! negative value of the internal cell is taken for the halo.
-      select case  (bcfaceid(nn))
-      case (imin)
+      select case  (bcfaceid(nn)) 
+      case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmti1(i, j, itu1, itu1) = one
             bmti1(i, j, itu2, itu2) = one
           end do
         end do
-      case (imax)
+      case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmti2(i, j, itu1, itu1) = one
             bmti2(i, j, itu2, itu2) = one
           end do
         end do
-      case (jmin)
+      case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtj1(i, j, itu1, itu1) = one
             bmtj1(i, j, itu2, itu2) = one
           end do
         end do
-      case (jmax)
+      case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtj2(i, j, itu1, itu1) = one
             bmtj2(i, j, itu2, itu2) = one
           end do
         end do
-      case (kmin)
+      case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtk1(i, j, itu1, itu1) = one
             bmtk1(i, j, itu2, itu2) = one
           end do
         end do
-      case (kmax)
+      case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             bmtk2(i, j, itu1, itu1) = one
@@ -975,8 +975,8 @@ bocos:do nn=1,nbocos
 ! some pointers accordingly.
 ! loop over the turbulent variables and set the second halo
 ! value. if this is an eddy model, also set the eddy viscosity.
-    select case  (bcfaceid(nn))
-    case (imin)
+    select case  (bcfaceid(nn)) 
+    case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           do l=nt1,nt2
@@ -985,7 +985,7 @@ bocos:do nn=1,nbocos
           if (eddymodel) rev(0, i, j) = rev(1, i, j)
         end do
       end do
-    case (imax)
+    case (imax) 
 !===============================================================
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -995,7 +995,7 @@ bocos:do nn=1,nbocos
           if (eddymodel) rev(ib, i, j) = rev(ie, i, j)
         end do
       end do
-    case (jmin)
+    case (jmin) 
 !===============================================================
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -1005,7 +1005,7 @@ bocos:do nn=1,nbocos
           if (eddymodel) rev(i, 0, j) = rev(i, 1, j)
         end do
       end do
-    case (jmax)
+    case (jmax) 
 !===============================================================
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -1015,7 +1015,7 @@ bocos:do nn=1,nbocos
           if (eddymodel) rev(i, jb, j) = rev(i, je, j)
         end do
       end do
-    case (kmin)
+    case (kmin) 
 !===============================================================
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -1025,7 +1025,7 @@ bocos:do nn=1,nbocos
           if (eddymodel) rev(i, j, 0) = rev(i, j, 1)
         end do
       end do
-    case (kmax)
+    case (kmax) 
 !===============================================================
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
@@ -1063,8 +1063,8 @@ bocos:do nn=1,nviscbocos
       call bcturbwall(nn)
 ! loop over the faces and set the state in
 ! the turbulent halo cells.
-      select case  (bcfaceid(nn))
-      case (imin)
+      select case  (bcfaceid(nn)) 
+      case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1081,7 +1081,7 @@ bocos:do nn=1,nviscbocos
             end if
           end do
         end do
-      case (imax)
+      case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1098,7 +1098,7 @@ bocos:do nn=1,nviscbocos
             end if
           end do
         end do
-      case (jmin)
+      case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1115,7 +1115,7 @@ bocos:do nn=1,nviscbocos
             end if
           end do
         end do
-      case (jmax)
+      case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1132,7 +1132,7 @@ bocos:do nn=1,nviscbocos
             end if
           end do
         end do
-      case (kmin)
+      case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1149,7 +1149,7 @@ bocos:do nn=1,nviscbocos
             end if
           end do
         end do
-      case (kmax)
+      case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             do l=nt1,nt2
@@ -1171,3 +1171,4 @@ bocos:do nn=1,nviscbocos
   end subroutine turbbcnswall
 
 end module turbbcroutines_fast_b
+

@@ -100,8 +100,8 @@ contains
 !
 ! ===========================================================
     call inviscidcentralflux()
-    select case  (discr)
-    case (dissscalar)
+    select case  (discr) 
+    case (dissscalar) 
 ! standard scalar dissipation scheme.
       if (finegrid) then
         if (.not.lumpeddiss) then
@@ -110,7 +110,7 @@ contains
           call invisciddissfluxscalarapprox()
         end if
       end if
-    case (dissmatrix)
+    case (dissmatrix) 
 !===========================================================
 ! matrix dissipation scheme.
       if (finegrid) then
@@ -120,7 +120,7 @@ contains
           call invisciddissfluxmatrixapprox()
         end if
       end if
-    case (upwind)
+    case (upwind) 
 !===========================================================
 ! dissipation via an upwind scheme.
       call inviscidupwindflux(finegrid)
@@ -400,7 +400,7 @@ contains
     q_factd = 0.0_8
     redimd = 0.0_8
     f_factd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=istart,iend
 ! extract the cell id.
       i = actuatorregions(iregion)%cellids(1, ii)
@@ -564,8 +564,8 @@ contains
 ! return immediately of no variables are in the range.
     if (varend .ge. varstart) then
 ! determine the equation mode and act accordingly.
-      select case  (equationmode)
-      case (steady)
+      select case  (equationmode) 
+      case (steady) 
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
@@ -658,8 +658,8 @@ contains
       return
     else
 ! determine the equation mode and act accordingly.
-      select case  (equationmode)
-      case (steady)
+      select case  (equationmode) 
+      case (steady) 
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
@@ -725,3 +725,4 @@ contains
 ! ----------------------------------------------------------------------
 
 end module residuals_b
+

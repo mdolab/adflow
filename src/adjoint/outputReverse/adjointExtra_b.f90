@@ -595,7 +595,7 @@ contains
     end if
     call pushreal8array(v1, 3)
     call pushreal8array(v2, 3)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 !
 !  computation of the face normals in i-, j- and k-direction.
 !  formula's are valid for a right handed block; for a left
@@ -632,7 +632,7 @@ contains
     end do
     call pushreal8array(v1, 3)
     call pushreal8array(v2, 3)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! projected areas of cell faces in the j direction
     do ii=0,ke*(je+1)*ie-1
 ! 1:ie
@@ -659,7 +659,7 @@ contains
     end do
     v1d = 0.0_8
     v2d = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,(ke+1)*je*ie-1
 ! 1:ie
       i = mod(ii, ie) + 1
@@ -718,7 +718,7 @@ contains
     end do
     call popreal8array(v2, 3)
     call popreal8array(v1, 3)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,ke*(je+1)*ie-1
 ! 1:ie
       i = mod(ii, ie) + 1
@@ -777,7 +777,7 @@ contains
     end do
     call popreal8array(v2, 3)
     call popreal8array(v1, 3)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,ke*je*(ie+1)-1
 ! 0:ie
       i = mod(ii, ie + 1) + 0
@@ -974,46 +974,46 @@ contains
     zzpd = 0.0_8
     yypd = 0.0_8
     xxpd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do mm=1,nbocos
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm)%icend-&
 &         bcdata(mm)%icbeg+1)-1
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
           call pushcontrol3b(1)
-        case (imax)
+        case (imax) 
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
           call pushcontrol3b(2)
-        case (jmin)
+        case (jmin) 
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
           call pushcontrol3b(3)
-        case (jmax)
+        case (jmax) 
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
           call pushcontrol3b(4)
-        case (kmin)
+        case (kmin) 
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
           call pushcontrol3b(5)
-        case (kmax)
+        case (kmax) 
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -1136,33 +1136,33 @@ bocoloop:do mm=1,nbocos
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
-        case (imax)
+        case (imax) 
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
-        case (jmin)
+        case (jmin) 
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
-        case (jmax)
+        case (jmax) 
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
-        case (kmin)
+        case (kmin) 
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
-        case (kmax)
+        case (kmax) 
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -1298,8 +1298,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm))
-          case (imin)
+          select case  (bcfaceid(mm)) 
+          case (imin) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1320,7 +1320,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from0)
             call pushcontrol4b(7)
-          case (imax)
+          case (imax) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1341,7 +1341,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from2)
             call pushcontrol4b(6)
-          case (jmin)
+          case (jmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1362,7 +1362,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from4)
             call pushcontrol4b(5)
-          case (jmax)
+          case (jmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1383,7 +1383,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from6)
             call pushcontrol4b(4)
-          case (kmin)
+          case (kmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1404,7 +1404,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from8)
             call pushcontrol4b(3)
-          case (kmax)
+          case (kmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1794,8 +1794,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm))
-          case (imin)
+          select case  (bcfaceid(mm)) 
+          case (imin) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1817,7 +1817,7 @@ loopbocos:do mm=1,nbocos
                 x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (imax)
+          case (imax) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1839,7 +1839,7 @@ loopbocos:do mm=1,nbocos
                 x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmin)
+          case (jmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1861,7 +1861,7 @@ loopbocos:do mm=1,nbocos
                 x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmax)
+          case (jmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1883,7 +1883,7 @@ loopbocos:do mm=1,nbocos
                 x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
               end do
             end do
-          case (kmin)
+          case (kmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1905,7 +1905,7 @@ loopbocos:do mm=1,nbocos
                 x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
               end do
             end do
-          case (kmax)
+          case (kmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1950,7 +1950,7 @@ loopbocos:do mm=1,nbocos
     intrinsic mod
 ! divide through by the reference volume
     nturb = nt2 - nt1 + 1
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -2069,3 +2069,4 @@ loopbocos:do mm=1,nbocos
   end subroutine sumdwandfw
 
 end module adjointextra_b
+

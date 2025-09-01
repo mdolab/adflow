@@ -96,7 +96,7 @@ contains
       omegazd = 0.0_8
       strainmag2d = 0.0_8
       ssd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -727,7 +727,7 @@ contains
     integer :: branch
 ! set model constants
     cb3inv = one/rsacb3
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -879,7 +879,7 @@ contains
       vold(i-1, j, k) = vold(i-1, j, k) + tempd0
       vold(i, j, k) = vold(i, j, k) + tempd0 - one*volid/vol(i, j, k)**2
     end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1031,7 +1031,7 @@ contains
       vold(i, j-1, k) = vold(i, j-1, k) + tempd0
       vold(i, j, k) = vold(i, j, k) + tempd0 - one*volid/vol(i, j, k)**2
     end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1425,7 +1425,7 @@ contains
     intrinsic max
     real(realtype) :: x1
     if (associated(scratchd)) scratchd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1476,3 +1476,4 @@ contains
   end subroutine saresscale
 
 end module sa_b
+

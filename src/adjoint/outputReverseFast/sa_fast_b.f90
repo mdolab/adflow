@@ -85,7 +85,7 @@ contains
     else
       strainmag2d = 0.0_8
       ssd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -654,7 +654,7 @@ branch = myIntStack(myIntPtr)
     integer :: branch
 ! set model constants
     cb3inv = one/rsacb3
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -771,7 +771,7 @@ branch = myIntStack(myIntPtr)
 &       rsacb2*cb3inv*cnudd
       wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) + half*nutmd
     end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -888,7 +888,7 @@ branch = myIntStack(myIntPtr)
 &       rsacb2*cb3inv*cnudd
       wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) + half*nutmd
     end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1247,7 +1247,7 @@ branch = myIntStack(myIntPtr)
     intrinsic max
     real(realtype) :: x1
     if (associated(scratchd)) scratchd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1298,3 +1298,4 @@ branch = myIntStack(myIntPtr)
   end subroutine saresscale
 
 end module sa_fast_b
+

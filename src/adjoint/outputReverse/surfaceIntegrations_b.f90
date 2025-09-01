@@ -130,7 +130,7 @@ contains
     call pushreal8array(cofx, 3*ntimeintervalsspectral)
     call pushreal8array(cofy, 3*ntimeintervalsspectral)
     call pushreal8array(cofz, 3*ntimeintervalsspectral)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! here we finally assign the final function values
     do sps=1,ntimeintervalsspectral
       funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
@@ -770,7 +770,7 @@ contains
       call popreal8array(cofz, 3*ntimeintervalsspectral)
       call popreal8array(cofy, 3*ntimeintervalsspectral)
       call popreal8array(cofx, 3*ntimeintervalsspectral)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do sps=1,ntimeintervalsspectral
 ! ------------
 ! ------------
@@ -1511,10 +1511,10 @@ contains
     real(kind=realtype) :: temp1
     real(kind=realtype) :: tempd1
     integer :: branch
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1535,7 +1535,7 @@ contains
     call pushreal8array(r, 3)
     call pushreal8array(v, 3)
     call pushreal8array(vecttangential, 3)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1751,7 +1751,7 @@ contains
     if (branch .eq. 0) then
       rd = 0.0_8
       refpointd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-&
 &         bcdata(mm)%inbeg)-1
         i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -1959,7 +1959,7 @@ contains
     call popreal8array(v, 3)
     call popreal8array(r, 3)
     call popreal8array(n, 3)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -2376,10 +2376,10 @@ contains
     intrinsic sqrt
     intrinsic cos
     intrinsic exp
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -2851,10 +2851,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -2908,7 +2908,7 @@ contains
     refpointd = 0.0_8
     sfacecoordrefd = 0.0_8
     ttotd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -3266,10 +3266,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -3492,3 +3492,4 @@ contains
 ! ----------------------------------------------------------------------
 
 end module surfaceintegrations_b
+

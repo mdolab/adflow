@@ -57,7 +57,7 @@ contains
       wwxd = 0.0_8
       wwyd = 0.0_8
       wwzd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -95,7 +95,7 @@ contains
     sfaced = 0.0_8
     sface = zero
     sfaced = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*ny*kl-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -214,7 +214,7 @@ contains
     sfaced = 0.0_8
     sface = zero
     sfaced = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, jl) + 1
@@ -335,7 +335,7 @@ contains
 ! block is not moving.
     sface = zero
     sfaced = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
       j = mod(ii/il, ny) + 2
@@ -893,7 +893,7 @@ contains
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
 ! possibly zero, the previously stored value.
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -955,7 +955,7 @@ contains
         end if
       end do
       call pushreal8(sface)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 !
 !       dissipative fluxes in the i-direction.
 !
@@ -1114,7 +1114,7 @@ contains
         fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
       end do
       call pushreal8(sface)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 !
 !       dissipative fluxes in the j-direction.
 !
@@ -1274,7 +1274,7 @@ contains
       end do
       dssd = 0.0_8
       sfaced = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -1719,7 +1719,7 @@ contains
         end if
       end do
       call popreal8(sface)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -2164,7 +2164,7 @@ contains
         end if
       end do
       call popreal8(sface)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -2609,7 +2609,7 @@ contains
         end if
       end do
       plimd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -3529,8 +3529,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3542,13 +3542,13 @@ contains
         ss = p
 !===============================================================
         call pushcontrol2b(1)
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! store the entropy in ss. see above.
         do ii=0,(ib+1)*(jb+1)*(kb+1)-1
           i = mod(ii, ib + 1)
@@ -3560,7 +3560,7 @@ contains
       case default
         call pushcontrol2b(0)
       end select
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! compute the pressure sensor for each cell, in each direction:
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
@@ -3615,7 +3615,7 @@ contains
 ! possibly zero, the previously stored value. owned cells
 ! only, because the halo values do not matter.
       dssd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -3757,7 +3757,7 @@ contains
         radkd(i, j, k) = radkd(i, j, k) + ppor*rradd
         radkd(i, j, k+1) = radkd(i, j, k+1) + ppor*rradd
       end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -3899,7 +3899,7 @@ contains
         radjd(i, j, k) = radjd(i, j, k) + ppor*rradd
         radjd(i, j+1, k) = radjd(i, j+1, k) + ppor*rradd
       end do
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -4045,7 +4045,7 @@ contains
       call popcontrol1b(branch)
       sslimd = 0.0_8
       ssd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,ie*je*ke-1
         i = mod(ii, ie) + 1
         j = mod(ii/ie, je) + 1
@@ -4120,7 +4120,7 @@ contains
           pd = pd + ssd
           pinfcorrd = pinfcorrd + 0.001_realtype*sslimd
         else
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
           do ii=0,(ib+1)*(jb+1)*(kb+1)-1
             i = mod(ii, ib + 1)
             j = mod(ii/(ib+1), jb + 1)
@@ -4207,8 +4207,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -4219,7 +4219,7 @@ contains
 ! just copy all anyway.
         ss = p
 !===============================================================
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
@@ -5708,10 +5708,10 @@ contains
         call pushcontrol1b(1)
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
         call pushcontrol2b(1)
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5819,7 +5819,7 @@ contains
 ! scheme.
         end do
         call pushcontrol2b(2)
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -6367,15 +6367,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -6445,7 +6445,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -6623,11 +6623,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -7103,11 +7103,11 @@ contains
 &             z1rd/(2.0*sqrt(right(irho)))
           if (.not.left(irho) .eq. 0.0_8) leftd(irho) = leftd(irho) + &
 &             z1ld/(2.0*sqrt(left(irho)))
-        case (turkel)
+        case (turkel) 
           sxd = 0.0_8
           syd = 0.0_8
           szd = 0.0_8
-        case (choimerkle)
+        case (choimerkle) 
           sxd = 0.0_8
           syd = 0.0_8
           szd = 0.0_8
@@ -7116,11 +7116,11 @@ contains
           syd = 0.0_8
           szd = 0.0_8
         end select
-      case (vanleer)
+      case (vanleer) 
         sxd = 0.0_8
         syd = 0.0_8
         szd = 0.0_8
-      case (ausmdv)
+      case (ausmdv) 
         sxd = 0.0_8
         syd = 0.0_8
         szd = 0.0_8
@@ -7168,11 +7168,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -7321,17 +7321,17 @@ contains
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        case (turkel)
+        case (turkel) 
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle)
+        case (choimerkle) 
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer)
+      case (vanleer) 
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv)
+      case (ausmdv) 
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -7921,15 +7921,15 @@ contains
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -7999,7 +7999,7 @@ contains
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -8150,11 +8150,11 @@ contains
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -8303,17 +8303,17 @@ contains
 !          flux(imy)   = -porflux*(tmp*drv)
 !          flux(imz)   = -porflux*(tmp*drw)
 !          flux(irhoe) = -porflux*(tmp*dre)
-        case (turkel)
+        case (turkel) 
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle)
+        case (choimerkle) 
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer)
+      case (vanleer) 
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv)
+      case (ausmdv) 
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -8471,7 +8471,7 @@ contains
       if (associated(vyd)) vyd = 0.0_8
       if (associated(vzd)) vzd = 0.0_8
       mued = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -9062,7 +9062,7 @@ contains
       mued = 0.0_8
       mue = zero
       mued = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -9656,7 +9656,7 @@ contains
 !
       mue = zero
       mued = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, ny) + 2
@@ -12294,8 +12294,8 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -12303,7 +12303,7 @@ contains
         sslim = 0.001_realtype*pinfcorr
 !===============================================================
         call pushcontrol2b(1)
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
@@ -13407,15 +13407,15 @@ contains
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
 !===============================================================
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
@@ -16396,3 +16396,4 @@ contains
 ! ----------------------------------------------------------------------
 
 end module fluxes_b
+

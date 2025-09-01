@@ -7,7 +7,7 @@
 ! setbcpointers are employed.
 module bcroutines_b
   implicit none
-  save
+  save 
 
 contains
   subroutine applyallbc_block(secondhalo)
@@ -193,7 +193,7 @@ contains
     intrinsic mod
     real(kind=realtype) :: tempd
     integer :: branch
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -333,7 +333,7 @@ contains
     intrinsic mod
     real(kind=realtype) :: tempd
     integer :: branch
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -465,7 +465,7 @@ contains
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd0
     integer :: branch
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -663,7 +663,7 @@ contains
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd0
     integer :: branch
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -865,7 +865,7 @@ contains
     else
       call pushcontrol1b(0)
     end if
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -894,8 +894,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -923,7 +923,7 @@ contains
     call popcontrol1b(branch)
     if (branch .eq. 1) call popreal8array(pp1, size(pp1, 1)*size(pp1, 2)&
 &                                  )
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -953,8 +953,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
         pp2d(i, j) = pp2d(i, j) + pp1d(i, j)
         rhokd = rhokd - four*third*pp1d(i, j)
         pp1d(i, j) = 0.0_8
@@ -1048,8 +1048,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -1118,7 +1118,7 @@ contains
       call pushcontrol1b(0)
     end if
     call pushreal8(rhok)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -1148,8 +1148,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -1195,7 +1195,7 @@ contains
     call popcontrol1b(branch)
     if (branch .eq. 1) call popreal8array(pp1, size(pp1, 1)*size(pp1, 2)&
 &                                  )
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -1232,8 +1232,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
         call pushcontrol2b(0)
@@ -1381,8 +1381,8 @@ contains
       walltreatment = viscwallbctreatment
       if (currentlevel .gt. groundlevel) walltreatment = &
 &         constantpressure
-      select case  (walltreatment)
-      case (constantpressure)
+      select case  (walltreatment) 
+      case (constantpressure) 
 ! constant pressure. set the gradient to zero.
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
@@ -1468,7 +1468,7 @@ contains
     else
       call pushcontrol1b(0)
     end if
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -1536,7 +1536,7 @@ contains
     call popcontrol1b(branch)
     if (branch .eq. 1) call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)&
 &                                   *size(ww1, 3))
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -1836,15 +1836,15 @@ contains
     real(kind=realtype) :: tempd1
 ! determine the boundary treatment to be used.
     govgm1 = gammaconstant/(gammaconstant-one)
-    select case  (bcdata(nn)%subsonicinlettreatment)
-    case (totalconditions)
+    select case  (bcdata(nn)%subsonicinlettreatment) 
+    case (totalconditions) 
       if (associated(ww1)) then
         call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
         call pushcontrol1b(1)
       else
         call pushcontrol1b(0)
       end if
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! the total conditions have been prescribed.
 ! loop over the generic subface to set the state in the
 ! halo cells.
@@ -1941,8 +1941,8 @@ contains
 ! this should call prhosubsonicinlet, but it doesnt' ad
 ! correctly, so just the constant cp model is used here.
 ! compute the pressure and density for these halo's.
-        select case  (cpmodel)
-        case (cpconstant)
+        select case  (cpmodel) 
+        case (cpconstant) 
 ! compute the static pressure from the total pressure
 ! and the temperature ratio. compute the density using
 ! the gas law.
@@ -1952,7 +1952,7 @@ contains
           ww1(i, j, irho) = ptot*ratio/(rgas*ts)
           if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
 &             irho)*ww1(i, j, itu1)
-        case (cptempcurvefits)
+        case (cptempcurvefits) 
           call terminate('bcroutines', 'not curve fits not implemented')
         end select
 ! set the viscosities in the halo to the viscosities
@@ -1961,8 +1961,8 @@ contains
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
       call pushcontrol2b(1)
-    case (massflow)
-!$fwd-of ii-loop
+    case (massflow) 
+!$fwd-of ii-loop 
 !===========================================================
 ! density and velocity vector prescribed.
 ! loop over the generic subface to set the state in the
@@ -2034,7 +2034,7 @@ contains
         call popcontrol1b(branch)
         if (branch .eq. 1) call popreal8array(ww1, size(ww1, 1)*size(ww1&
 &                                       , 2)*size(ww1, 3))
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
         do ii=0,isize*jsize-1
           i = mod(ii, isize) + istart
           j = ii/isize + jstart
@@ -2141,8 +2141,8 @@ contains
 ! this should call prhosubsonicinlet, but it doesnt' ad
 ! correctly, so just the constant cp model is used here.
 ! compute the pressure and density for these halo's.
-          select case  (cpmodel)
-          case (cpconstant)
+          select case  (cpmodel) 
+          case (cpconstant) 
 ! compute the static pressure from the total pressure
 ! and the temperature ratio. compute the density using
 ! the gas law.
@@ -2154,7 +2154,7 @@ contains
             else
               call pushcontrol2b(2)
             end if
-          case (cptempcurvefits)
+          case (cptempcurvefits) 
             call pushcontrol2b(3)
           case default
             call pushcontrol2b(0)
@@ -2309,7 +2309,7 @@ contains
           bcdatad(nn)%ptinlet(i, j) = bcdatad(nn)%ptinlet(i, j) + ptotd
         end do
       else
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
         do ii=0,isize*jsize-1
           i = mod(ii, isize) + istart
           j = ii/isize + jstart
@@ -2428,8 +2428,8 @@ contains
     real(kind=realtype) :: max1
 ! determine the boundary treatment to be used.
     govgm1 = gammaconstant/(gammaconstant-one)
-    select case  (bcdata(nn)%subsonicinlettreatment)
-    case (totalconditions)
+    select case  (bcdata(nn)%subsonicinlettreatment) 
+    case (totalconditions) 
 !$ad ii-loop
 ! the total conditions have been prescribed.
 ! loop over the generic subface to set the state in the
@@ -2527,8 +2527,8 @@ contains
 ! this should call prhosubsonicinlet, but it doesnt' ad
 ! correctly, so just the constant cp model is used here.
 ! compute the pressure and density for these halo's.
-        select case  (cpmodel)
-        case (cpconstant)
+        select case  (cpmodel) 
+        case (cpconstant) 
 ! compute the static pressure from the total pressure
 ! and the temperature ratio. compute the density using
 ! the gas law.
@@ -2538,7 +2538,7 @@ contains
           ww1(i, j, irho) = ptot*ratio/(rgas*ts)
           if (correctfork) pp1(i, j) = pp1(i, j) + twothird*ww1(i, j, &
 &             irho)*ww1(i, j, itu1)
-        case (cptempcurvefits)
+        case (cptempcurvefits) 
           call terminate('bcroutines', 'not curve fits not implemented')
         end select
 ! set the viscosities in the halo to the viscosities
@@ -2546,7 +2546,7 @@ contains
         if (viscous) rlv1(i, j) = rlv2(i, j)
         if (eddymodel) rev1(i, j) = rev2(i, j)
       end do
-    case (massflow)
+    case (massflow) 
 !$ad ii-loop
 !===========================================================
 ! density and velocity vector prescribed.
@@ -2672,13 +2672,13 @@ contains
 !  undivided pressure gradient accordingly. this gradient is
 !  temporarily stored in the halo pressure.
 !
-    select case  (walltreatment)
-    case (constantpressure)
+    select case  (walltreatment) 
+    case (constantpressure) 
       call pushcontrol2b(0)
 ! constant pressure. set the gradient to zero.
       grad = zero
-    case (linextrapolpressure)
-!$fwd-of ii-loop
+    case (linextrapolpressure) 
+!$fwd-of ii-loop 
 ! linear extrapolation.
       do ii=0,isize*jsize-1
         j = mod(ii, isize) + istart
@@ -2686,8 +2686,8 @@ contains
         grad(j, k) = pp3(j, k) - pp2(j, k)
       end do
       call pushcontrol2b(1)
-    case (normalmomentum)
-!$fwd-of ii-loop
+    case (normalmomentum) 
+!$fwd-of ii-loop 
 ! pressure gradient is computed using the normal momentum
 ! equation. first set a couple of additional variables for
 ! the normals, depending on the block face. note that the
@@ -2807,7 +2807,7 @@ contains
     case default
       call pushcontrol2b(0)
     end select
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
     do ii=0,isize*jsize-1
@@ -2845,7 +2845,7 @@ contains
 &                                   *size(ww1, 3))
     call computeetot_b(ww1, ww1d, pp1, pp1d, correctfork)
     gradd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       j = mod(ii, isize) + istart
       k = ii/isize + jstart
@@ -2906,7 +2906,7 @@ contains
     call popcontrol2b(branch)
     if (branch .ne. 0) then
       if (branch .eq. 1) then
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
         do ii=0,isize*jsize-1
           j = mod(ii, isize) + istart
           k = ii/isize + jstart
@@ -2915,7 +2915,7 @@ contains
           gradd(j, k) = 0.0_8
         end do
       else
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
         do ii=0,isize*jsize-1
           j = mod(ii, isize) + istart
           k = ii/isize + jstart
@@ -3172,11 +3172,11 @@ contains
 !  undivided pressure gradient accordingly. this gradient is
 !  temporarily stored in the halo pressure.
 !
-    select case  (walltreatment)
-    case (constantpressure)
+    select case  (walltreatment) 
+    case (constantpressure) 
 ! constant pressure. set the gradient to zero.
       grad = zero
-    case (linextrapolpressure)
+    case (linextrapolpressure) 
 !$ad ii-loop
 ! linear extrapolation.
       do ii=0,isize*jsize-1
@@ -3184,7 +3184,7 @@ contains
         k = ii/isize + jstart
         grad(j, k) = pp3(j, k) - pp2(j, k)
       end do
-    case (normalmomentum)
+    case (normalmomentum) 
 !$ad ii-loop
 ! pressure gradient is computed using the normal momentum
 ! equation. first set a couple of additional variables for
@@ -3394,7 +3394,7 @@ contains
     else
       call pushcontrol1b(0)
     end if
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -3487,7 +3487,7 @@ contains
     call popcontrol1b(branch)
     if (branch .eq. 1) call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)&
 &                                   *size(ww1, 3))
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -3897,11 +3897,11 @@ contains
     if (bctype(nn) .eq. supersonicoutflow) then
 ! a physical outflow face. set the weights depending
 ! on the input parameter.
-      select case  (outflowtreatment)
-      case (constantextrapol)
+      select case  (outflowtreatment) 
+      case (constantextrapol) 
         fw2 = one
         fw3 = zero
-      case (linextrapol)
+      case (linextrapol) 
         fw2 = two
         fw3 = -one
       end select
@@ -3969,8 +3969,8 @@ contains
     real(kind=realtype) :: intts, inttt, val
     intrinsic mod
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. compute the coefficient
 ! gamma/(gamma-1), which occurs in the isentropic expression
 ! for the total pressure.
@@ -4032,7 +4032,7 @@ contains
 ! the correct interval.
         ii = cpnparts
         start = 1
-interval:do
+interval:do 
 ! next guess for the interval.
           nn = start + ii/2
 ! determine the situation we are having here.
@@ -4090,13 +4090,13 @@ interval:do
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmpd0
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
       factk = ovgm1*(five*third-gammaconstant)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,isize*jsize-1
         i = mod(ii, isize) + istart
         j = ii/isize + jstart
@@ -4140,8 +4140,8 @@ interval:do
     integer(kind=inttype) :: ii, i, j
     real(kind=realtype) :: ovgm1, factk
     intrinsic mod
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -4161,7 +4161,7 @@ interval:do
 &           j, irho)*ww(i, j, itu1)
         end if
       end do
-    case (cptempcurvefits)
+    case (cptempcurvefits) 
       call terminate('bcroutines', &
 &              'cptempcurvefits not implemented yet.')
     end select
@@ -4198,7 +4198,7 @@ interval:do
     else
       call pushcontrol1b(0)
     end if
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! loop over the generic subface to set the state in the
 ! halo cells.
     do ii=0,isize*jsize-1
@@ -4229,7 +4229,7 @@ interval:do
     call popcontrol1b(branch)
     if (branch .eq. 1) call popreal8array(ww0, size(ww0, 1)*size(ww0, 2)&
 &                                   *size(ww0, 3))
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
@@ -4339,3 +4339,4 @@ interval:do
   end subroutine extrapolate2ndhalo
 
 end module bcroutines_b
+
