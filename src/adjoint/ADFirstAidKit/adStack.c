@@ -109,7 +109,7 @@ void setCurrentLocationToResumePoint(RepetitionLevel *repetitionLevel) {
   curStack = repetitionLevel->resumePointBlock ;
   tapblock = curStack->contents ;
   tappos = repetitionLevel->resumePoint ;
-} 
+}
 
 void setFreePushToCurrentLocation(RepetitionLevel *repetitionLevel) {
   repetitionLevel->freePushBlock = curStack ;
@@ -120,7 +120,7 @@ void setCurrentLocationToFreePush(RepetitionLevel *repetitionLevel) {
   curStack = repetitionLevel->freePushBlock ;
   tapblock = curStack->contents ;
   tappos = repetitionLevel->freePush ;
-} 
+}
 
 //TODO: try inline this function for efficiency:
 int currentLocationStrictBelowFreePush(RepetitionLevel *repetitionLevel) {

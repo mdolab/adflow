@@ -1664,7 +1664,7 @@ contains
                     nNodeElement = 8
                     elementFound = .true.
 
-                    kkk = kk; 
+                    kkk = kk;
                     uu = chi(1); vv = chi(2); ww = chi(3)
 
                     m(1) = n(1); m(2) = n(2); m(3) = n(3); m(4) = n(4)

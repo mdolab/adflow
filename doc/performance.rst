@@ -5,8 +5,8 @@ Performance
 
 This section is intended to give a rough measure of the performance
 that users may expect from ADflow. It is intended to give users some
-indication if their simulation is performing as well as it should 
-be. 
+indication if their simulation is performing as well as it should
+be.
 
 In general, simulations should be run on the *minimum* number of
 processors possible. This will generally mean that memory usage will
@@ -40,7 +40,7 @@ used to measure solution performance is: CPPH = # of cells converged/(proc *
 hour). We will arbitrary say a solution is converged when the L2 norm
 of the residual (totalR in the monitoring output) has dropped by 8
 orders of magnitude. This is equivalent of setting L2convergence=1e-8
-with the NKSolver. 
+with the NKSolver.
 
 For simple cases with good meshes (think isolated wing with a pyHyp)
 mesh and a modest number of cells (<1M), CPPH can exceed 1 million. As
@@ -56,7 +56,7 @@ configuration: wing, body, nacelle, pylon, h-stab and v-stab, the CPPH
 may be much lower ~200\,000. Another example:
 
 * 5 200 000 cell mesh
-* 64 processors 
+* 64 processors
 * 1200 sec solution time
 * CPPH = 244 000
 
@@ -70,4 +70,4 @@ In general, Euler cases will require somewhat less memory than the
 RANS cases. However, with the matrix-free adjoint solver the fraction
 reduction will not be much more than 5/6 of the RANS memory. Run time
 for Euler cases will be typically be 2-5 times smaller than an
-equivalently sized RANS case (number of cells). 
+equivalently sized RANS case (number of cells).
