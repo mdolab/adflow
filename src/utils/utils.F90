@@ -4029,7 +4029,7 @@ contains
         do nn = 1, nDom
             call setPointers(nn, 1, 1)
             do mm = 1, nBocos
-                if (bcType(mm) == symm) then
+                if (bcType(mm) == symm .or. bcType(mm) == antisymm) then
 
                     select case (BCFaceID(mm))
                     case (iMin)
