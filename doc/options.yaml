@@ -629,6 +629,13 @@ explicitSurfaceCallback:
                    # We use this approach so that the users can have complete
                    # control over the surface mesh nodes after they are loaded.
                    "coordXfer": coordXfer,
+
+                   # Optional entry: pointSetKwargs,
+                   # This is a dictionary that contains custom kwargs that will be
+                   # used with the addPointSet call when this surface is added to
+                   # DVGeo. This is done when the solver does full overset updates
+                   # between iterations, where we also track the blanking surfaces
+                   # with DVGeo.
                },
 
                # Similar entries for the fuselage.
