@@ -156,14 +156,15 @@ contains
   end subroutine applyallbc_block
 
 !  differentiation of bcsymm1sthalo in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
-!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   rw status of diff variables: *rev1:in-out *rev2:in *pp1:in-out
-!                *pp2:in *rlv1:in-out *rlv2:in *ww1:in-out *ww2:in
-!                *(*bcdata.norm):in
-!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
-!                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
+!   variations   of useful results: *rev1 *d2wall1 *pp1 *rlv1 *ww1
+!   with respect to varying inputs: *rev1 *rev2 *d2wall1 *d2wall2
+!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: *rev1:in-out *rev2:in *d2wall1:in-out
+!                *d2wall2:in *pp1:in-out *pp2:in *rlv1:in-out *rlv2:in
+!                *ww1:in-out *ww2:in *(*bcdata.norm):in
+!   plus diff mem management of: rev1:in rev2:in d2wall1:in d2wall2:in
+!                pp1:in pp2:in rlv1:in rlv2:in ww1:in ww2:in bcdata:in
+!                *bcdata.norm:in
 ! ===================================================================
 !   actual implementation of each of the boundary condition routines
 ! ===================================================================
@@ -179,9 +180,11 @@ contains
     use constants
     use blockpointers, only : bcdata, bcdatad
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : gamma1, gamma2, ww1, ww1d, ww2, ww2d, pp1, &
 &   pp1d, pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, istart, jstart, isize, &
-&   jsize, rev1, rev1d, rev2, rev2d
+&   jsize, rev1, rev1d, rev2, rev2d, d2wall1, d2wall1d, d2wall2, &
+&   d2wall2d, ks1, ks2
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -232,6 +235,9 @@ contains
       gamma1(i, j) = gamma2(i, j)
       pp1d(i, j) = pp2d(i, j)
       pp1(i, j) = pp2(i, j)
+      d2wall1d(i, j) = d2wall2d(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) then
         rlv1d(i, j) = rlv2d(i, j)
         rlv1(i, j) = rlv2(i, j)
@@ -258,8 +264,10 @@ contains
     use constants
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, &
-&   rlv2, istart, jstart, isize, jsize, rev1, rev2
+&   rlv2, istart, jstart, isize, jsize, rev1, rev2, d2wall1, d2wall2, &
+&   ks1, ks2
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -289,6 +297,8 @@ contains
 ! laminar and eddy viscosity in the halo.
       gamma1(i, j) = gamma2(i, j)
       pp1(i, j) = pp2(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
@@ -297,12 +307,11 @@ contains
 !  differentiation of bcsymm2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
 !   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!                *rlv3 *ww0 *ww3
 !   rw status of diff variables: *rev0:in-out *rev3:in *pp0:in-out
 !                *pp3:in *rlv0:in-out *rlv3:in *ww0:in-out *ww3:in
-!                *(*bcdata.norm):in
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
-!                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
+!                rlv0:in rlv3:in ww0:in ww3:in
   subroutine bcsymm2ndhalo_d(nn)
 !  bcsymm2ndhalo applies the symmetry boundary conditions to a
 !  block for the 2nd halo. this routine is separate as it makes
@@ -310,9 +319,11 @@ contains
     use constants
     use blockpointers, only : bcdata, bcdatad
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : gamma0, gamma3, ww0, ww0d, ww3, ww3d, pp0, &
-&   pp0d, pp3, pp3d, rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d,&
-&   istart, jstart, isize, jsize
+&   pp0d, pp3, pp3d, rlv0, rlv0d, rlv3, rlv3d, d2wall0, d2wall0d, &
+&   d2wall3, d2wall3d, ks0, ks3, rev0, rev0d, rev3, rev3d, istart, &
+&   jstart, isize, jsize
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -332,27 +343,22 @@ contains
       temp = bcdata(nn)%norm(i, j, 1)
       temp0 = bcdata(nn)%norm(i, j, 2)
       temp1 = bcdata(nn)%norm(i, j, 3)
-      vnd = two*(temp*ww3d(i, j, ivx)+ww3(i, j, ivx)*bcdatad(nn)%norm(i&
-&       , j, 1)+temp0*ww3d(i, j, ivy)+ww3(i, j, ivy)*bcdatad(nn)%norm(i&
-&       , j, 2)+temp1*ww3d(i, j, ivz)+ww3(i, j, ivz)*bcdatad(nn)%norm(i&
-&       , j, 3))
-      vn = two*(ww3(i, j, ivx)*temp+ww3(i, j, ivy)*temp0+ww3(i, j, ivz)*&
-&       temp1)
+      vnd = two*(temp*ww3d(i, j, ivx)+temp0*ww3d(i, j, ivy)+temp1*ww3d(i&
+&       , j, ivz))
+      vn = two*(temp*ww3(i, j, ivx)+temp0*ww3(i, j, ivy)+temp1*ww3(i, j&
+&       , ivz))
 ! determine the flow variables in the halo cell.
       ww0d(i, j, irho) = ww3d(i, j, irho)
       ww0(i, j, irho) = ww3(i, j, irho)
       temp1 = bcdata(nn)%norm(i, j, 1)
-      ww0d(i, j, ivx) = ww3d(i, j, ivx) - temp1*vnd - vn*bcdatad(nn)%&
-&       norm(i, j, 1)
-      ww0(i, j, ivx) = ww3(i, j, ivx) - vn*temp1
+      ww0d(i, j, ivx) = ww3d(i, j, ivx) - temp1*vnd
+      ww0(i, j, ivx) = ww3(i, j, ivx) - temp1*vn
       temp1 = bcdata(nn)%norm(i, j, 2)
-      ww0d(i, j, ivy) = ww3d(i, j, ivy) - temp1*vnd - vn*bcdatad(nn)%&
-&       norm(i, j, 2)
-      ww0(i, j, ivy) = ww3(i, j, ivy) - vn*temp1
+      ww0d(i, j, ivy) = ww3d(i, j, ivy) - temp1*vnd
+      ww0(i, j, ivy) = ww3(i, j, ivy) - temp1*vn
       temp1 = bcdata(nn)%norm(i, j, 3)
-      ww0d(i, j, ivz) = ww3d(i, j, ivz) - temp1*vnd - vn*bcdatad(nn)%&
-&       norm(i, j, 3)
-      ww0(i, j, ivz) = ww3(i, j, ivz) - vn*temp1
+      ww0d(i, j, ivz) = ww3d(i, j, ivz) - temp1*vnd
+      ww0(i, j, ivz) = ww3(i, j, ivz) - temp1*vn
       ww0d(i, j, irhoe) = ww3d(i, j, irhoe)
       ww0(i, j, irhoe) = ww3(i, j, irhoe)
 ! set the pressure and gamma and possibly the
@@ -360,6 +366,9 @@ contains
       gamma0(i, j) = gamma3(i, j)
       pp0d(i, j) = pp3d(i, j)
       pp0(i, j) = pp3(i, j)
+      d2wall0d(i, j) = 0.0_8
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) then
         rlv0d(i, j) = rlv3d(i, j)
         rlv0(i, j) = rlv3(i, j)
@@ -378,8 +387,10 @@ contains
     use constants
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, &
-&   rlv3, rev0, rev3, istart, jstart, isize, jsize
+&   rlv3, d2wall0, d2wall3, ks0, ks3, rev0, rev3, istart, jstart, isize,&
+&   jsize
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -406,19 +417,23 @@ contains
 ! laminar and eddy viscosity in the halo.
       gamma0(i, j) = gamma3(i, j)
       pp0(i, j) = pp3(i, j)
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) rlv0(i, j) = rlv3(i, j)
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
 
 !  differentiation of bcsymmpolar1sthalo in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
-!   with respect to varying inputs: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2
-!   rw status of diff variables: *xx:in *rev1:in-out *rev2:in *pp1:in-out
-!                *pp2:in *rlv1:in-out *rlv2:in *ww1:in-out *ww2:in
-!   plus diff mem management of: xx:in rev1:in rev2:in pp1:in pp2:in
-!                rlv1:in rlv2:in ww1:in ww2:in
+!   variations   of useful results: *rev1 *d2wall1 *pp1 *rlv1 *ww1
+!   with respect to varying inputs: *xx *rev1 *rev2 *d2wall1 *d2wall2
+!                *pp1 *pp2 *rlv1 *rlv2 *ww1 *ww2
+!   rw status of diff variables: *xx:in *rev1:in-out *rev2:in *d2wall1:in-out
+!                *d2wall2:in *pp1:in-out *pp2:in *rlv1:in-out *rlv2:in
+!                *ww1:in-out *ww2:in
+!   plus diff mem management of: xx:in rev1:in rev2:in d2wall1:in
+!                d2wall2:in pp1:in pp2:in rlv1:in rlv2:in ww1:in
+!                ww2:in
   subroutine bcsymmpolar1sthalo_d(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
@@ -427,9 +442,10 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 1st level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : ww1, ww1d, ww2, ww2d, pp1, pp1d, pp2, pp2d,&
 &   rlv1, rlv1d, rlv2, rlv2d, rev1, rev1d, rev2, rev2d, xx, xxd, istart,&
-&   jstart, isize, jsize
+&   jstart, isize, jsize, d2wall1, d2wall1d, d2wall2, d2wall2d, ks1, ks2
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -514,6 +530,9 @@ contains
 ! eddy viscosity in the halo.
       pp1d(i, j) = pp2d(i, j)
       pp1(i, j) = pp2(i, j)
+      d2wall1d(i, j) = d2wall2d(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) then
         rlv1d(i, j) = rlv2d(i, j)
         rlv1(i, j) = rlv2(i, j)
@@ -533,8 +552,9 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 1st level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2,&
-&   xx, istart, jstart, isize, jsize
+&   xx, istart, jstart, isize, jsize, d2wall1, d2wall2, ks1, ks2
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -590,19 +610,23 @@ contains
 ! set the pressure and possibly the laminar and
 ! eddy viscosity in the halo.
       pp1(i, j) = pp2(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
   end subroutine bcsymmpolar1sthalo
 
 !  differentiation of bcsymmpolar2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
-!   with respect to varying inputs: *xx *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3
-!   rw status of diff variables: *xx:in *rev0:in-out *rev3:in *pp0:in-out
-!                *pp3:in *rlv0:in-out *rlv3:in *ww0:in-out *ww3:in
-!   plus diff mem management of: xx:in rev0:in rev3:in pp0:in pp3:in
-!                rlv0:in rlv3:in ww0:in ww3:in
+!   variations   of useful results: *rev0 *d2wall0 *pp0 *rlv0 *ww0
+!   with respect to varying inputs: *xx *rev0 *d2wall0 *rev3 *d2wall3
+!                *pp0 *pp3 *rlv0 *rlv3 *ww0 *ww3
+!   rw status of diff variables: *xx:in *rev0:in-out *d2wall0:in-out
+!                *rev3:in *d2wall3:in *pp0:in-out *pp3:in *rlv0:in-out
+!                *rlv3:in *ww0:in-out *ww3:in
+!   plus diff mem management of: xx:in rev0:in d2wall0:in rev3:in
+!                d2wall3:in pp0:in pp3:in rlv0:in rlv3:in ww0:in
+!                ww3:in
   subroutine bcsymmpolar2ndhalo_d(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
 ! singular line of a block. it is assumed that the pointers in
@@ -611,9 +635,11 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 2nd level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : ww0, ww0d, ww3, ww3d, pp0, pp0d, pp3, pp3d,&
-&   rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d, xx, xxd, istart,&
-&   jstart, isize, jsize
+&   rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d, d2wall0, &
+&   d2wall0d, d2wall3, d2wall3d, ks0, ks3, xx, xxd, istart, jstart, &
+&   isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -696,6 +722,9 @@ contains
 ! eddy viscosity in the halo.
       pp0d(i, j) = pp3d(i, j)
       pp0(i, j) = pp3(i, j)
+      d2wall0d(i, j) = d2wall3d(i, j)
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) then
         rlv0d(i, j) = rlv3d(i, j)
         rlv0(i, j) = rlv3(i, j)
@@ -715,8 +744,9 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 2nd level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers_d, only : ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3,&
-&   xx, istart, jstart, isize, jsize
+&   d2wall0, d2wall3, ks0, ks3, xx, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -770,6 +800,8 @@ contains
 ! set the pressure and possibly the laminar and
 ! eddy viscosity in the halo.
       pp0(i, j) = pp3(i, j)
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) rlv0(i, j) = rlv3(i, j)
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do

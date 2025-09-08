@@ -10,11 +10,31 @@ contains
     subroutine setBCVarNamesIsothermalWall
         use cgnsNames
         use constants
+        use inputPhysics, only: useRoughSA
         implicit none
         nbcVar = nbcVarIsothermalWall
         bcVarNames(1) = cgnsTemp
 
+        if (useRoughSA) then
+            nbcVar = nbcVar + 1
+            bcVarNames(2) = cgnsSandGrainRoughness
+        end if
+
     end subroutine setBCVarNamesIsothermalWall
+
+    subroutine setBCVarNamesAdiabaticWall
+        use cgnsNames
+        use constants
+        use inputPhysics, only: useRoughSA
+        implicit none
+        nbcVar = nbcVarAdiabaticWall
+
+        if (useRoughSA) then
+            nbcVar = nbcVar + 1
+            bcVarNames(1) = cgnsSandGrainRoughness
+        end if
+
+    end subroutine setBCVarNamesAdiabaticWall
 
     subroutine setBCVarNamesSubsonicInflow
         use constants
@@ -424,6 +444,7 @@ contains
 #ifndef USE_TAPENADE
         use commonFormats, only: strings
 #endif
+        use inputPhysics, only: useRoughSA
         implicit none
         !
         !      Subroutine arguments.
@@ -467,7 +488,61 @@ contains
             end do
         end do
 
+        ! Set a value of 0 if it was not possible to determine the
+        ! sand grain roughness
+
+        if (useRoughSA) then
+            ! Set a value of 0 if it was not possible to determine the
+            ! sand grain roughness
+            if (.not. bcVarPresent(1)) then
+                bcVarArray(:, :, 2) = zero
+            end if
+
+            do j = jBeg, jEnd
+                do i = iBeg, iEnd
+                    BCData(boco)%ksNS_Wall(i, j) = bcVarArray(i, j, 2)
+                end do
+            end do
+        end if
+
     end subroutine BCDataIsothermalWall
+
+    subroutine BCDataAdiabaticWall(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd)
+        !
+        !       Tries to extract the equivalent sand grain roughness. It sets
+        !       a default value of 0.0
+        !
+        use constants
+        use cgnsNames
+        use inputPhysics, only: useRoughSA
+        use blockPointers, only: BCFaceID, BCData, nBKGlobal
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType) :: boco
+        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+        real(kind=realType), dimension(iBeg:iEnd, jBeg:jEnd, nbcVarMax) :: bcVarArray
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j
+
+        if (useRoughSA) then
+            ! Set a value of 0 if it was not possible to determine the
+            ! sand grain roughness
+            if (.not. bcVarPresent(1)) then
+                bcVarArray(:, :, 1) = zero
+            end if
+
+            do j = jBeg, jEnd
+                do i = iBeg, iEnd
+                    BCData(boco)%ksNS_Wall(i, j) = bcVarArray(i, j, 1)
+                end do
+            end do
+        end if
+
+    end subroutine BCDataAdiabaticWall
 
     subroutine BCDataSubsonicInflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd, allTurbPresent)
         !
@@ -1452,6 +1527,9 @@ contains
 
                         select case (BCType(j))
 
+                        case (NSWallAdiabatic)
+                            call setBCVarNamesAdiabaticWall
+                            call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                         case (NSWallIsothermal)
                             call setBCVarNamesSupersonicInflow
                             call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
@@ -1550,6 +1628,9 @@ contains
 
                         select case (BCType(j))
 
+                        case (NSWallAdiabatic)
+                            call setBCVarNamesAdiabaticWall
+                            call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                         case (NSWallIsothermal)
                             call setBCVarNamesSupersonicInflow
                             call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
@@ -1655,6 +1736,9 @@ contains
 
                         select case (BCType(j))
 
+                        case (NSWallAdiabatic)
+                            call setBCVarNamesAdiabaticWall
+                            call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                         case (NSWallIsothermal)
                             call setBCVarNamesSupersonicInflow
                             call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
@@ -2129,6 +2213,7 @@ contains
         use blockPointers, only: BCData, flowDoms, nBocos, nDom, BCType
         use flowVarRefState, only: nt1, nt2
         use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputPhysics, only: useRoughSA
         use iteration, only: nALESteps
         use utils, only: setPointers, terminate
         implicit none
@@ -2198,6 +2283,14 @@ contains
                                       BCData(mm)%area(iNodeBeg + 1:iNodeEnd, jNodeBeg + 1:jNodeEnd), &
                                       BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                                       stat=ierr)
+                            if (useRoughSA .and. ierr == 0) then
+                                allocate (BCData(mm)%ksNS_Wall(iBeg:iEnd, jBeg:jEnd), stat=ierr)
+                                if (level > 1) then
+                                    ! The extrapolation of the BC for MG does not work
+                                    ! properly. Thus it must be initialized with zero
+                                    BCData(mm)%ksNS_Wall = zero
+                                end if
+                            end if
                             if (ierr /= 0) &
                                  call terminate("allocMemBCData", &
                                  "Memory allocation failure for &
@@ -2221,6 +2314,14 @@ contains
                                       BCData(mm)%area(iNodeBeg + 1:iNodeEnd, jNodeBeg + 1:jNodeEnd), &
                                       BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                                       stat=ierr)
+                            if (useRoughSA .and. ierr == 0) then
+                                allocate (BCData(mm)%ksNS_Wall(iBeg:iEnd, jBeg:jEnd), stat=ierr)
+                                if (level > 1) then
+                                    ! The extrapolation of the BC for MG does not work
+                                    ! properly. Thus it must be initialized with zero
+                                    BCData(mm)%ksNS_Wall = zero
+                                end if
+                            end if
                             if (ierr /= 0) &
                                  call terminate("allocMemBCData", &
                                  "Memory allocation failure for &
@@ -2580,6 +2681,7 @@ contains
                         nullify (BCData(j)%surfIndex)
                         nullify (BCData(j)%uSlip)
                         nullify (BCData(j)%TNS_Wall)
+                        nullify (BCData(j)%ksNS_Wall)
                         nullify (BCData(j)%CpTarget)
 
                         nullify (BCData(j)%normALE)
@@ -2703,6 +2805,11 @@ contains
                     ! call the appropriate routine.
 
                     select case (BCType(j))
+
+                    case (NSWallAdiabatic)
+                        call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+                        call extractFromDataSet(bcVarArray)
+                        call BCDataAdiabaticWall(j, bcVarArray, iBeg, iEnd, jBeg, jEnd)
 
                     case (NSWallIsothermal)
                         call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
@@ -2958,6 +3065,12 @@ contains
                     ! call the appropriate routine.
                     select case (BCType(j))
 
+                        ! This would be needed if wall roughness is differentiated
+                        ! case (NSWallAdiabatic)
+                        !    call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+                        !    call extractFromDataSet_d(bcVarArray, bcVarArrayd)
+                        !    call BCDataAdiabaticWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+
                     case (NSWallIsothermal)
                         call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
                         call extractFromDataSet_d(bcVarArray, bcVarArrayd)
@@ -3053,6 +3166,13 @@ contains
                     ! Determine the boundary condition we are having here and
                     ! call the appropriate routine.
                     select case (BCType(j))
+
+                        ! This would be needed if wall roughness is differentiated
+                        ! case (NSWallAdiabatic)
+                        !    call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+                        !    call extractFromDataSet(bcVarArray)
+                        !    call BCDataAdiabaticWall_b(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+                        !    call extractFromDataSet_b(bcVarArray, bcVarArrayd)
 
                     case (NSWallIsothermal)
                         call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
