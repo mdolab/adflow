@@ -831,6 +831,7 @@ class ADFLOW(AeroSolver):
     def addActuatorRegion(
         self,
         fileName,
+        actType,
         axis1,
         axis2,
         familyName,
@@ -840,10 +841,34 @@ class ADFLOW(AeroSolver):
         relaxStart=None,
         relaxEnd=None,
         coordXfer=None,
+        # simpleProp specific parameters
+        swirlFact=0.0,
+        mDistribParam=1.0,
+        nDistribParam=0.5,
+        distribPDfactor=0.5,
+        innerZeroThrustRadius=0.0,
+        propRadius=0.1,
+        spinnerRadius=0.0,
+        rootDragFactor=0.0,
     ):
-        """
-        Add an actuator disk zone defined by the supplied closed surface in the
-        plot3d file "fileName". This surface defines the physical extent of the
+        """Add an actuator zone with a uniform force distribution or add
+        an actuator-disk zone representing a propeller. The zone is defined by
+        the (closed) supplied surface in the plot3d file "fileName". The type
+        is set with the string "actType" as either 'uniform' or 'simpleProp'.
+
+        For the uniform distribution (i.e., actType = 'uniform'):
+        The specified thrust is applied uniformly over the specified zone.
+
+        For the propeller model (i.e., actType = 'simpleProp'):
+        The radial distributions of the axial and tangential forces can be tuned
+        using the parameters. For the distributions, the models used by Hoekstra
+        in "A RANS-based analysis tool for ducted propeller systems in open water
+        condition" [International Shipbuilding Progress, 2006] are used here.
+        See "RANS-based aerodynamic shape optimization of a wing considering
+        propeller-wing interaction" by Chauhan and Martins
+        for more. This applies axis-symmetric (but radially varying) forces.
+
+        The surface defines the physical extent of the
         region over which to apply the source terms. The plot3d file may be
         multi-block but all the surface normals must point outside and no
         additional surfaces can be inside. Internally, we find all of the CFD
@@ -887,29 +912,40 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
         fileName : str
-           Surface Plot 3D file (multiblock ascii) defining the closed
-           region over which the integration is to be applied.
+           The surface Plot3D file (multiblock ascii) defining the closed
+           region to which the forces are to be applied.
+
+        actType : str
+           The type of force distribution.
+           Uniform ('uniform') or propeller ('simpleProp').
 
         axis1 : numpy array, length 3
-           The physical location of the start of the axis
+           The physical location of the start of the thrust or propeller axis (x,y,z).
 
-        axis2 : numpy array, length 4
-           The physical location of the end of the axis
+        axis2 : numpy array, length 3
+           The physical location of the end of the thrust or propeller axis (x,y,z).
+           The axis1 and axis2 points are used to define the direction of the
+           thrust, and also to define the propeller axis for the propeller model.
+           The propeller axis is used to compute the radii of the cells in the
+           actuator-disk zone and also to calculate the directions for axial and
+           tangential forces.
 
         familyName : str
-           The name to be associated with the functions defined on this
-           region.
+           The name to be associated with the functions defined on this region.
 
-        thrust : scalar, float
-           The total amount of axial force to apply to this region, in the direction
-           of axis1 -> axis2
+        thrust : scalar
+           The total magnitude of the (axial) thrust to apply to the region,
+           in the direction of axis1 -> axis2. (This does not include the forces
+           applied inside the innerZeroThrustRadius for the propeller model.
+           See below for a description of innerZeroThrustRadius.)
 
         torque : scalar, float
+           Torque does not work! If you want swirl, try the simpleProp actType.
            The total amount of torque to apply to the region, about the
-           specified axis.
+           specified axis. This is only for the uniform actuator zone.
 
         heat : scalar, float
-            The total amount of head added in the actuator zone with source terms
+           The total amount of head added in the actuator zone with source terms
 
         relaxStart : scalar, float
             The start of the relaxation in terms of
@@ -926,6 +962,42 @@ class ADFLOW(AeroSolver):
             arbitrary modifications to the loaded plot3d surface. The call
             signature is documented in DVGeometry's :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>` method.
 
+        Note that the following are only for the propeller model.
+
+        swirlFact : scalar
+           A factor to multiply the tangential forces by. For example, this can
+           be used to reverse the swirl rotation direction or remove the swirl.
+           If axis1 -> axis2 points front to back, then a positive swirlFact will
+           give a clockwise rotation looking from the back.
+
+        mDistribParam : scalar
+           The m parameter in the distribution. See the Hoekstra or Chauhan and
+           Martins papers mentioned above.
+
+        nDistribParam : scalar
+           The n parameter for the distribution. See the Hoekstra or Chauhan and
+           Martins papers mentioned above.
+
+        distribPDfactor : scalar
+           The pitch-to-diameter ratio for the blade. See the Hoekstra or
+           Chauhan and Martins papers mentioned above. Increasing the pitch-to-
+           diameter ratio increases the swirl.
+
+        innerZeroThrustRadius : scalar
+           The radius at which the thrust becomes zero and then goes negative.
+           Only use this if you know the propeller produces drag near the root,
+           otherwise use the default value of 0.
+
+        propRadius : scalar
+           The outer radius of the propeller.
+
+        spinnerRadius : scalar
+           The radius at which the blades connect to the spinner (aka the hub).
+
+        rootDragFactor : scalar
+           A factor that the negative thrust (drag) inside the innerZeroThrustRadius
+           is multiplied by. This is used to scale the forces in the region.
+           This is not required if not using the innerZeroThrustRadius.
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption("equationMode").lower() == "time spectral":
@@ -967,9 +1039,37 @@ class ADFLOW(AeroSolver):
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
-        # Now continue to fortran were we setup the actual actuator region.
+        if actType != "uniform" and actType != "simpleProp":
+            raise Error("actType must be 'uniform' or 'simpleProp'")
+
+        # Torque input doesn't do anything, warn user if they try to change it
+        if actType == "uniform" and torque != 0.0 and self.comm.rank == 0:
+            ADFLOWWarning(
+                "The torque input does not work for the uniform actuator region. If swirl is desired, try using the simpleProp actuator region."
+            )
+
+        #  Now continue to fortran were we setup the actual region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat, relaxStart, relaxEnd
+            pts.T,
+            conn.T,
+            actType,
+            axis1,
+            axis2,
+            familyName,
+            famID,
+            thrust,
+            torque,
+            heat,
+            swirlFact,
+            mDistribParam,
+            nDistribParam,
+            distribPDfactor,
+            innerZeroThrustRadius,
+            propRadius,
+            spinnerRadius,
+            rootDragFactor,
+            relaxStart,
+            relaxEnd,
         )
 
     def writeActuatorRegions(self, fileName, outputDir=None):

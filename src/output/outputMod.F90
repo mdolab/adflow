@@ -1498,7 +1498,7 @@ contains
 
             select case (solName)
 
-             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
+            case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
                   cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir, &
                   cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorKsArea)
 

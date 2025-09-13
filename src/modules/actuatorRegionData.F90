@@ -3,10 +3,15 @@ module actuatorRegionData
 
     type actuatorRegionType
 
-        character(len=maxStringLen) :: famName
+        character(len=maxStringLen) :: famName, actType
         integer(kind=intType) :: famID
         ! The block indexes of the cells included in this region
         integer(kind=intType), dimension(:, :), pointer :: cellIDs
+
+        ! The tangent unit-vectors of the cells included in this region
+        real(kind=realType), dimension(:, :), pointer :: cellTangentials
+        ! The radii of the cells included in this region
+        real(kind=realType), dimension(:), pointer :: cellRadii
 
         ! The total number of cells included this proc has
         integer(kind=intType) :: nCellIDs
@@ -15,10 +20,22 @@ module actuatorRegionData
         ! this is equal to torque * axisVec
         real(kind=realType) :: force(3)
 
+        ! thrust is the total thrust magnitude to be applied on this region
+        real(kind=realType) :: thrust
+        real(kind=realType) :: swirlFact
+        real(kind=realType) :: mDistribParam
+        real(kind=realType) :: nDistribParam
+        real(kind=realType) :: distribPDfactor
+        real(kind=realType) :: innerZeroThrustRadius
+        real(kind=realType) :: spinnerRadius
+        real(kind=realType) :: rootDragFactor
+
         ! magnitude of the total torque to be applied on this region
         real(kind=realType) :: torque
-        ! vector that determines the direction of the applied torque
+        ! vector that determines the direction of the applied torque and force
         real(kind=realType), dimension(3) :: axisVec
+        real(kind=realType), dimension(:, :), pointer :: thrustVec
+        real(kind=realType), dimension(:, :), pointer :: swirlVec
 
         ! total heat flux to be added on this regoin
         real(kind=realType) :: heat
@@ -27,6 +44,9 @@ module actuatorRegionData
         ! procs) included in this region
         real(kind=realType) :: volume
         real(kind=realType) :: volLocal
+
+        real(kind=realType) :: totalThrustSum
+        real(kind=realType) :: totalSwirlSum
 
         integer(kind=intType), dimension(:), allocatable :: blkPtr
 
