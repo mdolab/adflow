@@ -1487,6 +1487,7 @@ contains
                                  cgnsSubFace, BCType
         use sorting, only: famInList
         use utils, only: setPointers_d, terminate, char2str
+        use actuatorRegionData, only: actuatorRegionsd, actuatorRegions, nActuatorRegions
         !
         !      Subroutine arguments.
         !
@@ -1550,6 +1551,19 @@ contains
             end do varLoop
         end do domainsLoop
 
+        ! Loop over any actuator regions and set the seeds to 0 (this is a temporary fix until the BC seeds can be set in python)
+        regionLoop: do iRegion = 1, nActuatorRegions
+            varLoop2: do iVar = 1, nVar
+                nFam = famLists(iVar, 1)
+                if (.not. famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2 + nFam - 1))) then
+                    cycle
+                end if
+
+                actuatorRegionsd(iRegion)%force =  zero
+                actuatorRegionsd(iRegion)%heat =  zero
+            end do varLoop2
+        end do regionLoop
+
     end subroutine setBCData_d
 
     subroutine setBCData_b(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
@@ -1563,6 +1577,7 @@ contains
                                  cgnsSubFace, BCType
         use sorting, only: famInList
         use utils, only: setPointers_b, terminate, char2str
+        use actuatorRegionData, only: actuatorRegionsd, actuatorRegions, nActuatorRegions
 
         !
         !      Subroutine arguments.
@@ -1628,6 +1643,23 @@ contains
                 end do bocoLoop
             end do varLoop
         end do domainsLoop
+
+
+        ! Loop over any actuator regions and set the seeds to 0 (this is a temporary fix until the BC seeds can be set in python)
+        regionLoop: do iRegion = 1, nActuatorRegions
+            varLoop2: do iVar = 1, nVar
+                nFam = famLists(iVar, 1)
+                if (.not. famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2 + nFam - 1))) then
+                    cycle
+                end if
+
+                ! Extract the name
+                varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
+
+                bcDataInd(ivar) = zero
+
+            end do varLoop2
+        end do regionLoop
 
     end subroutine setBCData_b
 
