@@ -363,7 +363,6 @@ class ADFLOW(AeroSolver):
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
             print("+--------------------------------------------------+")
 
-
     def __del__(self):
         """
         Clean up allocated memory if necessary
@@ -868,9 +867,9 @@ class ADFLOW(AeroSolver):
         if relaxEnd < 0 and relaxStart >= 0:
             raise ValueError("relaxEnd must be given if relaxStart is specified")
 
-
-        self._actuatorRegionHandler.addActuatorRegion(actuatorRegion, self.adflow, familyName, familyID, relaxStart, relaxEnd)
-
+        self._actuatorRegionHandler.addActuatorRegion(
+            actuatorRegion, self.adflow, familyName, familyID, relaxStart, relaxEnd
+        )
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
@@ -893,7 +892,6 @@ class ADFLOW(AeroSolver):
             outputDir = self.getOption("outputDirectory")
 
         self._actuatorRegionHandler.writeActuatorRegions(self.adflow, fileName, outputDir)
-
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a

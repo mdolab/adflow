@@ -92,19 +92,19 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.ap = ap_actuator_pipe
 
         actuator_region = UniformActuatorRegion(
-            centerPoint = np.array([-0.38, 0, 0.3]),
-            thrustVector = np.array([1, 0, 0]),
-            innerDiameter = 0.0,
-            outerDiameter = 0.354,
-            regionDepth = 0.12,
-            thrust = 0,
-            heat = 0,
-            )
+            centerPoint=np.array([-0.38, 0, 0.3]),
+            thrustVector=np.array([1, 0, 0]),
+            innerDiameter=0.0,
+            outerDiameter=0.354,
+            regionDepth=0.12,
+            thrust=0,
+            heat=0,
+        )
 
         self.CFDSolver.addActuatorRegion(
             actuator_region,
-            'actuator_region',
-            )
+            "actuator_region",
+        )
 
         # add thrust and heat as AP DVs
         self.ap.setBCVar("Thrust", 0.0, "actuator_region")

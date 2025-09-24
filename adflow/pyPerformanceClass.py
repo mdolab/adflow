@@ -29,7 +29,6 @@ To Do:
 
 
 class PERFORMANCE(object):
-
     """
     Basic Performance class to handle dynamic handling qualities constraints
     """

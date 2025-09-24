@@ -367,9 +367,7 @@ def calculateWingInertias(acg):
                     # print 'zs3',Zs3
                     Zs4 = acg[i][j].z_Centroid
 
-                    Ix = (
-                        Ix + I1x - W * (Ys_dot**2) - W * (Zs3**2) + W * (Ys_dot + Ysoff) ** 2 + W * (Zs3 + Zs1) ** 2
-                    )
+                    Ix = Ix + I1x - W * (Ys_dot**2) - W * (Zs3**2) + W * (Ys_dot + Ysoff) ** 2 + W * (Zs3 + Zs1) ** 2
                     Iy = Iy + I1y - W * (Xs**2) - W * (Zs3**2) + W * (Xs + Xs4) ** 2 + W * (Zs3 + Zs1) ** 2
                     Iz = Iz + I1z - W * (Xs**2 + Ys_dot**2) + W * (Xs + Xs4) ** 2 + W * (Ys_dot + Ysoff) ** 2
                     # Ixz = ...
