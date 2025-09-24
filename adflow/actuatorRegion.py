@@ -212,7 +212,7 @@ class UniformActuatorRegion(CircularActuatorRegion):
     def computeCellForceVector(self, distance2axis, distance2plane, tangent, cellVolume, totalVolume):
         thrustBC = self._boundaryConditions[self._thrustBcName]
 
-        force = np.outer(thrustBC * cellVolume / totalVolume, self.thrustVector)
+        force = np.outer(thrustBC * cellVolume / totalVolume, -self.thrustVector)
 
         return force
 
@@ -274,7 +274,7 @@ class BSplineActuatorRegion(CircularActuatorRegion):
         thrustFactor = thrustBC * cellVolume / totalVolume
 
         # add axial contribution (thrust)
-        force = np.outer(self._thrustSpline(normalizedRadius) * thrustFactor, self.thrustVector)
+        force = np.outer(self._thrustSpline(normalizedRadius) * thrustFactor, -self.thrustVector)
 
         # add tangential contribution (swirl)
         force += np.multiply(tangent.T, np.array([self._tangentSpline(normalizedRadius) * thrustFactor])).T
