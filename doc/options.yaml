@@ -942,7 +942,7 @@ NKInnerPreconItsCoarse:
 
 NKOuterPreconIts:
   desc: >
-    Number of global preconditioning iterations for the NK solver adjoint solution.
+    Number of global preconditioning iterations for the NK solver.
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
 
@@ -1205,7 +1205,7 @@ ANKTurbKSPDebug:
 ANKUseMatrixFree:
   desc: >
     Use the matrix-free Jacobian for the ANK solver.
-    If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
+    If False, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
 
 ANKCharTimeStepType:
   desc: >
