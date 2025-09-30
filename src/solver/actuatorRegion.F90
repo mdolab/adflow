@@ -205,6 +205,11 @@ contains
         allocate (region%force(3, region%nCellIDs))
         allocate (region%heat(region%nCellIDs))
 
+
+        ! same for derivative seeds
+        allocate (actuatorRegionsd(nActuatorRegions)%force(3, region%nCellIDs))
+        allocate (actuatorRegionsd(nActuatorRegions)%heat(region%nCellIDs))
+
     end subroutine addActuatorRegion
 
     subroutine computeSpatialMetrics(iRegion, nLocalCells, centerPoint, thrustVector, &
