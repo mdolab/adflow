@@ -169,7 +169,7 @@ class ActuatorRegionHandler:
                 heat.T,
             )
 
-    def writeActuatorRegions(self, adflow_fortran: ModuleType, fileName: str, outputDir: str):
+    def writeActuatorRegions(self, fileName: str, outputDir: str):
         # Join to get the actual filename root
         fileName = os.path.join(outputDir, fileName)
 
@@ -178,7 +178,7 @@ class ActuatorRegionHandler:
         fileName += ".plt"
 
         # just call the underlying fortran routine
-        adflow_fortran.actuatorregion.writeactuatorregions(fileName)
+        self._adflow_fortran.actuatorregion.writeactuatorregions(fileName)
 
 
 class CircularActuatorRegion(AbstractActuatorRegion):
