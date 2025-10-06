@@ -203,7 +203,7 @@ class ADFLOW(AeroSolver):
         # had we read in a param file
         self.adflow.iteration.deforming_grid = True
 
-        self._actuatorRegionHandler = ActuatorRegionHandler()
+        self._actuatorRegionHandler = ActuatorRegionHandler(self.adflow, self.comm)
 
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
@@ -867,9 +867,7 @@ class ADFLOW(AeroSolver):
         if relaxEnd < 0 and relaxStart >= 0:
             raise ValueError("relaxEnd must be given if relaxStart is specified")
 
-        self._actuatorRegionHandler.addActuatorRegion(
-            actuatorRegion, self.adflow, familyName, familyID, relaxStart, relaxEnd
-        )
+        self._actuatorRegionHandler.addActuatorRegion(actuatorRegion, familyName, familyID, relaxStart, relaxEnd)
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
@@ -891,7 +889,7 @@ class ADFLOW(AeroSolver):
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
 
-        self._actuatorRegionHandler.writeActuatorRegions(self.adflow, fileName, outputDir)
+        self._actuatorRegionHandler.writeActuatorRegions(fileName, outputDir)
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
@@ -3584,7 +3582,7 @@ class ADFLOW(AeroSolver):
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
-        self._actuatorRegionHandler.updateActuatorRegionsBC(AP, self.adflow, self.comm)
+        self._actuatorRegionHandler.updateActuatorRegionsBC(AP)
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
