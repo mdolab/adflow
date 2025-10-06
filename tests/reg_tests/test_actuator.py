@@ -93,7 +93,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         actuator_region = UniformActuatorRegion(
             centerPoint=np.array([-0.38, 0, 0.3]),
-            thrustVector=np.array([1, 0, 0]),
+            thrustVector=np.array([-1, 0, 0]),
             innerDiameter=0.0,
             outerDiameter=0.354,
             regionDepth=0.12,
