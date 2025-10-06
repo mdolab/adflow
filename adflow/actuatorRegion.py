@@ -49,10 +49,11 @@ class AbstractActuatorRegion(ABC):
         self._boundaryConditions[bcName] = bcValue
 
     def _computeScalingConstant(self, cellValues, totalValue, comm):
-        if np.isclose(totalValue, 0):
-            return 1
-
         computedTotalvalue = comm.allreduce(np.sum(cellValues), op=MPI.SUM)
+
+        if np.isclose(computedTotalvalue, 0):
+            return 0.0
+
         return totalValue / computedTotalvalue
 
     @abstractmethod
@@ -148,10 +149,6 @@ class ActuatorRegionHandler:
 
             totalVolume = self._comm.allreduce(np.sum(volume), op=MPI.SUM)
 
-            # skip this proc if no cells are active
-            if actuatorRegion.nLocalCells == 0:
-                continue
-
             # compute the source terms
             force = actuatorRegion.computeCellForceVector(
                 distance2axis, distance2plane, tangent, volume, totalVolume, self._comm
@@ -159,6 +156,10 @@ class ActuatorRegionHandler:
             heat = actuatorRegion.computeCellHeatVector(
                 distance2axis, distance2plane, tangent, volume, totalVolume, self._comm
             )
+
+            # skip this proc if no cells are active
+            if actuatorRegion.nLocalCells == 0:
+                continue
 
             # apply the source terms in Fortran
             self._adflow_fortran.actuatorregion.populatebcvalues(
@@ -278,23 +279,6 @@ class BSplineActuatorRegion(CircularActuatorRegion):
         self._tangentSpline = interpolate.BSpline(*tangentDistribution)
         self._radialSpline = interpolate.BSpline(*radialDistribution)
         self._heatSpline = interpolate.BSpline(*heatDistribution)
-
-    def _computeDistributionScalingConstant(self, distribution: Tuple[npt.NDArray, npt.NDArray, float]):
-        n_r = 1000
-        r_inner = self._innerDiameter / 2
-        r_outer = self._outerDiameter / 2
-        d = interpolate.BSpline(*distribution)
-
-        s = np.linspace(0, 1, n_r)
-
-        r = r_inner + s * (r_outer - r_inner)
-        dr_ds = r_outer - r_inner
-        w = 2 * r * dr_ds / (r_outer**2 - r_inner**2)
-
-        integral = np.trapz(d(s) * w, s)
-        constant = 1 / integral
-
-        return constant
 
     def _formSpline(self, distribution: Tuple[npt.NDArray, npt.NDArray, float], scalingConstant: float):
         t = distribution[0]
