@@ -49,7 +49,7 @@ class AbstractActuatorRegion(ABC):
         self._boundaryConditions[bcName] = bcValue
 
     def _computeScalingConstant(self, cellValues, totalValue, comm):
-        if totalValue == 0:
+        if np.isclose(totalValue, 0):
             return 1
 
         computedTotalvalue = comm.allreduce(np.sum(cellValues), op=MPI.SUM)
