@@ -292,7 +292,7 @@ acousticScaleFactor:
     Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
     Setting this to the freestream Mach number tends to work well for most low Mach number cases.
     Values greater than 1.0 should not be used because this will compromise the accuracy of the solution.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
 
 vis4:
   desc: >
@@ -476,7 +476,7 @@ useDissContinuation:
     This will have no effect on purely subsonic flows.
     The solution needs to be well converged to ensure that the additional dissipation is reduced to a value that does not affect the converged result.
     For the default values of :py:data:`dissContMagnitude` and :py:data:`dissContMidpoint`, an L2 convergence of 1e-6 is sufficient.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
 
 dissContMagnitude:
   desc: >
@@ -942,7 +942,7 @@ NKInnerPreconItsCoarse:
 
 NKOuterPreconIts:
   desc: >
-    Number of global preconditioning iterations for the NK solver adjoint solution.
+    Number of global preconditioning iterations for the NK solver.
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
 
@@ -1205,7 +1205,7 @@ ANKTurbKSPDebug:
 ANKUseMatrixFree:
   desc: >
     Use the matrix-free Jacobian for the ANK solver.
-    If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
+    If False, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
 
 ANKCharTimeStepType:
   desc: >
@@ -1214,7 +1214,7 @@ ANKCharTimeStepType:
     The amount of speedup will depend on how low the local Mach number is across the entire flowfield.
     This option is mainly useful for cases with freestream Mach numbers of 0.4 or lower.
     In most cases, this should be used in combination with :py:data:`acousticScaleFactor`.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
   None: No characteristic time stepping
   Turkel: >
     Turkel preconditioner.
