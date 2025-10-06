@@ -257,10 +257,37 @@ class BSplineActuatorRegion(CircularActuatorRegion):
     ):
         super().__init__(centerPoint, thrustVector, innerDiameter, outerDiameter, regionDepth, thrust, heat)
 
-        self._thrustSpline = interpolate.BSpline(*thrustDistribution)
-        self._tangentSpline = interpolate.BSpline(*tangentDistribution)
-        self._radialSpline = interpolate.BSpline(*radialDistribution)
-        self._heatSpline = interpolate.BSpline(*heatDistribution)
+        # compute a scaling constant such that the integrated thrust equals the total prescribed thrust
+        scalingConstant = self._computeDistributionScalingConstant(thrustDistribution)
+
+        self._thrustSpline = self._formSpline(thrustDistribution, scalingConstant)
+        self._tangentSpline = self._formSpline(tangentDistribution, scalingConstant)
+        self._radialSpline = self._formSpline(radialDistribution, scalingConstant)
+        self._heatSpline = self._formSpline(heatDistribution, scalingConstant)
+
+    def _computeDistributionScalingConstant(self, distribution: Tuple[npt.NDArray, npt.NDArray, float]):
+        n_r = 1000
+        r_inner = self._innerDiameter / 2
+        r_outer = self._outerDiameter / 2
+        d = interpolate.BSpline(*distribution)
+
+        s = np.linspace(0, 1, n_r)
+
+        r = r_inner + s * (r_outer - r_inner)
+        dr_ds = r_outer - r_inner
+        w = 2 * r * dr_ds / (r_outer**2 - r_inner**2)
+
+        integral = np.trapz(d(s) * w, s)
+        constant = 1 / integral
+
+        return constant
+
+    def _formSpline(self, distribution: Tuple[npt.NDArray, npt.NDArray, float], scalingConstant: float):
+        t = distribution[0]
+        c = distribution[1]
+        k = distribution[2]
+
+        return interpolate.BSpline(t, c * scalingConstant, k)
 
     def _computeNormalizedRadius(self, distance2axis):
         normalizedRadius = distance2axis - self._innerDiameter / 2
