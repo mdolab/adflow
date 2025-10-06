@@ -3248,8 +3248,6 @@ class ADFLOW(AeroSolver):
             Flag to release the adjoint memory when setting a new aeroproblem, by default True
         """
 
-        ptSetName = "adflow_%s_coords" % aeroProblem.name
-
         newAP = False
         # Tell the user if we are switching aeroProblems
         if self.curAP != aeroProblem:
@@ -3263,8 +3261,22 @@ class ADFLOW(AeroSolver):
             _ = aeroProblem.adflowData
         except AttributeError:
             aeroProblem.adflowData = adflowFlowCase()
-            aeroProblem.ptSetName = ptSetName
             aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilyGroup)
+
+            # dictionary that holds the ptsetname for each family
+            ptSetNames = {}
+            if self.customPointSetFamilies is None:
+                # we dont have a custom child dvgeo mapping. the surface family will be only
+                # designFamilyGroup and we will have a single pointset
+                ptSetName = f"adflow_{self.designFamilyGroup}_{aeroProblem.name}_coords"
+                ptSetNames[self.designFamilyGroup] = ptSetName
+            else:
+                # we have a custom surface family to child dvgeo mapping.
+                for familyName in self.customPointSetFamilies.keys():
+                    ptSetName = f"adflow_{familyName}_{aeroProblem.name}_coords"
+                    ptSetNames[familyName] = ptSetName
+
+            aeroProblem.ptSetNames = ptSetNames
 
         if self.curAP is not None:
             # If we have already solved something and are now
@@ -3293,10 +3305,31 @@ class ADFLOW(AeroSolver):
 
         # Now check if we have an DVGeo object to deal with:
         if self.DVGeo is not None:
-            # DVGeo appeared and we have not embedded points!
-            if ptSetName not in self.DVGeo.points:
-                coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
-                self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
+            # we have a DVGeo added. check if we have already added the points for this AP
+            if self.customPointSetFamilies is None:
+                # we have a single pointset
+                ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
+
+                if ptSetName not in self.DVGeo.points:
+                    coords0 = self.mapVector(
+                        self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False
+                    )
+                    self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
+            else:
+                # we have custom pointsets
+                for family, familyKwargs in self.customPointSetFamilies.items():
+                    ptSetName = aeroProblem.ptSetNames[family]
+
+                    if ptSetName not in self.DVGeo.points:
+                        # coords0 is now the subset of this family
+                        coords0 = self.mapVector(self.coords0, self.allFamilies, family, includeZipper=False)
+                        # this pointset is added with a custom familyKwargs
+                        self.DVGeo.addPointSet(
+                            coords0,
+                            ptSetName,
+                            **self.pointSetKwargs,
+                            **familyKwargs,
+                        )
 
             # also check if we need to embed blanking surface points
             if self.getOption("oversetUpdateMode") == "full" and self.getOption("explicitSurfaceCallback") is not None:
@@ -3306,6 +3339,7 @@ class ADFLOW(AeroSolver):
                     # used in the explicit hole cutting multiple times in different
                     # configurations.
                     surfFile = self.blankingSurfDict[surf]["surfFile"]
+                    surfPointSetKwargs = self.blankingSurfDict[surf]["pointSetKwargs"]
                     surfPtSetName = f"points_{surfFile}"
                     if surfPtSetName not in self.DVGeo.points:
                         # we need to add the pointset to dvgeo. do it in parallel
@@ -3327,11 +3361,52 @@ class ADFLOW(AeroSolver):
                         # we already communicated the points when loading the file,
                         # so just add them to dvgeo now
                         procPts = surfPts[disp[self.comm.rank] : disp[self.comm.rank + 1]]
-                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs)
+                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs, **surfPointSetKwargs)
 
             # Check if our point-set is up to date:
-            if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
-                coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+            updateSurface = False
+
+            # check for disp first. doing this check here is not the most efficient,
+            # but it results in simpler code
+            if aeroProblem.adflowData.disp is not None:
+                updateSurface = True
+
+            if self.customPointSetFamilies is None:
+                # we have a single pointset
+                ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
+
+                if not self.DVGeo.pointSetUpToDate(ptSetName):
+                    updateSurface = True
+
+                    coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+
+            else:
+                # we have custom pointsets
+                # first figure out if we want to update the pointset; check each family we are tracking
+                for family in self.customPointSetFamilies.keys():
+                    # return immediately if we are flagged for a surfafce update
+                    if updateSurface:
+                        break
+
+                    # check if any of the pointsets are out of date
+                    ptSetName = aeroProblem.ptSetNames[family]
+                    if not self.DVGeo.pointSetUpToDate(ptSetName):
+                        updateSurface = True
+
+                # if we have the updateSurface flag True, compute the coords array
+                if updateSurface:
+                    # get the current design surface family. we will overwrite this as we go through the families
+                    coords = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
+
+                    for family in self.customPointSetFamilies.keys():
+                        ptSetName = aeroProblem.ptSetNames[family]
+                        familyCoords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+                        # map this to the coords vector
+                        self.mapVector(familyCoords, family, self.designFamilyGroup, vec2=coords, includeZipper=False)
+
+            if updateSurface:
+                # the coords array is computed above. if we have the update surface flag enabled,
+                # run the surface update
 
                 # Potentially add a fixed set of displacements to it.
                 if aeroProblem.adflowData.disp is not None:
@@ -4671,9 +4746,22 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
-                    xsdot.shape
-                )
+                if self.customPointSetFamilies is None:
+                    # no custom pointset families, just process the entire dvdot and add to xsdot
+                    xsdot += self.DVGeo.totalSensitivityProd(
+                        xDvDot, self.curAP.ptSetNames[self.designFamilyGroup], config=self.curAP.name
+                    ).reshape(xsdot.shape)
+                else:
+                    # custom pointsets. accumulate local xsdots in the complete vector
+                    for family in self.customPointSetFamilies.keys():
+                        # process this family's xsdot
+                        ptSetName = self.curAP.ptSetNames[family]
+                        xsdot_family = self.DVGeo.totalSensitivityProd(
+                            xDvDot, ptSetName, self.comm, config=self.curAP.name
+                        )
+                        # map it to an empty surface vector and accumulate
+                        xsdot += self.mapVector(xsdot_family, family, self.designFamilyGroup)
+
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -4989,12 +5077,38 @@ class ADFLOW(AeroSolver):
             if xDvDeriv:
                 xdvbar = {}
                 if self.mesh is not None:  # Include geometric
-                    # derivatives if mesh is
-                    # present
+                    # derivatives if mesh is present
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
-                        xdvbar.update(
-                            self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name)
-                        )
+                        # we have a DVGeo added. check if we have already added the points for this AP
+                        if self.customPointSetFamilies is None:
+                            # we have a single pointset
+                            ptSetName = self.curAP.ptSetNames[self.designFamilyGroup]
+
+                            xdvbar.update(
+                                self.DVGeo.totalSensitivity(xsbar, ptSetName, self.comm, config=self.curAP.name)
+                            )
+
+                        else:
+                            # we have custom pointsets
+                            # start with an empty dict, we set the entries in the first pass,
+                            # and add in the following passes
+                            for family in self.customPointSetFamilies.keys():
+                                ptSetName = self.curAP.ptSetNames[family]
+
+                                # get the mapped xsbar
+                                xsbarFamily = self.mapVector(xsbar, self.designFamilyGroup, family, includeZipper=False)
+
+                                familySens = self.DVGeo.totalSensitivity(
+                                    xsbarFamily, ptSetName, self.comm, config=self.curAP.name
+                                )
+
+                                for key, val in familySens.items():
+                                    # not the best way to do this but should work...
+                                    if key in xdvbar:
+                                        xdvbar[key] += val
+                                    else:
+                                        xdvbar[key] = val
+
                     else:
                         if self.comm.rank == 0:
                             ADFLOWWarning(
