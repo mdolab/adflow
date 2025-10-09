@@ -589,7 +589,7 @@ bocos:do nn=1,nbocos
         call bcturbwall(nn)
 !=============================================================
 !=============================================================
-      case (symm, symmpolar, eulerwall) 
+      case (symm, antisymm, symmpolar, eulerwall) 
 ! symmetry, polar symmetry or inviscid wall. treatment of
 ! the turbulent equations is identical.
         call bcturbsymm(nn)

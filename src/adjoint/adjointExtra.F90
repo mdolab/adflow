@@ -436,7 +436,7 @@ contains
             ! The actual correction of the coordinates only takes
             ! place for symmetry planes.
 
-            testSymmetry: if (BCType(mm) == Symm) then
+            testSymmetry: if (BCType(mm) == Symm .or. BCType(mm) == AntiSymm) then
 
                 ! Set some variables, depending on the block face on
                 ! which the subface is located.
