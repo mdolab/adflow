@@ -206,6 +206,7 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    real(kind=realtype) :: fact
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.
@@ -213,37 +214,43 @@ bocos:do nn=1,nbocos
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(1, i, j) = -rev(2, i, j)
+          call saroughfact(2, i, j, fact)
+          rev(1, i, j) = fact*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(ie, i, j) = -rev(il, i, j)
+          call saroughfact(il, i, j, fact)
+          rev(ie, i, j) = fact*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, 1, j) = -rev(i, 2, j)
+          call saroughfact(i, 2, j, fact)
+          rev(i, 1, j) = fact*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, je, j) = -rev(i, jl, j)
+          call saroughfact(i, jl, j, fact)
+          rev(i, je, j) = fact*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, 1) = -rev(i, j, 2)
+          call saroughfact(i, j, 2, fact)
+          rev(i, j, 1) = fact*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, ke) = -rev(i, j, kl)
+          call saroughfact(i, j, kl, fact)
+          rev(i, j, ke) = fact*rev(i, j, kl)
         end do
       end do
     end select
@@ -632,7 +639,7 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
-    real(kind=realtype) :: tmpd, tmpe, tmpf, nu
+    real(kind=realtype) :: tmpd, tmpe, tmpf, nu, fact
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -661,37 +668,43 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti1(i, j, itu1, itu1) = one
+            call saroughfact(2, i, j, fact)
+            bmti1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti2(i, j, itu1, itu1) = one
+            call saroughfact(il, i, j, fact)
+            bmti2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj1(i, j, itu1, itu1) = one
+            call saroughfact(i, 2, j, fact)
+            bmtj1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj2(i, j, itu1, itu1) = one
+            call saroughfact(i, jl, j, fact)
+            bmtj2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk1(i, j, itu1, itu1) = one
+            call saroughfact(i, j, 2, fact)
+            bmtk1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk2(i, j, itu1, itu1) = one
+            call saroughfact(i, j, kl, fact)
+            bmtk2(i, j, itu1, itu1) = -fact
           end do
         end do
       end select
@@ -1169,6 +1182,32 @@ bocos:do nn=1,nviscbocos
       end select
     end do bocos
   end subroutine turbbcnswall
+
+  subroutine saroughfact(i, j, k, fact)
+! returns either the regular sa-boundary condition
+! or the modified roughness-boundary condition
+    use constants
+    use inputphysics, only : useroughsa
+    use blockpointers, only : ks, d2wall, il, jl, kl
+    implicit none
+! local variablse
+    integer(kind=inttype), intent(in) :: i, j, k
+    real(kind=realtype), intent(out) :: fact
+    if (.not.useroughsa) then
+      fact = -one
+      return
+    else
+      fact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j, k)+&
+&       d2wall(i, j, k)/0.03_realtype)
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
+    end if
+  end subroutine saroughfact
 
 end module turbbcroutines_fast_b
 

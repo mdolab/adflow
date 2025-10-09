@@ -132,17 +132,17 @@ flowUtils%computeEtotBlock(w, p) > \
 \
 turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev) \
 \
-BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > \
-                        (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) \
+BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, d2wall1, d2wall2, bcData%norm) > \
+                        (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, d2wall1, d2wall2, bcData%norm) \
 \
-BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) > \
-                        (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) \
+BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bd2wall0, d2wall3, cData%norm) > \
+                        (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bd2wall0, d2wall3, bcData%norm) \
 \
-BCRoutines%bcSymmPolar1stHalo(xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) > \
-                             (xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) \
+BCRoutines%bcSymmPolar1stHalo(xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, d2wall1, d2wall2) > \
+                             (xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, d2wall1, d2wall2) \
 \
-BCRoutines%bcSymmPolar2ndHalo(xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) > \
-                             (xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) \
+BCRoutines%bcSymmPolar2ndHalo(xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, d2wall0, d2wall3) > \
+                             (xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, d2wall0, d2wall3) \
 \
 BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) > \
                             (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) \
@@ -162,11 +162,11 @@ BCRoutines%bcSubsonicInflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0
 BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) > \
                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) \
 \
-turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
-                                      (rev, w) \
+turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2, d2wall) > \
+                                      (rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2, d2wall) \
 \
-turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \
-                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
+turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2) > \
+                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2) \
 \
 solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > \
               (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) \

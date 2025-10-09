@@ -24,6 +24,7 @@ module paramTurb
     real(kind=realType), parameter :: rsaCt3 = 1.2_realType
     real(kind=realType), parameter :: rsaCt4 = 0.5_realType
     real(kind=realType), parameter :: rsaCrot = 2.0_realType
+    real(kind=realType), parameter :: rsaCr1 = 0.5_realType
 
 !
 !       K-omega constants.

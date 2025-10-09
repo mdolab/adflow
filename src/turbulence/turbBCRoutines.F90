@@ -320,6 +320,7 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: i, j
+        real(kind=realType) :: fact
 
         ! Determine the face id on which the subface is located and
         ! loop over the faces of the subface and set the eddy viscosity
@@ -329,42 +330,48 @@ contains
         case (iMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(1, i, j) = -rev(2, i, j)
+                    call saRoughFact(2, i, j, fact)
+                    rev(1, i, j) = fact * rev(2, i, j)
                 end do
             end do
 
         case (iMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(ie, i, j) = -rev(il, i, j)
+                    call saRoughFact(il, i, j, fact)
+                    rev(ie, i, j) = fact * rev(il, i, j)
                 end do
             end do
 
         case (jMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, 1, j) = -rev(i, 2, j)
+                    call saRoughFact(i, 2, j, fact)
+                    rev(i, 1, j) = fact * rev(i, 2, j)
                 end do
             end do
 
         case (jMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, je, j) = -rev(i, jl, j)
+                    call saRoughFact(i, jl, j, fact)
+                    rev(i, je, j) = fact * rev(i, jl, j)
                 end do
             end do
 
         case (kMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, j, 1) = -rev(i, j, 2)
+                    call saRoughFact(i, j, 2, fact)
+                    rev(i, j, 1) = fact * rev(i, j, 2)
                 end do
             end do
 
         case (kMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, j, ke) = -rev(i, j, kl)
+                    call saRoughFact(i, j, kl, fact)
+                    rev(i, j, ke) = fact * rev(i, j, kl)
                 end do
             end do
         end select
@@ -819,7 +826,7 @@ contains
         !
         integer(kind=intType) :: i, j, ii, jj, iiMax, jjMax
 
-        real(kind=realType) :: tmpd, tmpe, tmpf, nu
+        real(kind=realType) :: tmpd, tmpe, tmpf, nu, fact
 
         real(kind=realType), dimension(:, :, :, :), pointer :: bmt
         real(kind=realType), dimension(:, :, :), pointer :: bvt, ww2
@@ -839,39 +846,45 @@ contains
             case (iMin)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmti1(i, j, itu1, itu1) = one
+                        call saRoughFact(2, i, j, fact)
+                        bmti1(i, j, itu1, itu1) = -fact
                     end do
                 end do
             case (iMax)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmti2(i, j, itu1, itu1) = one
+                        call saRoughFact(il, i, j, fact)
+                        bmti2(i, j, itu1, itu1) = -fact
                     end do
                 end do
             case (jMin)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmtj1(i, j, itu1, itu1) = one
+                        call saRoughFact(i, 2, j, fact)
+                        bmtj1(i, j, itu1, itu1) = -fact
                     end do
                 end do
             case (jMax)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmtj2(i, j, itu1, itu1) = one
+                        call saRoughFact(i, jl, j, fact)
+                        bmtj2(i, j, itu1, itu1) = -fact
                     end do
                 end do
 
             case (kMin)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmtk1(i, j, itu1, itu1) = one
+                        call saRoughFact(i, j, 2, fact)
+                        bmtk1(i, j, itu1, itu1) = -fact
                     end do
                 end do
 
             case (kMax)
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                        bmtk2(i, j, itu1, itu1) = one
+                        call saRoughFact(i, j, kl, fact)
+                        bmtk2(i, j, itu1, itu1) = -fact
                     end do
                 end do
             end select
@@ -1384,5 +1397,29 @@ contains
             end select
         end do bocos
     end subroutine turbBCNSWall
+
+    subroutine saRoughFact(i, j, k, fact)
+
+        ! returns either the regular SA-boundary condition
+        ! or the modified Roughness-boundary condition
+
+        use constants
+        use inputPhysics, only: useRoughSA
+        use BlockPointers, only: ks, d2wall, il, jl, kl
+        implicit none
+
+        ! local variablse
+        integer(kind=intType), intent(in) :: i, j, k
+        real(kind=realType), intent(out) :: fact
+
+        if (.not. useRoughSA) then
+            fact = -one
+            return
+        end if
+
+        fact = (ks(i, j, k) - d2wall(i, j, k) / 0.03_realType) / &
+               (ks(i, j, k) + d2wall(i, j, k) / 0.03_realType)
+
+    end subroutine saRoughFact
 
 end module turbBCRoutines

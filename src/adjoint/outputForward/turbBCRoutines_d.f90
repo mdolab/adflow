@@ -7,12 +7,16 @@ module turbbcroutines_d
 contains
 !  differentiation of applyallturbbcthisblock in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev *w
-!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
-!                *bvtk2 *bvti1 *bvti2
+!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bmtk1
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
 !   rw status of diff variables: *rev:in-out *bvtj1:in *bvtj2:in
-!                *w:in-out *bvtk1:in *bvtk2:in *bvti1:in *bvti2:in
+!                *w:in-out *bmtk1:in *bmtk2:in *bvtk1:in *bvtk2:in
+!                *d2wall:in *bmti1:in *bmti2:in *bvti1:in *bvti2:in
+!                *bmtj1:in *bmtj2:in
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in
+!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in d2wall:in
+!                bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_d(secondhalo)
 !
@@ -36,6 +40,7 @@ contains
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww1, ww2
     real(kind=realtype) :: temp
+    real(kind=realtype) :: temp0
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! loop over the faces and set the state in
@@ -49,9 +54,11 @@ bocos:do nn=1,nbocos
                 wd(1, i, j, l) = bvti1d(i, j, l)
                 w(1, i, j, l) = bvti1(i, j, l)
                 do m=nt1,nt2
-                  temp = bmti1(i, j, l, m)
-                  wd(1, i, j, l) = wd(1, i, j, l) - temp*wd(2, i, j, m)
-                  w(1, i, j, l) = w(1, i, j, l) - temp*w(2, i, j, m)
+                  temp = w(2, i, j, m)
+                  temp0 = bmti1(i, j, l, m)
+                  wd(1, i, j, l) = wd(1, i, j, l) - temp*bmti1d(i, j, l&
+&                   , m) - temp0*wd(2, i, j, m)
+                  w(1, i, j, l) = w(1, i, j, l) - temp0*temp
                 end do
               end do
             end do
@@ -63,10 +70,11 @@ bocos:do nn=1,nbocos
                 wd(ie, i, j, l) = bvti2d(i, j, l)
                 w(ie, i, j, l) = bvti2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(il, i, j, m)
                   temp = bmti2(i, j, l, m)
-                  wd(ie, i, j, l) = wd(ie, i, j, l) - temp*wd(il, i, j, &
-&                   m)
-                  w(ie, i, j, l) = w(ie, i, j, l) - temp*w(il, i, j, m)
+                  wd(ie, i, j, l) = wd(ie, i, j, l) - temp0*bmti2d(i, j&
+&                   , l, m) - temp*wd(il, i, j, m)
+                  w(ie, i, j, l) = w(ie, i, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -78,9 +86,11 @@ bocos:do nn=1,nbocos
                 wd(i, 1, j, l) = bvtj1d(i, j, l)
                 w(i, 1, j, l) = bvtj1(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, 2, j, m)
                   temp = bmtj1(i, j, l, m)
-                  wd(i, 1, j, l) = wd(i, 1, j, l) - temp*wd(i, 2, j, m)
-                  w(i, 1, j, l) = w(i, 1, j, l) - temp*w(i, 2, j, m)
+                  wd(i, 1, j, l) = wd(i, 1, j, l) - temp0*bmtj1d(i, j, l&
+&                   , m) - temp*wd(i, 2, j, m)
+                  w(i, 1, j, l) = w(i, 1, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -92,10 +102,11 @@ bocos:do nn=1,nbocos
                 wd(i, je, j, l) = bvtj2d(i, j, l)
                 w(i, je, j, l) = bvtj2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, jl, j, m)
                   temp = bmtj2(i, j, l, m)
-                  wd(i, je, j, l) = wd(i, je, j, l) - temp*wd(i, jl, j, &
-&                   m)
-                  w(i, je, j, l) = w(i, je, j, l) - temp*w(i, jl, j, m)
+                  wd(i, je, j, l) = wd(i, je, j, l) - temp0*bmtj2d(i, j&
+&                   , l, m) - temp*wd(i, jl, j, m)
+                  w(i, je, j, l) = w(i, je, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -107,9 +118,11 @@ bocos:do nn=1,nbocos
                 wd(i, j, 1, l) = bvtk1d(i, j, l)
                 w(i, j, 1, l) = bvtk1(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, j, 2, m)
                   temp = bmtk1(i, j, l, m)
-                  wd(i, j, 1, l) = wd(i, j, 1, l) - temp*wd(i, j, 2, m)
-                  w(i, j, 1, l) = w(i, j, 1, l) - temp*w(i, j, 2, m)
+                  wd(i, j, 1, l) = wd(i, j, 1, l) - temp0*bmtk1d(i, j, l&
+&                   , m) - temp*wd(i, j, 2, m)
+                  w(i, j, 1, l) = w(i, j, 1, l) - temp*temp0
                 end do
               end do
             end do
@@ -121,10 +134,11 @@ bocos:do nn=1,nbocos
                 wd(i, j, ke, l) = bvtk2d(i, j, l)
                 w(i, j, ke, l) = bvtk2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, j, kl, m)
                   temp = bmtk2(i, j, l, m)
-                  wd(i, j, ke, l) = wd(i, j, ke, l) - temp*wd(i, j, kl, &
-&                   m)
-                  w(i, j, ke, l) = w(i, j, ke, l) - temp*w(i, j, kl, m)
+                  wd(i, j, ke, l) = wd(i, j, ke, l) - temp0*bmtk2d(i, j&
+&                   , l, m) - temp*wd(i, j, kl, m)
+                  w(i, j, ke, l) = w(i, j, ke, l) - temp*temp0
                 end do
               end do
             end do
@@ -407,8 +421,8 @@ bocos:do nn=1,nbocos
 
 !  differentiation of bceddywall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev
-!   with respect to varying inputs: *rev
-!   plus diff mem management of: rev:in
+!   with respect to varying inputs: *rev *d2wall
+!   plus diff mem management of: rev:in d2wall:in
   subroutine bceddywall_d(nn)
 !
 !       bceddywall sets the eddy viscosity in the halo cells of
@@ -427,6 +441,8 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    real(kind=realtype) :: fact
+    real(kind=realtype) :: factd
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.
@@ -434,43 +450,49 @@ bocos:do nn=1,nbocos
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(1, i, j) = -revd(2, i, j)
-          rev(1, i, j) = -rev(2, i, j)
+          call saroughfact_d(2, i, j, fact, factd)
+          revd(1, i, j) = rev(2, i, j)*factd + fact*revd(2, i, j)
+          rev(1, i, j) = fact*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(ie, i, j) = -revd(il, i, j)
-          rev(ie, i, j) = -rev(il, i, j)
+          call saroughfact_d(il, i, j, fact, factd)
+          revd(ie, i, j) = rev(il, i, j)*factd + fact*revd(il, i, j)
+          rev(ie, i, j) = fact*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, 1, j) = -revd(i, 2, j)
-          rev(i, 1, j) = -rev(i, 2, j)
+          call saroughfact_d(i, 2, j, fact, factd)
+          revd(i, 1, j) = rev(i, 2, j)*factd + fact*revd(i, 2, j)
+          rev(i, 1, j) = fact*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, je, j) = -revd(i, jl, j)
-          rev(i, je, j) = -rev(i, jl, j)
+          call saroughfact_d(i, jl, j, fact, factd)
+          revd(i, je, j) = rev(i, jl, j)*factd + fact*revd(i, jl, j)
+          rev(i, je, j) = fact*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, j, 1) = -revd(i, j, 2)
-          rev(i, j, 1) = -rev(i, j, 2)
+          call saroughfact_d(i, j, 2, fact, factd)
+          revd(i, j, 1) = rev(i, j, 2)*factd + fact*revd(i, j, 2)
+          rev(i, j, 1) = fact*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, j, ke) = -revd(i, j, kl)
-          rev(i, j, ke) = -rev(i, j, kl)
+          call saroughfact_d(i, j, kl, fact, factd)
+          revd(i, j, ke) = rev(i, j, kl)*factd + fact*revd(i, j, kl)
+          rev(i, j, ke) = fact*rev(i, j, kl)
         end do
       end do
     end select
@@ -494,6 +516,7 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    real(kind=realtype) :: fact
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.
@@ -501,49 +524,58 @@ bocos:do nn=1,nbocos
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(1, i, j) = -rev(2, i, j)
+          call saroughfact(2, i, j, fact)
+          rev(1, i, j) = fact*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(ie, i, j) = -rev(il, i, j)
+          call saroughfact(il, i, j, fact)
+          rev(ie, i, j) = fact*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, 1, j) = -rev(i, 2, j)
+          call saroughfact(i, 2, j, fact)
+          rev(i, 1, j) = fact*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, je, j) = -rev(i, jl, j)
+          call saroughfact(i, jl, j, fact)
+          rev(i, je, j) = fact*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, 1) = -rev(i, j, 2)
+          call saroughfact(i, j, 2, fact)
+          rev(i, j, 1) = fact*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, ke) = -rev(i, j, kl)
+          call saroughfact(i, j, kl, fact)
+          rev(i, j, ke) = fact*rev(i, j, kl)
         end do
       end do
     end select
   end subroutine bceddywall
 
 !  differentiation of bcturbfarfield in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
-!                bvti1:in bvti2:in
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
+!                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
+!                bmtj1:in bmtj2:in
   subroutine bcturbfarfield_d(nn)
 !
 !       bcturbfarfield applies the implicit treatment of the
@@ -584,16 +616,22 @@ bocos:do nn=1,nbocos
           do l=nt1,nt2
             select case  (bcfaceid(nn)) 
             case (imin) 
+              bmti1d(i, j, l, l) = 0.0_8
               bmti1(i, j, l, l) = -one
             case (imax) 
+              bmti2d(i, j, l, l) = 0.0_8
               bmti2(i, j, l, l) = -one
             case (jmin) 
+              bmtj1d(i, j, l, l) = 0.0_8
               bmtj1(i, j, l, l) = -one
             case (jmax) 
+              bmtj2d(i, j, l, l) = 0.0_8
               bmtj2(i, j, l, l) = -one
             case (kmin) 
+              bmtk1d(i, j, l, l) = 0.0_8
               bmtk1(i, j, l, l) = -one
             case (kmax) 
+              bmtk2d(i, j, l, l) = 0.0_8
               bmtk2(i, j, l, l) = -one
             end select
           end do
@@ -908,6 +946,65 @@ bocos:do nn=1,nbocos
     end do
   end subroutine bcturboutflow
 
+!  differentiation of bcturbsymm in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   with respect to varying inputs: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   plus diff mem management of: bmtk1:in bmtk2:in bmti1:in bmti2:in
+!                bmtj1:in bmtj2:in
+  subroutine bcturbsymm_d(nn)
+!
+!       bcturbsymm applies the implicit treatment of the symmetry
+!       boundary condition (or inviscid wall) to subface nn. as the
+!       symmetry boundary condition is independent of the turbulence
+!       model, this routine is valid for all models. it is assumed
+!       that the pointers in blockpointers are already set to the
+!       correct block on the correct grid level.
+!
+    use constants
+    use blockpointers
+    use flowvarrefstate
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: nn
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, l
+! loop over the faces of the subfaces and set the values of bmt
+! for an implicit treatment. for a symmetry face this means
+! that the halo value is set to the internal value.
+    do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+      do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+        do l=nt1,nt2
+          select case  (bcfaceid(nn)) 
+          case (imin) 
+            bmti1d(i, j, l, l) = 0.0_8
+            bmti1(i, j, l, l) = -one
+          case (imax) 
+            bmti2d(i, j, l, l) = 0.0_8
+            bmti2(i, j, l, l) = -one
+          case (jmin) 
+            bmtj1d(i, j, l, l) = 0.0_8
+            bmtj1(i, j, l, l) = -one
+          case (jmax) 
+            bmtj2d(i, j, l, l) = 0.0_8
+            bmtj2(i, j, l, l) = -one
+          case (kmin) 
+            bmtk1d(i, j, l, l) = 0.0_8
+            bmtk1(i, j, l, l) = -one
+          case (kmax) 
+            bmtk2d(i, j, l, l) = 0.0_8
+            bmtk2(i, j, l, l) = -one
+          end select
+        end do
+      end do
+    end do
+  end subroutine bcturbsymm_d
+
   subroutine bcturbsymm(nn)
 !
 !       bcturbsymm applies the implicit treatment of the symmetry
@@ -955,14 +1052,19 @@ bocos:do nn=1,nbocos
   end subroutine bcturbsymm
 
 !  differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: winf *w *rlv *d2wall
-!   rw status of diff variables: winf:in *bvtj1:out *bvtj2:out
-!                *w:in *rlv:in *bvtk1:out *bvtk2:out *d2wall:in
-!                *bvti1:out *bvti2:out
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *bmtk1
+!                *rlv *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2
+!                *bvti1 *bvti2 *bmtj1 *bmtj2
+!   rw status of diff variables: winf:in *bvtj1:in-out *bvtj2:in-out
+!                *w:in *bmtk1:in-out *rlv:in *bmtk2:in-out *bvtk1:in-out
+!                *bvtk2:in-out *d2wall:in *bmti1:in-out *bmti2:in-out
+!                *bvti1:in-out *bvti2:in-out *bmtj1:in-out *bmtj2:in-out
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbtreatment_d()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that
@@ -991,7 +1093,9 @@ bocos:do nn=1,nbocos
       do j=1,je
         do l=nt1,nt2
           do m=nt1,nt2
+            bmti1d(j, k, l, m) = 0.0_8
             bmti1(j, k, l, m) = zero
+            bmti2d(j, k, l, m) = 0.0_8
             bmti2(j, k, l, m) = zero
           end do
           bvti1d(j, k, l) = 0.0_8
@@ -1005,7 +1109,9 @@ bocos:do nn=1,nbocos
       do i=1,ie
         do l=nt1,nt2
           do m=nt1,nt2
+            bmtj1d(i, k, l, m) = 0.0_8
             bmtj1(i, k, l, m) = zero
+            bmtj2d(i, k, l, m) = 0.0_8
             bmtj2(i, k, l, m) = zero
           end do
           bvtj1d(i, k, l) = 0.0_8
@@ -1019,7 +1125,9 @@ bocos:do nn=1,nbocos
       do i=1,ie
         do l=nt1,nt2
           do m=nt1,nt2
+            bmtk1d(i, j, l, m) = 0.0_8
             bmtk1(i, j, l, m) = zero
+            bmtk2d(i, j, l, m) = 0.0_8
             bmtk2(i, j, l, m) = zero
           end do
           bvtk1d(i, j, l) = 0.0_8
@@ -1029,12 +1137,6 @@ bocos:do nn=1,nbocos
         end do
       end do
     end do
-    if (associated(bvtj1d)) bvtj1d = 0.0_8
-    if (associated(bvtj2d)) bvtj2d = 0.0_8
-    if (associated(bvtk1d)) bvtk1d = 0.0_8
-    if (associated(bvtk2d)) bvtk2d = 0.0_8
-    if (associated(bvti1d)) bvti1d = 0.0_8
-    if (associated(bvti2d)) bvti2d = 0.0_8
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
@@ -1049,7 +1151,7 @@ bocos:do nn=1,nbocos
       case (symm, symmpolar, eulerwall) 
 ! symmetry, polar symmetry or inviscid wall. treatment of
 ! the turbulent equations is identical.
-        call bcturbsymm(nn)
+        call bcturbsymm_d(nn)
 !=============================================================
       case (farfield) 
 ! farfield. the kind of boundary condition to be applied,
@@ -1160,12 +1262,15 @@ bocos:do nn=1,nbocos
   end subroutine bcturbtreatment
 
 !  differentiation of bcturbwall in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: *bvtj1 *bvtj2 *w *bmtk1 *rlv
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbwall_d(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous
@@ -1188,8 +1293,8 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
-    real(kind=realtype) :: tmpd, tmpe, tmpf, nu
-    real(kind=realtype) :: tmpdd, nud
+    real(kind=realtype) :: tmpd, tmpe, tmpf, nu, fact
+    real(kind=realtype) :: tmpdd, nud, factd
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -1220,37 +1325,49 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti1(i, j, itu1, itu1) = one
+            call saroughfact_d(2, i, j, fact, factd)
+            bmti1d(i, j, itu1, itu1) = -factd
+            bmti1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti2(i, j, itu1, itu1) = one
+            call saroughfact_d(il, i, j, fact, factd)
+            bmti2d(i, j, itu1, itu1) = -factd
+            bmti2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj1(i, j, itu1, itu1) = one
+            call saroughfact_d(i, 2, j, fact, factd)
+            bmtj1d(i, j, itu1, itu1) = -factd
+            bmtj1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj2(i, j, itu1, itu1) = one
+            call saroughfact_d(i, jl, j, fact, factd)
+            bmtj2d(i, j, itu1, itu1) = -factd
+            bmtj2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk1(i, j, itu1, itu1) = one
+            call saroughfact_d(i, j, 2, fact, factd)
+            bmtk1d(i, j, itu1, itu1) = -factd
+            bmtk1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk2(i, j, itu1, itu1) = one
+            call saroughfact_d(i, j, kl, fact, factd)
+            bmtk2d(i, j, itu1, itu1) = -factd
+            bmtk2(i, j, itu1, itu1) = -fact
           end do
         end do
       end select
@@ -1299,7 +1416,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(2, ii, jj)*d2wall(2, ii, jj)))
             tmpdd = -(temp0*2*d2walld(2, ii, jj)/d2wall(2, ii, jj))
             tmpd = temp0
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             bmti1(i, j, itu1, itu1) = one
+            bmti1d(i, j, itu2, itu2) = 0.0_8
             bmti1(i, j, itu2, itu2) = one
             bvti1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvti1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1338,7 +1457,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(il, ii, jj)/d2wall(il, ii, jj))
             tmpd = temp0
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             bmti2(i, j, itu1, itu1) = one
+            bmti2d(i, j, itu2, itu2) = 0.0_8
             bmti2(i, j, itu2, itu2) = one
             bvti2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvti2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1376,7 +1497,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(ii, 2, jj)*d2wall(ii, 2, jj)))
             tmpdd = -(temp0*2*d2walld(ii, 2, jj)/d2wall(ii, 2, jj))
             tmpd = temp0
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             bmtj1(i, j, itu1, itu1) = one
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
             bmtj1(i, j, itu2, itu2) = one
             bvtj1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtj1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1415,7 +1538,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(ii, jl, jj)/d2wall(ii, jl, jj))
             tmpd = temp0
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             bmtj2(i, j, itu1, itu1) = one
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
             bmtj2(i, j, itu2, itu2) = one
             bvtj2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtj2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1453,7 +1578,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(ii, jj, 2)*d2wall(ii, jj, 2)))
             tmpdd = -(temp0*2*d2walld(ii, jj, 2)/d2wall(ii, jj, 2))
             tmpd = temp0
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             bmtk1(i, j, itu1, itu1) = one
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
             bmtk1(i, j, itu2, itu2) = one
             bvtk1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtk1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1492,7 +1619,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(ii, jj, kl)/d2wall(ii, jj, kl))
             tmpd = temp0
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             bmtk2(i, j, itu1, itu1) = one
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
             bmtk2(i, j, itu2, itu2) = one
             bvtk2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtk2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1507,42 +1636,54 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             bmti1(i, j, itu1, itu1) = one
+            bmti1d(i, j, itu2, itu2) = 0.0_8
             bmti1(i, j, itu2, itu2) = one
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             bmti2(i, j, itu1, itu1) = one
+            bmti2d(i, j, itu2, itu2) = 0.0_8
             bmti2(i, j, itu2, itu2) = one
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             bmtj1(i, j, itu1, itu1) = one
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
             bmtj1(i, j, itu2, itu2) = one
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             bmtj2(i, j, itu1, itu1) = one
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
             bmtj2(i, j, itu2, itu2) = one
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             bmtk1(i, j, itu1, itu1) = one
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
             bmtk1(i, j, itu2, itu2) = one
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             bmtk2(i, j, itu1, itu1) = one
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
             bmtk2(i, j, itu2, itu2) = one
           end do
         end do
@@ -1573,7 +1714,7 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
-    real(kind=realtype) :: tmpd, tmpe, tmpf, nu
+    real(kind=realtype) :: tmpd, tmpe, tmpf, nu, fact
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -1602,37 +1743,43 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti1(i, j, itu1, itu1) = one
+            call saroughfact(2, i, j, fact)
+            bmti1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti2(i, j, itu1, itu1) = one
+            call saroughfact(il, i, j, fact)
+            bmti2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj1(i, j, itu1, itu1) = one
+            call saroughfact(i, 2, j, fact)
+            bmtj1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj2(i, j, itu1, itu1) = one
+            call saroughfact(i, jl, j, fact)
+            bmtj2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk1(i, j, itu1, itu1) = one
+            call saroughfact(i, j, 2, fact)
+            bmtk1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk2(i, j, itu1, itu1) = one
+            call saroughfact(i, j, kl, fact)
+            bmtk2(i, j, itu1, itu1) = -fact
           end do
         end do
       end select
@@ -2223,6 +2370,69 @@ bocos:do nn=1,nviscbocos
       end select
     end do bocos
   end subroutine turbbcnswall
+
+!  differentiation of saroughfact in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: fact
+!   with respect to varying inputs: *d2wall
+!   plus diff mem management of: d2wall:in
+  subroutine saroughfact_d(i, j, k, fact, factd)
+! returns either the regular sa-boundary condition
+! or the modified roughness-boundary condition
+    use constants
+    use inputphysics, only : useroughsa
+    use blockpointers, only : ks, d2wall, d2walld, il, jl, kl
+    implicit none
+! local variablse
+    integer(kind=inttype), intent(in) :: i, j, k
+    real(kind=realtype), intent(out) :: fact
+    real(kind=realtype), intent(out) :: factd
+    real(kind=realtype) :: temp
+    real(kind=realtype) :: temp0
+    if (.not.useroughsa) then
+      fact = -one
+      factd = 0.0_8
+      return
+    else
+      temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
+      temp0 = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/temp
+      factd = -((1.0/0.03_realtype+temp0/0.03_realtype)*d2walld(i, j, k)&
+&       /temp)
+      fact = temp0
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
+    end if
+  end subroutine saroughfact_d
+
+  subroutine saroughfact(i, j, k, fact)
+! returns either the regular sa-boundary condition
+! or the modified roughness-boundary condition
+    use constants
+    use inputphysics, only : useroughsa
+    use blockpointers, only : ks, d2wall, il, jl, kl
+    implicit none
+! local variablse
+    integer(kind=inttype), intent(in) :: i, j, k
+    real(kind=realtype), intent(out) :: fact
+    if (.not.useroughsa) then
+      fact = -one
+      return
+    else
+      fact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j, k)+&
+&       d2wall(i, j, k)/0.03_realtype)
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
+    end if
+  end subroutine saroughfact
 
 end module turbbcroutines_d
 
