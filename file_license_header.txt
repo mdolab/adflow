@@ -1,14 +1,14 @@
 !______________________________________________________________________________
-! 
+!
 !   This file is part of ADflow, a computational fluid dynamics solver
 !   Copyright (c) 2006 Stanford University
 !   Copyright (c) 2008 University of Toronto
 !   Copyright (c) 2012 University of Michigan
-!   Additional copyright (c) 2012 Edwin van der Weide, Juan J. Alonso,  
-!     Joaquim R. R. A. Martins, Gaetan K. W. Kenway, and Charles A. Mader. 
+!   Additional copyright (c) 2012 Edwin van der Weide, Juan J. Alonso,
+!     Joaquim R. R. A. Martins, Gaetan K. W. Kenway, and Charles A. Mader.
 !   All rights reserved.
 !
-!   ADflow is licensed under the GNU Lesser General Public License (LGPL), 
+!   ADflow is licensed under the GNU Lesser General Public License (LGPL),
 !   version 2.1 (the "License"); you may not use this software except in
 !   compliance with the License. You may obtain a copy of the License at:
 !     https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -17,5 +17,3 @@
 !   College of Engineering, Aerospace Engineering Department
 !   http://mdolab.engin.umich.edu/
 !______________________________________________________________________________
-
-
