@@ -1,3 +1,4 @@
+extend = "~/.config/ruff/ruff.toml"
 extend-exclude =[
     "src/build/fort_depend.py",
     "src/adjoint/autoEdit/autoEdit*.py",

@@ -242,7 +242,3 @@ struct vpwgtdef {
 };
 
 typedef struct vpwgtdef VPInfoType;
-
-
-
-

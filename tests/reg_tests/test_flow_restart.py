@@ -96,7 +96,6 @@ class TestRestart(reg_test_classes.RegTest):
                 "cflcoarse": 1.25,
                 "solutionprecision": "double",
                 "gridprecision": "double",
-                "mgcycle": "sg",
                 "anksecondordswitchtol": 1e-2,
                 "ankcoupledswitchtol": 1e-4,
                 "l2convergence": 1e-13,

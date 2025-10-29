@@ -104,4 +104,3 @@ subroutine initialize_stencils
     visc_drdw_stencil(33, :) = (/0, 0, 2/)
 
 end subroutine initialize_stencils
-

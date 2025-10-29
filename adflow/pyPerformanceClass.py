@@ -29,7 +29,6 @@ To Do:
 
 
 class PERFORMANCE(object):
-
     """
     Basic Performance class to handle dynamic handling qualities constraints
     """
@@ -132,7 +131,7 @@ class PERFORMANCE(object):
 
     def calculateNAlpha(self, Clalpha, rho, Area, U, mass, g):
         """
-        calculate the g normalized lift derivative
+        Calculate the g normalized lift derivative
         """
 
         nalpha = rho * U**2 * Area * Clalpha / (2 * mass * g)
@@ -141,7 +140,7 @@ class PERFORMANCE(object):
 
     def computeStaticMargin(self, averagesol, geom, wbc, acg):
         """
-        compute the percent static margin and return
+        Compute the percent static margin and return
         """
         # Compute the MAC
         [MAC, C4MAC] = wbc.calculateWingMAC(acg)
@@ -212,7 +211,7 @@ class PERFORMANCE(object):
 
     def thumbprintDriverpyGeo(self, acg, wbc, geom, averagesol, rho, V, A, surface):
         """
-        run the routines to calculate the CAP values
+        Run the routines to calculate the CAP values
         """
         # Get Aircraft weight
         W = wbc.estimateWeight(acg)
@@ -250,7 +249,7 @@ class PERFORMANCE(object):
 
     def CAPDriver(self, acg, wbc, geom, averagesol, rho, V, A, thickness):
         """
-        run the routines to calculate the CAP values
+        Run the routines to calculate the CAP values
         """
         # Get Aircraft weight
         W = wbc.estimateWeight(acg)
@@ -300,7 +299,7 @@ class PERFORMANCE(object):
 
     def CAPDriverpyGeo(self, acg, wbc, geom, averagesol, rho, V, A, surface):
         """
-        run the routines to calculate the CAP values
+        Run the routines to calculate the CAP values
         """
         # Get Aircraft weight
         W = wbc.estimateWeight(acg)
@@ -343,7 +342,7 @@ class PERFORMANCE(object):
 
     def computeStaticMarginDerivative(self, x, geo, dvFunc, geom, wbc, acg):
         """
-        compute the percent static margin derivative and return
+        Compute the percent static margin derivative and return
         """
         xw = copy.deepcopy(x)
         for i in xw.keys():
@@ -373,7 +372,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriver(self, x, geo, con, acg, wbc, geom, dvFunc, rho, V, A):
         """
-        compute the derivative of the CAP function...
+        Compute the derivative of the CAP function...
         """
         # print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         dCondx = con.getThicknessSensitivity(geo, "con")
@@ -427,7 +426,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeo(self, x, geo, con, acg, wbc, geom, dvFunc, rho, V, A, surface, surfInst):
         """
-        compute the derivative of the CAP function...
+        Compute the derivative of the CAP function...
         """
         # print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -485,7 +484,7 @@ class PERFORMANCE(object):
 
     def CAPDerivativeDriverpyGeoFD(self, x, geo, con, acg, wbc, geom, dvFunc, rho, V, A, surface, surfInst):
         """
-        compute the derivative of the CAP function...
+        Compute the derivative of the CAP function...
         """
         # print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         #        dCondx = con.getThicknessSensitivity(geo,'con')
@@ -548,7 +547,7 @@ class PERFORMANCE(object):
 
     def thumbprintDerivativeDriver(self, x, geo, con, acg, wbc, geom, dvFunc, rho, V, A):
         """
-        compute the derivative of the thumbprint function...
+        Compute the derivative of the thumbprint function...
         """
         # print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         dCondx = con.getThicknessSensitivity(geo, "con")
@@ -600,7 +599,7 @@ class PERFORMANCE(object):
 
     def thumbprintDerivativeDriverpyGeo(self, x, geo, con, acg, wbc, geom, dvFunc, rho, V, A, surface, surfInst):
         """
-        compute the derivative of the thumbprint function...
+        Compute the derivative of the thumbprint function...
         """
         # print 'dvlists',geo.DV_listGlobal,geo.DV_namesGlobal,'local', geo.DV_listLocal,geo.DV_namesLocal
         #        dCondx = con.getThicknessSensitivity(geo,'con')

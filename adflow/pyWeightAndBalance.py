@@ -26,7 +26,6 @@ To Do:
 # Standard Python modules
 # =============================================================================
 import os, sys, copy
-import pdb
 import time
 
 # from cmath import pi,cos,tan,sin
@@ -48,7 +47,6 @@ from pyGeometry_complex import catan, cabs, cmin, cmax
 
 
 class WEIGHTANDBALANCE(Base):
-
     """
     Implementation of basic preliminary level CG and inertia
     estimation methods.
@@ -405,12 +403,7 @@ class WEIGHTANDBALANCE(Base):
                         # print 'centroids',Xs,Ys,Zs3
 
                         Ix = (
-                            Ix
-                            + I1x
-                            - W * (Ys_dot**2)
-                            - W * (Zs3**2)
-                            + W * (Ys_dot + Ysoff) ** 2
-                            + W * (Zs3 + Zs1) ** 2
+                            Ix + I1x - W * (Ys_dot**2) - W * (Zs3**2) + W * (Ys_dot + Ysoff) ** 2 + W * (Zs3 + Zs1) ** 2
                         )
                         # print 'w',W,(Ys_dot),W*(Ys_dot**2)
                         # Ix = Ix-W*(Ys_dot**2)#-W*(Zs3**2)+W*(Ys_dot+Ysoff)**2 + W*(Zs3+Zs1)**2

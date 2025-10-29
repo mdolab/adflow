@@ -475,8 +475,8 @@ contains
         ! Initialize the force and moment coefficients to 0 as well as
         ! yplusMax.
 
-        Fp = zero; Fv = zero; 
-        Mp = zero; Mv = zero; 
+        Fp = zero; Fv = zero;
+        Mp = zero; Mv = zero;
         COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
         yplusMax = zero
         sepSensor = zero
@@ -486,8 +486,8 @@ contains
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
-        Mpaxis = zero; Mvaxis = zero; 
-        CpError2 = zero; 
+        Mpaxis = zero; Mvaxis = zero;
+        CpError2 = zero;
         !
         !         Integrate the inviscid contribution over the solid walls,
         !         either inviscid or viscous. The integration is done with

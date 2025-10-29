@@ -53,5 +53,3 @@ directories:
 # Add a couple of extra ones
 	mkdir -p ../c_defines
 	mkdir -p ../f2py
-
-
