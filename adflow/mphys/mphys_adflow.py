@@ -13,7 +13,7 @@ from .om_utils import get_dvs_and_cons
 
 # Set this to true to print out the name of the function being called and the class it's being called from along with
 # printing messages when node coordinates and states are updated from OpenMDAO inputs and outputs.
-DEBUG_LOGGING = False
+DEBUG_LOGGING = True
 
 
 X_AERO0 = MPhysVariables.Aerodynamics.Surface.COORDINATES_INITIAL
@@ -22,7 +22,6 @@ X_AERO0_MESH = MPhysVariables.Aerodynamics.Surface.Mesh.COORDINATES
 X_AERO0_GEOM_OUTPUT = MPhysVariables.Aerodynamics.Surface.Geometry.COORDINATES_OUTPUT
 F_AERO = MPhysVariables.Aerodynamics.Surface.LOADS
 Q_AERO = MPhysVariables.Aerodynamics.Surface.HEAT_FLOW
-
 
 def print_func_call(component):
     """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
@@ -499,12 +498,23 @@ class ADflowSolver(ImplicitComponent):
         self.set_val("adflow_states", self.solver.getStates())
 
     def apply_nonlinear(self, inputs, outputs, residuals):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
         # flow residuals
         residuals["adflow_states"] = solver.getResidual(ap)
+
+    def printStatesRange(self, states):
+        stateNames = ["density", "velocityX", "velocityY", "velocityZ", "Energy", "Turb"]
+        for ii, stateName in enumerate(stateNames):
+            singleState = states[ii::6]
+            minState = self.comm.allreduce(np.min(singleState), op=MPI.MIN)
+            maxState = self.comm.allreduce(np.max(singleState), op=MPI.MAX)
+            if self.comm.rank == 0:
+                print(f"{stateName}: min = {minState:.11e}, max = {maxState:.11e}")
 
     def solve_nonlinear(self, inputs, outputs):
         if DEBUG_LOGGING:
@@ -513,9 +523,41 @@ class ADflowSolver(ImplicitComponent):
         ap = self.ap
 
         if self._do_solve:
+
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
+
+            # For some reason, the ADflow solver will randomly NaN in the first iteration of a solve when starting from a state and mesh that it has already converged successfully. I have tried many things to debug this but nothing has worked:
+            # - Explicitly setting state before solve
+            # - compiling with `-O1 -xCORE-AVX2`
+            # - Compiling with `-fp-model=precise`
+            # - Compiling with only `-O2`
+            # - Disabling blockettes
+            # - running with a different number of procs
+            # - Running on `cas_ait` instead of `sky_ele` nodes
+            # - As above but setting slightly perturbed states
+            # - Running on a different mesh
+            # - Running on stampede
+
+            # The thing I have found to work is:
+            # - Set the OpenMDAO inputs and outputs
+            # - Evaluate the residual
+            # - If there is a NaN in the residual, call `resetFlow` and set the same OpenMDAO inputs and outputs again
+            # - Run the solver
+            res = solver.getResidual(ap)
+
+            nanInResidual = self.comm.allreduce(any(np.isnan(res)), op=MPI.LOR)
+            if self.comm.rank == 0:
+                if nanInResidual:
+                    print("NaN present in residual")
+                else:
+                    print("No NaNs in residual")
+
+            if nanInResidual:
+                # Reset the solution then set the inputs and states again, somehow this fixes the issue
+                solver.resetFlow(ap)
+                setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
             # do not write solution files inside the solver loop
             solver(ap, writeSolution=False)
@@ -528,6 +570,10 @@ class ADflowSolver(ImplicitComponent):
                     print("###############################################################")
                     print("# Solve Fatal Fail. Analysis Error")
                     print("###############################################################")
+
+                # write the solution so that we can diagnose
+                solver.writeSolution(baseName=fail_name, number=self.solution_counter)
+                self.solution_counter += 1
 
                 raise AnalysisError("ADFLOW Solver Fatal Fail")
 
