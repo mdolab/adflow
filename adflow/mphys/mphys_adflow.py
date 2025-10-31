@@ -13,7 +13,7 @@ from .om_utils import get_dvs_and_cons
 
 # Set this to true to print out the name of the function being called and the class it's being called from along with
 # printing messages when node coordinates and states are updated from OpenMDAO inputs and outputs.
-DEBUG_LOGGING = True
+DEBUG_LOGGING = False
 
 
 X_AERO0 = MPhysVariables.Aerodynamics.Surface.COORDINATES_INITIAL
