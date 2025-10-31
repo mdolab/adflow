@@ -23,6 +23,7 @@ X_AERO0_GEOM_OUTPUT = MPhysVariables.Aerodynamics.Surface.Geometry.COORDINATES_O
 F_AERO = MPhysVariables.Aerodynamics.Surface.LOADS
 Q_AERO = MPhysVariables.Aerodynamics.Surface.HEAT_FLOW
 
+
 def print_func_call(component):
     """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
     is calling things in.
@@ -352,8 +353,6 @@ class ADflowWarper(ExplicitComponent):
 
     def initialize(self):
         self.options.declare("aero_solver", recordable=False)
-        # self.options.declare('use_OM_KSP', default=False, types=bool,
-        #    desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
     def setup(self):
         # self.set_check_partial_options(wrt='*',directional=True)
@@ -416,11 +415,10 @@ class ADflowSolver(ImplicitComponent):
 
     def initialize(self):
         self.options.declare("aero_solver", recordable=False)
-        # self.options.declare('use_OM_KSP', default=False, types=bool,
-        #    desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
         self.options.declare("restart_failed_analysis", default=False)
         self.options.declare("err_on_convergence_fail", default=False)
         self.options.declare("res_ref", default=None, recordable=False)
+        self.options.declare("linear_precon_only", default=False, recordable=False)
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
@@ -432,6 +430,7 @@ class ADflowSolver(ImplicitComponent):
 
         self.restart_failed_analysis = self.options["restart_failed_analysis"]
         self.err_on_convergence_fail = self.options["err_on_convergence_fail"]
+        self.linear_precon_only = self.options["linear_precon_only"]
         self.solver = self.options["aero_solver"]
         self.res_ref = self.options["res_ref"]
         solver = self.solver
@@ -523,7 +522,6 @@ class ADflowSolver(ImplicitComponent):
         ap = self.ap
 
         if self._do_solve:
-
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
@@ -744,11 +742,20 @@ class ADflowSolver(ImplicitComponent):
 
         if self.comm.rank == 0:
             print("Solving linear in mphys_adflow", flush=True)
+
         if mode == "fwd":
-            d_outputs["adflow_states"] = solver.solveDirectForRHS(d_residuals["adflow_states"])
+            if self.linear_precon_only:
+                phi = d_outputs["adflow_states"].copy()
+                solver.globalNKPreCon(d_residuals["adflow_states"], phi)
+                d_outputs["adflow_states"] = phi
+            else:
+                d_outputs["adflow_states"] = solver.solveDirectForRHS(d_residuals["adflow_states"])
         elif mode == "rev":
             phi = d_residuals["adflow_states"].copy()
-            solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
+            if self.linear_precon_only:
+                solver.globalAdjointPreCon(d_outputs["adflow_states"], phi)
+            else:
+                solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
             d_residuals["adflow_states"] = phi
 
         return True, 0, 0
@@ -1252,6 +1259,7 @@ class ADflowGroup(Group):
         self.options.declare("err_on_convergence_fail", default=False)
         self.options.declare("balance_group", default=None, recordable=False)
         self.options.declare("res_ref", default=None, recordable=False)
+        self.options.declare("linear_precon_only", default=False, recordable=False)
 
     def setup(self):
         self.aero_solver = self.options["solver"]
@@ -1284,6 +1292,7 @@ class ADflowGroup(Group):
                 restart_failed_analysis=self.restart_failed_analysis,
                 err_on_convergence_fail=self.err_on_convergence_fail,
                 res_ref=self.res_ref,
+                linear_precon_only=self.options["linear_precon_only"],
             ),
             promotes_inputs=["adflow_vol_coords"],
             promotes_outputs=["adflow_states"],
@@ -1384,6 +1393,7 @@ class ADflowBuilder(Builder):
         user_family_groups=None,
         write_solution=True,
         res_ref=None,
+        linear_precon_only=False,
     ):
         """Create an ADflow MPhys builder
 
@@ -1402,13 +1412,20 @@ class ADflowBuilder(Builder):
         err_on_convergence_fail : bool, optional
             Whether to raise an analysis error if the solver stalls, by default False
         balance_group : OpenMDAO Group or Component, optional
-            Optional OpenMDAO group or component that is added inside the ADflowGroup after the internal components needed by ADflow. This can be used to define implicit relationships that depend on the aerodynamic functions and that need to be converged by varying inputs to ADflow.
+            Optional OpenMDAO group or component that is added inside the ADflowGroup after the internal components
+            needed by ADflow. This can be used to define implicit relationships that depend on the aerodynamic functions
+            and that need to be converged by varying inputs to ADflow.
         user_family_groups : dict, optional
             Dictonary of {group: surfs} to add, by default None
         write_solution : bool, optional
             Whether to automatically write solution files at the end of each (coupled) solution, by default True
         res_ref : float, optional
             Reference residual value used for OpenMDAO's residual scaling, by default None
+        linear_precon_only : bool, optional
+            If True, the `solve_linear` method in the ADflow solver group will only apply the ADflow primal or adjoint
+            preconditioner, rather than fully solving the linear system. This should only be used if you are using an
+            OpenMDAO linear solver such as `om.PETScKrylov` (not om.LinearBlockGS or om.LinearBlockJac) at the MPhys
+            coupling group level. By default False.
         """
         # options dictionary for ADflow
         self.options = options
@@ -1499,6 +1516,9 @@ class ADflowBuilder(Builder):
         # flag for raising an error on convergence stall
         self.err_on_convergence_fail = err_on_convergence_fail
 
+        # flag to only apply the linear preconditioner in the linear solve
+        self.linear_precon_only = linear_precon_only
+
         # balance group for propulsion
         self.balance_group = balance_group
 
@@ -1547,6 +1567,7 @@ class ADflowBuilder(Builder):
             err_on_convergence_fail=self.err_on_convergence_fail,
             balance_group=self.balance_group,
             res_ref=self.res_ref,
+            linear_precon_only=self.linear_precon_only,
         )
         return adflow_group
 

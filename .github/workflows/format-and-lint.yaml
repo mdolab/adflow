@@ -1,0 +1,12 @@
+name: Format and Lint
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - v*.*.*
+  pull_request:
+
+jobs:
+  pre-commit:
+    uses: mdolab/.github/.github/workflows/format-and-lint.yaml@ruffConfig
