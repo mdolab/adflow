@@ -28,6 +28,8 @@ project = "ADflow"
 # so that RTD can import and use them
 extensions.extend(["numpydoc", "ext.costfunctionslist"])
 
+html_static_path = ['_static']
+
 # mock import for autodoc
 autodoc_mock_imports = ["numpy", "mpi4py", "baseclasses"]
 
