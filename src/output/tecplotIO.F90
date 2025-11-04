@@ -62,6 +62,7 @@ module tecplotIO
     integer(kind=intType), parameter :: nSliceMax = 1000
     integer(kind=intType) :: nParaSlices = 0
     integer(kind=intType) :: nAbsSlices = 0
+    integer(kind=intType) :: nVolSlice = 0
     type(slice), dimension(:, :), allocatable :: paraSlices, absSlices
 
     ! Data for the user supplied lift distributions
@@ -2310,5 +2311,458 @@ contains
             write (fileID, int5) 1, 2
         end if
     end subroutine writeSlice
+
+    subroutine writeUserIntSurf(sliceName, fileName, famID)
+        use constants
+        use inputIO
+        use commonFormats, only: int7
+        use userSurfaceIntegrationData, only: userIntSurfs, nUserIntSurfs, userIntSurf
+        use userSurfaceIntegrations, only: getUserSurfaceData
+        use sorting, only: famInList
+        use communication, only: myID
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputIteration, only: printIterations
+        implicit none
+
+        ! Input parameters
+        character(len=*), intent(in) :: sliceName
+        character(len=*), intent(in) :: fileName
+        integer(kind=intType), intent(in) :: famID
+
+        ! Working variables
+        integer(kind=intType) :: i, j, iSurf, sps, file
+        real(kind=realType) :: tmp
+        real(kind=realType), dimension(:, :), allocatable :: vars
+        integer(kind=intType), dimension(:, :), allocatable :: conn
+        type(userIntSurf) :: surf
+
+        if (myID == 0 .and. printIterations) then
+            print "(a)", "#"
+            print "(a)", "Writing volume slice"
+        end if
+
+        timeLoop: do sps = 1, nTimeIntervalsSpectral
+
+            ! This needs to happen on all processors because
+            ! getUserSurfaceData has to communicate the data for this surface.
+            ! Only the vars and conn on the root proc will have data.
+            do iSurf = 1, nUserIntSurfs
+                surf = userIntSurfs(iSurf)
+                if (surf%famID == famID) then
+                    call getUserSurfaceData(iSurf, sps, vars, conn)
+                    exit
+                end if
+            end do
+
+            file = 11
+            if (myID == 0) then
+                print "(a,4x,a)", "#", trim(fileName)
+                open (unit=file, file=trim(fileName))
+
+                ! Write the header information
+                write (file, *) "Title = ""ADflow Volume Slice"""
+                write (file, "(a)", advance='no') "Variables = "
+                write (file, "(a)", advance="no") " ""CoordinateX"" "
+                write (file, "(a)", advance="no") " ""CoordinateY"" "
+                write (file, "(a)", advance="no") " ""CoordinateZ"" "
+                write (file, "(a)", advance="no") " ""VelocityX"" "
+                write (file, "(a)", advance="no") " ""VelocityY"" "
+                write (file, "(a)", advance="no") " ""VelocityZ"" "
+                write (file, "(a)", advance="no") " ""Density"" "
+                write (file, "(a)", advance="no") " ""StaticPressure"" "
+                write (file, "(a)", advance="no") " ""TotalPressure"" "
+                write (file, "(a)", advance="no") " ""TotalTemperature"" "
+                write (file, "(a)", advance="no") " ""Mach"" "
+
+                write (file, "(1x)")
+
+                write (file, "(a,a,a)") "Zone T= """, trim(sliceName), """"
+
+                if (size(vars, 2) > 0) then
+                    write (file, *) "Nodes = ", size(vars, 2), " Elements= ", size(conn, 2), " ZONETYPE=FETRIANGLE"
+                    write (file, *) "DATAPACKING=POINT"
+
+                    do i = 1, size(vars, 2)
+                        ! Write the variables
+                        do j = 1, size(vars, 1)
+                            write (file, sci6, advance='no') vars(j, i)
+                        end do
+
+                        write (file, "(1x)")
+                    end do
+
+                    do i = 1, size(conn, 2)
+                        write (file, int7) conn(1, i), conn(2, i), conn(3, i)
+                    end do
+                else
+                    write (file, *) "Nodes = ", 3, " Elements= ", 1, " ZONETYPE=FETRIANGLE"
+                    write (file, *) "DATAPACKING=POINT"
+                    do i = 1, 3
+                        do j = 1, 10
+                            write (file, sci6, advance='no') zero
+                        end do
+
+                        write (file, "(1x)")
+                    end do
+                    write (file, int7) 1, 2, 3
+                end if
+            end if
+        end do timeLoop
+
+    end subroutine writeUserIntSurf
+
+    subroutine writeBCSurfacesASCII(fileName, famList)
+        use constants
+        use communication, only: myid, adflow_comm_world, nProc
+        use commonFormats, only: int7
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputPhysics, only: equationMode
+        use inputIteration, only: printIterations
+        use inputIO, only: precisionsurfgrid, precisionsurfsol
+        use outputMod, only: surfSolNames, numberOfSurfSolVariables
+        use surfaceFamilies, onlY: BCFamExchange, famNames, familyExchange
+        use utils, only: EChk, setPointers, setBCPointers
+        use BCPointers, only: xx
+        use sorting, only: famInList
+        use extraOutput, only: surfWriteBlank
+        use oversetData, only: zipperMesh, zipperMeshes
+        use surfaceUtils
+#include <petsc/finclude/petsc.h>
+        use petsc
+        implicit none
+
+        ! Input Params
+        character(len=*), intent(in) :: fileName
+        integer(kind=intType), intent(in), dimension(:) :: famList
+
+        ! Working parameters
+        integer(kind=intType) :: i, j, k, nn, mm, fileID, iVar, ii, ierr, iSize
+        integer(Kind=intType) :: nSolVar, iBeg, iEnd, jBeg, jEnd, sps, sizeNode, sizeCell
+        integer(kind=intType) :: iBCGroup, iFam, iProc, nCells, nNodes, nCellsToWrite, iZone, lastZoneSharing
+        character(len=maxStringLen) :: fname
+        character(len=7) :: intString
+        integer(kind=intType), dimension(:), allocatable :: nodeSizes, nodeDisps
+        integer(kind=intType), dimension(:), allocatable :: cellSizes, cellDisps
+        character(len=maxCGNSNameLen), dimension(:), allocatable :: solNames
+        real(kind=realType), dimension(:, :), allocatable :: nodalValues
+        integer(kind=intType), dimension(:, :), allocatable :: conn, localConn
+        real(kind=realType), dimension(:, :), allocatable :: vars
+        integer(kind=intType), dimension(:), allocatable :: mask, elemFam, localElemFam, cgnsBlockID
+        logical :: blankSave, BCGroupNeeded, dataWritten
+        type(zipperMesh), pointer :: zipper
+        type(familyExchange), pointer :: exch
+        if (myID == 0 .and. printIterations) then
+            print "(a)", "#"
+            print "(a)", "# Writing tecplot surface file(s):"
+        end if
+
+        ! Number of surface variables. Note that we *explictly*
+        ! remove the potential for writing the surface blanks as
+        ! these are not necessary for the tecplot IO as we write the
+        ! zipper mesh directly. We must save and restore the
+        ! variable in case the CGNS otuput still wants to write it.
+        blankSave = surfWriteBlank
+        surfWriteBlank = .False.
+        call numberOfSurfSolVariables(nSolVar)
+        allocate (solNames(nSolVar))
+        call surfSolNames(solNames)
+
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+
+            ! If it is time spectral we need to agument the filename
+            if (equationMode == timeSpectral) then
+                write (intString, "(i7)") sps
+                intString = adjustl(intString)
+                fname = trim(fileName)//"Spectral"//trim(intString)
+            else
+                fname = fileName
+            end if
+
+            fileID = 11
+            ! Open file on root proc:
+            if (myid == 0) then
+                ! Print the filename to stdout
+                print "(a,4x,a)", "#", trim(fname)
+
+                open (unit=fileID, file=trim(fname))
+
+                ! Write the title of the file
+                write (fileID, *) "Title = ""ADflow Surface Solution Data"""
+
+                ! Write the variables header
+                write (fileID, "(a)", advance="no") ("Variables = ")
+
+                ! Write the variable names
+                write (fileID, "(a)", advance="no") " ""CoordinateX"" "
+                write (fileID, "(a)", advance="no") " ""CoordinateY"" "
+                write (fileID, "(a)", advance="no") " ""CoordinateZ"" "
+
+                ! Write the rest of the variables
+                do i = 1, nSolVar
+                    write (fileID, "(a)", advance="no") " """//trim(solNames(i))//""" "
+                end do
+                write (fileID, "(1x)")
+
+                deallocate (solNames)
+
+            end if
+
+            ! First pass through to generate and write header information
+            masterBCLoop1: do iBCGroup = 1, nFamExchange
+
+                ! Pointers for easier reading
+                exch => BCFamExchange(iBCGroup, sps)
+                zipper => zipperMeshes(iBCGroup)
+
+                ! First thing we do is figure out if we actually need to do
+                ! anything with this BCgroup at all. If none the requested
+                ! families are in this BCExcahnge we don't have to do
+                ! anything.
+
+                BCGroupNeeded = .False.
+                do i = 1, size(famList)
+                    if (famInLIst(famList(i), exch%famList)) then
+                        BCGroupNeeded = .True.
+                    end if
+                end do
+
+                ! Keep going if we don't need this.
+                if (.not. BCGroupNeeded) then
+                    cycle
+                end if
+
+                ! Get the sizes of this BCGroup
+                call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famList), .True.)
+                call mpi_reduce(sizeNode, nNodes, 1, adflow_integer, MPI_SUM, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Now gather up the cell family info.
+                allocate (cellDisps(0:nProc), cellSizes(nProc))
+
+                call mpi_gather(sizeCell, 1, adflow_integer, &
+                                cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                allocate (localElemFam(sizeCell))
+                call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
+
+                if (myid == 0) then
+                    cellDisps(0) = 0
+                    do iProc = 1, nProc
+                        cellDisps(iProc) = cellDisps(iProc - 1) + cellSizes(iProc)
+                    end do
+                    nCells = sum(cellSizes)
+                    allocate (elemFam(nCells))
+                end if
+
+                call mpi_gatherv(localElemFam, &
+                                 size(localElemFam), adflow_integer, elemFam, &
+                                 cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Deallocate temp memory
+                deallocate (localElemFam, cellSizes, cellDisps)
+
+                rootProc: if (myid == 0 .and. nCells > 0) then
+                    do iFam = 1, size(exch%famList)
+
+                        ! Check if we have to write this one:
+                        famInclude: if (famInList(exch%famList(iFam), famList)) then
+                            nCellsToWrite = 0
+                            do i = 1, nCells
+                                ! Check if this elem is to be included
+                                if (elemFam(i) == exch%famList(iFam)) then
+                                    nCellsToWrite = nCellsToWrite + 1
+                                end if
+                            end do
+
+                            if (nCellsToWrite > 0) then
+                                write (fileID, "(a,a,a)") "Zone T = """, trim(famNames(exch%famList(iFam))), """"
+                                write (fileID, *) "Nodes = ", nNodes, " Elements = ", &
+                                    nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
+                                write (fileID, *) "DATAPACKING=POINT"
+
+                            end if
+                        end if famInclude
+                    end do
+                end if rootProc
+                if (myid == 0) then
+                    deallocate (elemFam)
+                end if
+            end do masterBCLoop1
+
+            ! Now do everything again but for real.
+            masterBCLoop: do iBCGroup = 1, nFamExchange
+
+                ! Pointers for easier reading
+                exch => BCFamExchange(iBCGroup, sps)
+                zipper => zipperMeshes(iBCGroup)
+
+                ! First thing we do is figure out if we actually need to do
+                ! anything with this BCgroup at all. If none the requested
+                ! families are in this BCExcahnge we don't have to do
+                ! anything.
+
+                BCGroupNeeded = .False.
+                do i = 1, size(famList)
+                    if (famInList(famList(i), exch%famList)) then
+                        BCGroupNeeded = .True.
+                    end if
+                end do
+
+                ! Keep going if we don't need this.
+                if (.not. BCGroupNeeded) then
+                    cycle
+                end if
+
+                ! Get the sizes of this BCGroup
+                call getSurfaceSize(sizeNode, sizeCell, exch%famList, size(exch%famList), .True.)
+                allocate (nodalValues(max(sizeNode, 1), nSolVar + 3 + 6))
+                ! Compute the nodal data
+
+                call computeSurfaceOutputNodalData(BCFamExchange(iBCGroup, sps), &
+                                                   zipperMeshes(iBCGroup), .False., nodalValues(:, :))
+
+                ! Gather up the number of nodes to be set to the root proc:
+                allocate (nodeSizes(nProc), nodeDisps(0:nProc))
+                nodeSizes = 0
+                nodeDisps = 0
+
+                call mpi_allgather(sizeNode, 1, adflow_integer, nodeSizes, 1, adflow_integer, &
+                                   adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+                nodeDisps(0) = 0
+                do iProc = 1, nProc
+                    nodeDisps(iProc) = nodeDisps(iProc - 1) + nodeSizes(iProc)
+                end do
+
+                iSize = 3 + 6 + nSolVar
+                if (myid == 0) then
+                    nNodes = sum(nodeSizes)
+                else
+                    nNodes = 1
+                end if
+
+                ! Only root proc actually has any space allocated
+                allocate (vars(nNodes, iSize))
+
+                ! Gather values to the root proc.
+                do i = 1, iSize
+                    call mpi_gatherv(nodalValues(:, i), sizeNode, &
+                                     adflow_real, vars(:, i), nodeSizes, nodeDisps, &
+                                     adflow_real, 0, adflow_comm_world, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+                end do
+                deallocate (nodalValues)
+
+                ! Now gather up the connectivity
+                allocate (cellDisps(0:nProc), cellSizes(nProc))
+
+                call mpi_gather(sizeCell, 1, adflow_integer, &
+                                cellSizes, 1, adflow_integer, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                if (allocated(cgnsBlockID)) then
+                    deallocate (cgnsBlockID)
+                end if
+
+                allocate (localConn(4, sizeCell), localElemFam(sizeCell), cgnsBlockID(sizeCell))
+                call getSurfaceConnectivity(localConn, cgnsBlockID, sizeCell, exch%famList, size(exch%famList), .True.)
+                call getSurfaceFamily(localElemFam, sizeCell, exch%famList, size(exch%famList), .True.)
+
+                if (myid == 0) then
+                    cellDisps(0) = 0
+                    do iProc = 1, nProc
+                        cellDisps(iProc) = cellDisps(iProc - 1) + cellSizes(iProc)
+                    end do
+                    nCells = sum(cellSizes)
+                    allocate (conn(4, nCells))
+                    allocate (elemFam(nCells))
+                end if
+
+                ! We offset the conn array by nodeDisps(iProc) which
+                ! automagically adjusts the connectivity to account for the
+                ! number of nodes from different processors
+
+                call mpi_gatherv(localConn + nodeDisps(myid), &
+                                 4 * size(localConn, 2), adflow_integer, conn, &
+                                 cellSizes * 4, cellDisps * 4, adflow_integer, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                call mpi_gatherv(localElemFam, &
+                                 size(localElemFam), adflow_integer, elemFam, &
+                                 cellSizes, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Local values are finished
+                deallocate (localConn, localElemFam)
+                rootProc2: if (myid == 0 .and. nCells > 0) then
+
+                    allocate (mask(nCells))
+                    dataWritten = .False.
+                    do iFam = 1, size(exch%famList)
+
+                        ! Check if we have to write this one:
+                        famInclude2: if (famInList(exch%famList(iFam), famList)) then
+
+                            ! Create a temporary mask
+                            mask = 0
+                            nCellsToWrite = 0
+                            do i = 1, nCells
+                                ! Check if this elem is to be included
+                                if (elemFam(i) == exch%famList(iFam)) then
+                                    mask(i) = 1
+                                    nCellsToWrite = nCellsToWrite + 1
+                                end if
+                            end do
+
+                            actualWrite2: if (nCellsToWrite > 0) then
+
+                                ! Dump the coordinates
+                                do k = 1, nNodes
+                                    do j = 1, 3
+                                        write (fileID, sci6, advance='no') vars(k, j)
+                                    end do
+                                    do j = 1, nSolVar
+                                        write (fileID, sci6, advance='no') vars(k, j + 9)
+                                    end do
+                                    write (fileID, "(1x)")
+                                end do
+
+                                ! Dump the connectivity
+                                do i = 1, nCells
+                                    ! Check if this elem is to be included
+                                    if (mask(i) == 1) then
+                                        do k = 1, 4
+                                            write (fileID, int7, advance="no") conn(k, i)
+                                        end do
+                                        write (fileID, "(1x)")
+                                    end if
+                                end do
+
+                            end if actualWrite2
+                        end if famInclude2
+                    end do
+                    deallocate (mask)
+                end if rootProc2
+                if (myid == 0) then
+                    deallocate (conn, elemFam)
+                end if
+                deallocate (cellSizes, cellDisps, nodeSizes, nodeDisps, vars)
+            end do masterBCLoop
+
+            if (myid == 0) then
+                close (fileID)
+            end if
+
+        end do spectralLoop
+
+        ! Restore the modified option
+        surfWriteBlank = blankSave
+        if (myID == 0 .and. printIterations) then
+            print "(a)", "# Tecplot surface file(s) written"
+            print "(a)", "#"
+        end if
+    end subroutine writeBCSurfacesASCII
 
 end module tecplotIO
