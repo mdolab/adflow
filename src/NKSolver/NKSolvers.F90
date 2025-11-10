@@ -519,6 +519,9 @@ contains
         use iteration, only: approxTotalIts, totalR0, stepMonitor, LinResMonitor, iterType
         use utils, only: EChk
         use killSignals, only: routineFailed
+#include "petsc/finclude/petscksp.h"
+        use petscksp
+        use petscCompat, only: KSPSetResidualHistoryCompat
         implicit none
 
         ! Input Variables
@@ -621,7 +624,7 @@ contains
                               real(atol), real(NK_divTol), maxIt, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(NK_KSP, resHist, maxIt + 1, PETSC_TRUE, ierr)
+        call KSPSetResidualHistoryCompat(NK_KSP, resHist, maxIt + 1, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! set the BaseVector of the matrix-free matrix
@@ -2085,7 +2088,7 @@ contains
                             irow = globalCell(i, j, k)
 
                             ! Add the contribution to the PETSc matrix
-                            call MatSetValuesBlocked(timeStepMat, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
+                            call MatSetValuesBlocked(timeStepMat, 1, [irow], 1, [irow], [timeStepBlock], ADD_VALUES, ierr)
                             call EChk(ierr, __FILE__, __LINE__)
 
                             ! Extension for setting coarse grids
@@ -2093,8 +2096,8 @@ contains
                             if (useCoarseMats .and. usePC) then
                                 do lvl = 2, ANK_AMGLevels
                                     coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
-                                    call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
-                                                             timeStepBlock, ADD_VALUES, ierr)
+                                    call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseRows(lvl)], &
+                                                            [timeStepBlock], ADD_VALUES, ierr)
                                     call EChk(ierr, __FILE__, __LINE__)
                                 end do
                             end if
@@ -2458,8 +2461,7 @@ contains
 
             implicit none
 
-            call MatSetValuesBlocked(dRdwPreTurb, 1, irow, 1, irow, blk, &
-                                     ADD_VALUES, ierr)
+            call MatSetValuesBlocked(dRdwPreTurb, 1, [irow], 1, [irow], [blk], ADD_VALUES, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end subroutine setBlock
@@ -3355,10 +3357,13 @@ contains
         use flowVarRefState, only: nw, nwf, nt1, nt2, kPresent, pInfCorr
         use communication
         use blockette, only: blocketteRes
+#include "petsc/finclude/petscksp.h"
+        use petscksp
+        use petscCompat, only: KSPSetResidualHistoryCompat
         implicit none
 
         ! Working Variables
-        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
+        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, nHist, iter, feval, orderturbsave
         integer(kind=intType) :: i, j, k, n
         real(kind=realType) :: atol, val, v2, factK, gm1
         real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
@@ -3366,6 +3371,7 @@ contains
         real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
         real(kind=alwaysRealType) :: linResMonitorTurb, totalRTurb
         logical :: correctForK, LSFailed
+        KSPConvergedReason :: reason
 
         ! Calculate the residuals and set rVecTurb before the first iteration
         call blocketteRes(useFlowRes=.False., useStoreWall=.False.)
@@ -3451,7 +3457,7 @@ contains
                                   real(atol), real(ANK_divTol), ank_maxIter, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPSetResidualHistory(ANK_KSPTurb, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+            call KSPSetResidualHistoryCompat(ANK_KSPTurb, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the BaseVector of the matrix-free matrix:
@@ -3650,19 +3656,23 @@ contains
         use turbUtils, only: computeEddyViscosity
         use communication
         use blockette, only: blocketteRes
+#include "petsc/finclude/petscksp.h"
+        use petscksp
+        use petscCompat, only: KSPSetResidualHistoryCompat
         implicit none
 
         ! Input Variables
         logical, intent(in) :: firstCall
 
         ! Working Variables
-        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
+        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, nHist, iter, feval, orderturbsave
         integer(kind=intType) :: i, j, k
         real(kind=realType) :: atol, val, v2, factK, gm1
         real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
         real(kind=alwaysRealType) :: resHist(ANK_maxIter + 1)
         real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old, rel_pcUpdateTol
         logical :: correctForK, LSFailed
+        KSPConvergedReason :: reason
 
         ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
         if (firstCall .or. &
@@ -3899,7 +3909,7 @@ contains
                               real(atol), real(ANK_divTol), ank_maxIter, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+        call KSPSetResidualHistoryCompat(ANK_KSP, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the BaseVector of the matrix-free matrix:

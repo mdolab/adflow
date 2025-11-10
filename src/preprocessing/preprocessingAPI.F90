@@ -1685,7 +1685,7 @@ contains
         ! 3. Node-based output for tecplot files.
         use constants
         use communication, only: adflow_comm_world, myid, nProc
-        use surfaceFamilies, only: familyExchange, IS1, IS2!, PETSC_COPY_VALUES, PETSC_DETERMINE
+        use surfaceFamilies, only: familyExchange, IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
         use utils, only: pointReduce, eChk
         use surfaceUtils
         implicit none
@@ -4176,6 +4176,7 @@ contains
         use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
                                 psi_like1, psi_like2, x_like, psi_like3, adjointPETScPreProcVarsAllocated
         use utils, only: setPointers, EChk
+        use petscCompat, only: VecCreateMPIWithArrayCompat
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -4201,29 +4202,23 @@ contains
         nDimX = 3 * nNodesLocal(1_intType) * nTimeIntervalsSpectral
 
         ! Two w-like vectors.
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, w_like1, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, vv=w_like1, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, w_like2, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, vv=w_like2, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         ! Two psi-like vectors.
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nState, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like1, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, nState, ndimPsi, PETSC_DECIDE, vv=psi_like1, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like2, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, vv=psi_like2, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like3, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, vv=psi_like3, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
-        call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, 3, ndimX, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, x_like, PETScIerr)
+        call VecCreateMPIWithArrayCompat(ADFLOW_COMM_WORLD, 3, ndimX, PETSC_DECIDE, vv=x_like, ierr=PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         adjointPETScPreProcVarsAllocated = .True.

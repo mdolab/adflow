@@ -9,6 +9,7 @@ module amg
     use utils, only: EChk
 #include <petsc/finclude/petsc.h>
     use petsc
+    use petscCompat, only: PCASMGetSubKSPCompat, PCASMRestoreSubKSPCompat
     implicit none
 
     ! Structure used for storing the interpolation indices
@@ -526,10 +527,10 @@ contains
         integer(kind=intTYpe) :: ierr
 
         ! Working
-        PC globalPC, subpc
-        KSP subksp
+        PC globalPC, subPC
+        KSP, pointer :: subKSP(:)
         integer(kind=intType) :: lvl
-        integer(kind=intType) :: nlocal, first
+        integer(kind=intType) :: nlocal, first, i
 
         do lvl = 1, amgLevels
             if (lvl == 1) then
@@ -573,45 +574,53 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Extract the ksp objects for each subdomain
-            call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
+            call PCASMGetSubKSPCompat(globalPC, nlocal, first, subKSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Since there is an extra matMult required when using the Richardson preconditioner
-            ! with only 1 iteration, only use it when we need to do more than 1 iteration.
-            if (amgLocalPreConIts > 1) then
-                ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
-                call KSPSetType(subksp, 'richardson', ierr)
+            ! Loop over each subKSP object and set it up
+            do i = 1, nlocal
+                ! Since there is an extra matMult required when using the Richardson preconditioner
+                ! with only 1 iteration, only use it when we need to do more than 1 iteration.
+                if (amgLocalPreConIts > 1) then
+                    ! Set the subKSP object to Richardson so we can do multiple iterations on the sub-domains
+                    call KSPSetType(subKSP(i), 'richardson', ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+
+                    ! Set the number of iterations to do on local blocks. Tolerances are ignored.
+                    call KSPSetTolerances(subKSP(i), PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+                                        amgLocalPreConIts, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+
+                    ! normtype is NONE because we don't want to check error
+                    call kspsetnormtype(subKSP(i), KSP_NORM_NONE, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+                else
+                    ! Set the subKSP object to preonly because we are only doing one iteration
+                    call KSPSetType(subKSP(i), 'preonly', ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+                end if
+
+                ! Extract the preconditioner for subKSP object
+                call KSPGetPC(subKSP(i), subPC, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
-                ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-                call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-                                      amgLocalPreConIts, ierr)
+                ! Set the subPC type to ILU
+                call PCSetType(subPC, 'ilu', ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
-                ! normtype is NONE because we don't want to check error
-                call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+                ! Set up the matrix ordering for the subPC object
+                call PCFactorSetMatOrderingtype(subPC, amgMatrixOrdering, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
-            else
-                ! Set the subksp object to preonly because we are only doing one iteration
-                call KSPSetType(subksp, 'preonly', ierr)
+
+                ! Set the ILU parameters
+                call PCFactorSetLevels(subPC, amgFillLevel, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
-            end if
+            end do
 
-            ! Extract the preconditioner for subksp object
-            call KSPGetPC(subksp, subpc, ierr)
+            ! Release the subKSP objects
+            call PCASMRestoreSubKSPCompat(globalPC, nlocal, first, subKSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Set the subpc type to ILU
-            call PCSetType(subpc, 'ilu', ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! Set up the matrix ordering for the subpc object
-            call PCFactorSetMatOrderingtype(subpc, amgMatrixOrdering, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! Set the ILU parameters
-            call PCFactorSetLevels(subpc, amgFillLevel, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
         end do
 
     end subroutine setupShellPC

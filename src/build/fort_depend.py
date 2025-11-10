@@ -142,7 +142,7 @@ def get_depends(fob=[], m2f=[]):
                 if m2f[j.lower()] != i.file_name:
                     tmp.append(m2f[j.lower()])
             except Exception:
-                if j in ["petsc", "mpi", "iso_fortran_env", "cgns"]:
+                if j in ["petsc", "petscvec", "petscmat", "petscksp", "mpi", "iso_fortran_env", "cgns"]:
                     # these dependence will be resolved through the included libraries
                     # there is no need to scare the user with the error message
                     continue

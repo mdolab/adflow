@@ -272,6 +272,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petsc
         implicit none
 
         ! Input Variables
@@ -279,7 +281,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason :: adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
         real(kind=realType) :: val
@@ -298,9 +300,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -355,6 +356,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petsc
         implicit none
 
         ! Input Variables
@@ -362,7 +365,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason :: adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
 
@@ -380,9 +383,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -678,8 +680,9 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
         use utils, only: EChk
-#include <petsc/finclude/petsc.h>
-        use petsc
+#include <petsc/finclude/petscksp.h>
+        use petscksp
+
         implicit none
 
         ! Input Parameters
@@ -774,9 +777,8 @@ contains
         L2Rel = min(L2Rel, 0.9)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user. -1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the tolerances

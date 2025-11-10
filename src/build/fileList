@@ -52,6 +52,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/BCDataMod.F90\
 		modules/userSurfaceIntegrationData.F90\
 		modules/actuatorRegionData.F90\
+		modules/petscCompat.F90\
 		\
 		NKSolver/NKSolvers.F90\
 		NKSolver/blockette.F90\

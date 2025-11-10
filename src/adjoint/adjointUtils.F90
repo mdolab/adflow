@@ -651,11 +651,11 @@ contains
                 if (nCol == 1) then
                     if (useTranspose) then
                         blk = transpose(blk)
-                        call MatSetValuesBlocked(matrix, 1, cols(1), 1, irow, blk, &
+                        call MatSetValuesBlocked(matrix, 1, [cols(1)], 1, [irow], [blk], &
                                                  ADD_VALUES, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
                     else
-                        call MatSetValuesBlocked(matrix, 1, irow, 1, cols(1), blk, &
+                        call MatSetValuesBlocked(matrix, 1, [irow], 1, [cols(1)], [blk], &
                                                  ADD_VALUES, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
                     end if
@@ -664,7 +664,7 @@ contains
                         blk = transpose(blk)
                         do m = 1, ncol
                             if (cols(m) >= 0) then
-                                call MatSetValuesBlocked(matrix, 1, cols(m), 1, irow, blk * weights(m), &
+                                call MatSetValuesBlocked(matrix, 1, [cols(m)], 1, [irow], [blk * weights(m)], &
                                                          ADD_VALUES, ierr)
                                 call EChk(ierr, __FILE__, __LINE__)
                             end if
@@ -672,7 +672,7 @@ contains
                     else
                         do m = 1, ncol
                             if (cols(m) >= 0) then
-                                call MatSetValuesBlocked(matrix, 1, irow, 1, cols(m), blk * weights(m), &
+                                call MatSetValuesBlocked(matrix, 1, [irow], 1, [cols(m)], [blk * weights(m)], &
                                                          ADD_VALUES, ierr)
                                 call EChk(ierr, __FILE__, __LINE__)
                             end if
@@ -686,11 +686,11 @@ contains
                         do lvl = 2, amgLevels
                             if (useTranspose) then
                                 ! Loop over the coarser levels
-                                call MatSetValuesBlocked(A(lvl), 1, coarseCols(1, lvl), 1, coarseRows(lvl), &
-                                                         blk, ADD_VALUES, ierr)
+                                call MatSetValuesBlocked(A(lvl), 1, [coarseCols(1, lvl)], 1, [coarseRows(lvl)], &
+                                                         [blk], ADD_VALUES, ierr)
                             else
-                                call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(1, lvl), &
-                                                         blk, ADD_VALUES, ierr)
+                                call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseCols(1, lvl)], &
+                                                         [blk], ADD_VALUES, ierr)
                             end if
                         end do
                     else
@@ -699,11 +699,11 @@ contains
                                 if (coarseCols(m, lvl) >= 0) then
                                     if (useTranspose) then
                                         ! Loop over the coarser levels
-                                        call MatSetValuesBlocked(A(lvl), 1, coarseCols(m, lvl), 1, coarseRows(lvl), &
-                                                                 blk * weights(m), ADD_VALUES, ierr)
+                                        call MatSetValuesBlocked(A(lvl), 1, [coarseCols(m, lvl)], 1, [coarseRows(lvl)], &
+                                                                 [blk * weights(m)], ADD_VALUES, ierr)
                                     else
-                                        call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(m, lvl), &
-                                                                 blk * weights(m), ADD_VALUES, ierr)
+                                        call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseCols(m, lvl)], &
+                                                                 [blk * weights(m)], ADD_VALUES, ierr)
                                     end if
                                 end if
                             end do
@@ -725,7 +725,7 @@ contains
         use inputDiscretization, only: useApproxWallDistance
         use inputPhysics, only: wallDistanceNeeded
         use communication, only: adflow_comm_world
-        use wallDistanceData, only: xSurfVec, xSurfVecd!, PETSC_DETERMINE
+        use wallDistanceData, only: xSurfVec, xSurfVecd, PETSC_DETERMINE
         use BCPointers_b
         use adjointVars, only: derivVarsAllocated
         use utils, only: EChk, setPointers, getDirAngle
@@ -1406,6 +1406,7 @@ contains
         use inputADjoint, only: GMRESOrthogType
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: PCASMGetSubKSPCompat, PCASMRestoreSubKSPCompat
         implicit none
 
         ! Input Params
@@ -1417,9 +1418,10 @@ contains
         integer(kind=intType), intent(in) :: globalPreConIts, localPreConIts
 
         ! Working Variables
-        PC master_PC, globalPC, subpc
-        KSP master_PC_KSP, subksp
-        integer(kind=intType) :: nlocal, first, ierr
+        PC master_PC, globalPC, subPC
+        KSP master_PC_KSP
+        KSP, pointer :: subKSP(:)
+        integer(kind=intType) :: nlocal, first, i, ierr
 
         ! First, KSPSetFromOptions MUST be called
         call KSPSetFromOptions(kspObject, ierr)
@@ -1519,45 +1521,53 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Extract the ksp objects for each subdomain
-        call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
+        call PCASMGetSubKSPCompat(globalPC, nlocal, first, subKSP, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Since there is an extra matMult required when using the Richardson preconditioner
-        ! with only 1 iteration, only use it when we need to do more than 1 iteration.
-        if (localPreConIts > 1) then
-            ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
-            call KSPSetType(subksp, 'richardson', ierr)
+        ! Loop over each subKSP object and set it up
+        do i = 1, nlocal
+            ! Since there is an extra matMult required when using the Richardson preconditioner
+            ! with only 1 iteration, only use it when we need to do more than 1 iteration.
+            if (localPreConIts > 1) then
+                ! Set the subKSP object to Richardson so we can do multiple iterations on the sub-domains
+                call KSPSetType(subKSP(i), 'richardson', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Set the number of iterations to do on local blocks. Tolerances are ignored.
+                call KSPSetTolerances(subKSP(i), PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+                                    localPreConIts, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! normtype is NONE because we don't want to check error
+                call kspsetnormtype(subKSP(i), KSP_NORM_NONE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            else
+                ! Set the subKSP object to preonly because we are only doing one iteration
+                call KSPSetType(subKSP(i), 'preonly', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! Extract the preconditioner for subKSP object.
+            call KSPGetPC(subKSP(i), subPC, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-                                  localPreConIts, ierr)
+            ! Set the subPC type; only ILU is currently supported
+            call PCSetType(subPC, localPCType, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! normtype is NONE because we don't want to check error
-            call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+            ! Setup the matrix ordering for the subPC object:
+            call PCFactorSetMatOrderingtype(subPC, localMatrixOrdering, ierr)
             call EChk(ierr, __FILE__, __LINE__)
-        else
-            ! Set the subksp object to preonly because we are only doing one iteration
-            call KSPSetType(subksp, 'preonly', ierr)
+
+            ! Set the ILU parameters
+            call PCFactorSetLevels(subPC, localFillLevel, ierr)
             call EChk(ierr, __FILE__, __LINE__)
-        end if
+        end do
 
-        ! Extract the preconditioner for subksp object.
-        call KSPGetPC(subksp, subpc, ierr)
+        ! Release the subKSP objects
+        call PCASMRestoreSubKSPCompat(globalPC, nlocal, first, subKSP, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Set the subpc type; only ILU is currently supported
-        call PCSetType(subpc, localPCType, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
-        ! Setup the matrix ordering for the subpc object:
-        call PCFactorSetMatOrderingtype(subpc, localMatrixOrdering, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
-        ! Set the ILU parameters
-        call PCFactorSetLevels(subpc, localFillLevel, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setupStandardKSP
 
