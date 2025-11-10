@@ -8,6 +8,8 @@ module petscCompat
     use petscvec
     use petscmat
     use petscksp
+    use petscdm
+    use petscdmda
     use precision
     implicit none
     save
@@ -15,7 +17,7 @@ module petscCompat
 contains
 
     subroutine VecGetArrayCompat(v, array, ierr)
-        ! PETSc compatability routine to get array from vector
+        ! PETSc compatibility routine to get array from vector
         implicit none
         Vec :: v
         real(kind=realType), pointer :: array(:)
@@ -30,7 +32,7 @@ contains
     end subroutine VecGetArrayCompat
 
     subroutine VecRestoreArrayCompat(v, array, ierr)
-        ! PETSc compatability routine to restore array
+        ! PETSc compatibility routine to restore array
         implicit none
         Vec :: v
         real(kind=realType), pointer :: array(:)
@@ -43,6 +45,68 @@ contains
 #endif
 
     end subroutine VecRestoreArrayCompat
+
+    subroutine VecGetArrayReadCompat(v, array, ierr)
+        ! PETSc compatibility routine to get read-only array from vector
+        implicit none
+        Vec :: v
+        real(kind=realType), pointer :: array(:)
+        integer(kind=intType), intent(out) :: ierr
+
+#if PETSC_VERSION_LT(3,20,0)
+        call VecGetArrayReadF90(v, array, ierr)
+#else
+        call VecGetArrayRead(v, array, ierr)
+#endif
+
+    end subroutine VecGetArrayReadCompat
+
+    subroutine VecRestoreArrayReadCompat(v, array, ierr)
+        ! PETSc compatibility routine to restore array
+        implicit none
+        Vec :: v
+        real(kind=realType), pointer :: array(:)
+        integer(kind=intType), intent(out) :: ierr
+
+#if PETSC_VERSION_LT(3,20,0)
+        call VecRestoreArrayReadF90(v, array, ierr)
+#else
+        call VecRestoreArrayRead(v, array, ierr)
+#endif
+
+    end subroutine VecRestoreArrayReadCompat
+
+    subroutine DMDAVecGetArrayCompat(da, v, array, ierr)
+        ! PETSc compatibility routine to get array from vector
+        implicit none
+        DM :: da
+        Vec :: v
+        real(kind=realType), dimension(:, :, :), pointer :: array
+        integer(kind=intType), intent(out) :: ierr
+
+#if PETSC_VERSION_LT(3,20,0)
+        call DMDAVecGetArrayF90(da, v, array, ierr)
+#else
+        call DMDAVecGetArray(da, v, array, ierr)
+#endif
+
+    end subroutine DMDAVecGetArrayCompat
+
+    subroutine DMDAVecRestoreArrayCompat(da, v, array, ierr)
+        ! PETSc compatibility routine to restore array
+        implicit none
+        DM :: da
+        Vec :: v
+        real(kind=realType), dimension(:, :, :), pointer :: array
+        integer(kind=intType), intent(out) :: ierr
+
+#if PETSC_VERSION_LT(3,20,0)
+        call DMDAVecRestoreArrayF90(da, v, array, ierr)
+#else
+        call DMDAVecRestoreArray(da, v, array, ierr)
+#endif
+
+    end subroutine DMDAVecRestoreArrayCompat
 
     subroutine VecCreateMPIWithArrayCompat(comm, bs, n, nGlobal, array, vv, ierr)
         implicit none
@@ -124,16 +188,17 @@ contains
         implicit none
         KSP, intent(in) :: ksp
         real(kind=realType), dimension(:), intent(in) :: a
+        PetscCount, intent(in) :: na
         logical, intent(in) :: reset
         integer(kind=intType), intent(out) :: ierr
 
 #if PETSC_VERSION_LT(3,22,0)
-        integer(kind=intType), intent(in) :: na
+        call KSPSetResidualHistory(ksp, a, int(na, kind=intType), reset, ierr)
 #else
-        PetscCount, intent(in) :: na
+        call KSPSetResidualHistory(ksp, a, na, reset, ierr)
 #endif
 
-        call KSPSetResidualHistory(ksp, a, na, reset, ierr)
     end subroutine KSPSetResidualHistoryCompat
+
 
 end module petscCompat

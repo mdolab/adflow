@@ -1323,6 +1323,7 @@ contains
         use oversetData, only: zipperMesh
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
         ! Input Param
         type(familyExchange) :: exch
@@ -1390,14 +1391,14 @@ contains
                 do iDim = 1, 6
 
                     ! Copy the values into localPtr
-                    call VecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+                    call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
                     do i = 1, exch%nNodes
                         localPtr(i) = nodalValues(i, iDim + 3)
                     end do
 
-                    call VecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+                    call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
                     ! Now use the *zipper* scatter
@@ -1411,14 +1412,14 @@ contains
 
                     ! Copy the zipper values out on the root proc
                     if (myid == 0) then
-                        call VecGetArrayF90(zipper%localVal, localPtr, ierr)
+                        call VecGetArrayCompat(zipper%localVal, localPtr, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
 
                         do i = 1, size(localPtr)
                             nodalValues(exch%nNodes + i, iDim + 3) = localPtr(i)
                         end do
 
-                        call VecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+                        call VecRestoreArrayCompat(zipper%localVal, localPtr, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
                     end if
                 end do
@@ -1435,7 +1436,7 @@ contains
         end do
         deallocate (tmp)
         ! For the remainder of the variables, use arithematic averaging.
-        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         localPtr = zero
@@ -1467,7 +1468,7 @@ contains
             end do
         end do
 
-        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Globalize the area
@@ -1485,18 +1486,18 @@ contains
         ! Now compute the inverse of the weighting so that we can multiply
         ! instead of dividing.
 
-        call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+        call VecGetArrayCompat(exch%sumGlobal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         localPtr = one / localPtr
 
-        call vecRestoreArrayF90(exch%sumGlobal, localPtr, ierr)
+        call VecRestoreArrayCompat(exch%sumGlobal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         varLoop: do iSol = 1, nSolVar
 
             ! Extract the poitner to the local array
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! ii is the continous running element pointer
@@ -1592,7 +1593,7 @@ contains
             end do domainLoop
 
             ! Return our pointer
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Globalize the function value
@@ -1623,14 +1624,14 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Copy the values into nodalValues
-            call VecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             do i = 1, size(localPtr)
                 nodalValues(i, iSol + 9) = localPtr(i)
             end do
 
-            call VecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             if (zipper%allocated) then
@@ -1646,14 +1647,14 @@ contains
 
                 ! Copy the zipper values out on the root proc
                 if (myid == 0) then
-                    call VecGetArrayF90(zipper%localVal, localPtr, ierr)
+                    call VecGetArrayCompat(zipper%localVal, localPtr, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
                     do i = 1, size(localPtr)
                         nodalValues(exch%nNodes + i, 9 + iSol) = localPtr(i)
                     end do
 
-                    call VecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+                    call VecRestoreArrayCompat(zipper%localVal, localPtr, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
                 end if
             end if

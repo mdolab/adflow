@@ -1735,6 +1735,7 @@ contains
         use sorting, only: unique
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Subroutine Arguments
@@ -1901,13 +1902,13 @@ contains
 
         if (transposed) then
             ! Pull the local vector out and convert it back to integers.
-            call VecGetArrayF90(offProcVec, tmpPointer, ierr)
+            call VecGetArrayCompat(offProcVec, tmpPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
             do i = 1, wSize
                 offProc(i) = int(tmpPointer(i) + half) ! Make sure, say 14.99999 is 15.
             end do
 
-            call VecRestoreArrayF90(offProcVec, tmpPointer, ierr)
+            call VecRestoreArrayCompat(offProcVec, tmpPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
 

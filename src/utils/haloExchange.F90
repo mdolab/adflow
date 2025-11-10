@@ -3104,6 +3104,7 @@ contains
 
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input variables
@@ -3131,7 +3132,7 @@ contains
         ! properties. There is no need to use the cellToNodeScatter stuff
         ! here like for the forces.
         varLoop: do iVar = 1, nZIppFlowComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3188,7 +3189,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
@@ -3222,6 +3223,7 @@ contains
         use utils, only: setPointers_d, setBCPointers_d, EChk
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
         ! Input variables
         logical, intent(in) :: isInflow
@@ -3252,7 +3254,7 @@ contains
         ! properties. There is no need to use the cellToNodeScatter stuff
         ! here like for the forces.
         varLoop: do iVar = 1, nZIppFlowComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3305,7 +3307,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
@@ -3339,6 +3341,7 @@ contains
         use utils, only: setPointers_b, setBCPointers_d, EChk
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input variables
@@ -3391,7 +3394,7 @@ contains
             ! Now finish the scatting back to the acutual BCs pointers (and
             ! thus the state variables).
 
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3458,7 +3461,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end do varLoop
@@ -3480,6 +3483,7 @@ contains
         use utils, only: setPointers, setBCPointers, EChk, isWallType
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
         ! Input variables
         real(kind=realType), dimension(:, :) :: vars
@@ -3499,7 +3503,7 @@ contains
         call computeNodalTractions(sps)
 
         varLoop: do iVar = 1, nZippWallComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3536,7 +3540,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
@@ -3570,6 +3574,7 @@ contains
         use utils, only: setPointers_d, setBCPointers_d, EChk, isWallType
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input variables
@@ -3593,7 +3598,7 @@ contains
         exch => BCFamExchange(iBCGroupWalls, sps)
 
         varLoop: do iVar = 1, nZippWallComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3630,7 +3635,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
@@ -3664,6 +3669,7 @@ contains
         use utils, only: setPointers_b, setBCPointers_d, EChk, isWallType
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input variables
@@ -3709,7 +3715,7 @@ contains
             ! Now finish the scatting back to the acutual BCs pointers (and
             ! thus the state variables).
 
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3746,7 +3752,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end do varLoop

@@ -5,6 +5,8 @@ module NKSolver
     ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
 #include <petsc/finclude/petsc.h>
     use petsc
+    use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat, &
+                           VecGetArrayReadCompat, VecRestoreArrayReadCompat
     implicit none
 
     ! PETSc Matrices:
@@ -261,18 +263,18 @@ contains
         ! Frist run the underlying matrix-free mult
         call matMult(dRdw, vecX, vecY, ierr)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayReadF90(vecX, xPtr, ierr)
+        call VecGetArrayReadCompat(vecX, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         yPtr = yPtr + one / NK_CFL * xPtr
 
-        call VecRestorearrayF90(vecY, yPtr, ierr)
+        call VecRestoreArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestorearrayReadF90(vecX, xPtr, ierr)
+        call VecRestoreArrayReadCompat(vecX, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine NKMatMult
@@ -529,11 +531,12 @@ contains
 
         ! Working Variables
         integer(kind=intType) :: iter, ierr, kspIterations
-        integer(kind=intType) :: maxNonLinearIts, nfevals, maxIt
+        integer(kind=intType) :: maxNonLinearIts, nfevals
         real(kind=alwaysRealType) :: norm, rtol, atol
         real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
         logical :: flag
         real(kind=alwaysRealType) :: resHist(NK_subspace + 1)
+        PetscCount :: maxIt
 
         if (firstCall) then
             call setupNKSolver()
@@ -621,7 +624,7 @@ contains
         maxIt = NK_subspace
 
         call KSPSetTolerances(NK_KSP, real(rtol), &
-                              real(atol), real(NK_divTol), maxIt, ierr)
+                              real(atol), real(NK_divTol), int(maxIt, kind=intType) , ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call KSPSetResidualHistoryCompat(NK_KSP, resHist, maxIt + 1, PETSC_TRUE, ierr)
@@ -1237,7 +1240,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 1
         do nn = 1, nDom
@@ -1257,7 +1260,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWVec
@@ -1284,7 +1287,7 @@ contains
         flowResLocal = zero
         turbResLocal = zero
 
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 1
 
@@ -1314,7 +1317,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (present(flowRes) .and. present(turbRes) .and. present(totalRes)) then
@@ -1345,7 +1348,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 1
@@ -1373,7 +1376,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setW
@@ -1648,6 +1651,8 @@ module ANKSolver
     use constants
 #include <petsc/finclude/petsc.h>
     use petsc
+    use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat, &
+                           VecGetArrayReadCompat, VecRestoreArrayReadCompat
     implicit none
 
     Mat dRdw, dRdwPre, timeStepMat
@@ -1665,7 +1670,7 @@ module ANKSolver
     logical :: useANKSolver
     integer(kind=intType) :: ANK_jacobianLag
     integer(kind=intType) :: ANK_subSpace
-    integer(kind=intType) :: ANK_maxIter
+    PetscCount :: ANK_maxIter
     integer(kind=intType) :: ANK_asmOverlap
     integer(kind=intType) :: ANK_asmOverlapCoarse
     integer(kind=intType) :: ANK_iluFill
@@ -2018,7 +2023,7 @@ contains
         outerPreConIts = ank_outerPreconIts
 
         if (ANK_subspace < 0) then
-            subspace = ANK_maxIter
+            subspace = int(ANK_maxIter, kind=intType)
         else
             subspace = ANK_subspace
         end if
@@ -2441,7 +2446,7 @@ contains
 
         ! Set up the KSP using the same code as used for the adjoint
         if (ank_subspace < 0) then
-            subspace = ANK_maxIter
+            subspace = int(ANK_maxIter, kind=intType)
         else
             subspace = ANK_subspace
         end if
@@ -2510,28 +2515,28 @@ contains
         end if
 
         ! rVec contains the full steady residual vector
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! inVec contains the perturbed state vector
-        call VecGetArrayReadF90(inVec, invec_pointer, ierr)
+        call VecGetArrayReadCompat(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Also read the wVec to access the un-perturbed state vector.
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Multiply the perturbed state by the time step terms and add it to the residual
         call MatMultAdd(timeStepMat, inVec, rVec, rVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(inVec, invec_pointer, ierr)
+        call VecRestoreArrayReadCompat(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2570,11 +2575,11 @@ contains
 
         ! Add the contribution from the time stepping term
 
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! inVec contains the perturbed state vector
-        call VecGetArrayReadF90(inVec, invec_pointer, ierr)
+        call VecGetArrayReadCompat(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Include time step for turbulence
@@ -2602,10 +2607,10 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(inVec, invec_pointer, ierr)
+        call VecRestoreArrayReadCompat(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2665,11 +2670,11 @@ contains
         call setRVecANK(rVec)
 
         ! rVec contains the full steady residual vector
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full state update vector
-        call VecGetArrayReadF90(deltaW, dvec_pointer, ierr)
+        call VecGetArrayReadCompat(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! TODO AY: check if this routine is fine with complex mode...
@@ -2687,10 +2692,10 @@ contains
         call VecDestroy(unsteadyVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(deltaW, dvec_pointer, ierr)
+        call VecRestoreArrayReadCompat(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2745,11 +2750,11 @@ contains
 
         ! Add the contribution from the time stepping term
 
-        call VecGetArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update to the state
-        call VecGetArrayReadF90(deltaWTurb, dvec_pointer, ierr)
+        call VecGetArrayReadCompat(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Include time step for turbulence
@@ -2776,10 +2781,10 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(deltaWTurb, dvec_pointer, ierr)
+        call VecRestoreArrayReadCompat(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2869,7 +2874,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2889,7 +2894,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWVecANK
@@ -2908,7 +2913,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: rvec_pointer(:)
         real(Kind=realType) :: ovv
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2929,7 +2934,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setRVecANK
@@ -2948,7 +2953,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: rvec_pointer(:)
         real(Kind=realType) :: ovv
-        call VecGetArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecGetArrayCompat(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2969,7 +2974,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecRestoreArrayCompat(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setRVecANKTurb
@@ -2987,7 +2992,7 @@ contains
         integer(kind=intType), intent(in) :: lStart, lEnd
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -3007,7 +3012,7 @@ contains
                 end do
             end do
         end do
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayReadCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWANK
@@ -3048,11 +3053,11 @@ contains
         ! operations.
 
         ! wVec contains the state vector
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update
-        call VecGetArrayF90(deltaW, dvec_pointer, ierr)
+        call VecGetArrayCompat(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! in decoupled, we just have the flow variables
@@ -3184,10 +3189,10 @@ contains
 
         ! Restore the pointers to PETSc vectors
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayCompat(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(deltaW, dvec_pointer, ierr)
+        call VecRestoreArrayCompat(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Make sure that we did not get any NaN's in the process
@@ -3247,11 +3252,11 @@ contains
         ! operations.
 
         ! wVec contains the state vector
-        call VecGetArrayF90(wVecTurb, wvec_pointer, ierr)
+        call VecGetArrayCompat(wVecTurb, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update
-        call VecGetArrayF90(deltaWTurb, dvec_pointer, ierr)
+        call VecGetArrayCompat(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 1
@@ -3309,10 +3314,10 @@ contains
 
         ! Restore the pointers to PETSc vectors
 
-        call VecRestoreArrayF90(wVecTurb, wvec_pointer, ierr)
+        call VecRestoreArrayCompat(wVecTurb, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(deltaWTurb, dvec_pointer, ierr)
+        call VecRestoreArrayCompat(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Make sure that we did not get any NaN's in the process
@@ -3454,7 +3459,7 @@ contains
             ! If this happens, the preconditioner is re-computed and because of this,
             ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
             call KSPSetTolerances(ANK_KSPTurb, rtol, &
-                                  real(atol), real(ANK_divTol), ank_maxIter, ierr)
+                                  real(atol), real(ANK_divTol), int(ank_maxIter, kind=intType), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call KSPSetResidualHistoryCompat(ANK_KSPTurb, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
@@ -3906,7 +3911,7 @@ contains
         ! If this happens, the preconditioner is re-computed and because of this,
         ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
         call KSPSetTolerances(ANK_KSP, rtol, &
-                              real(atol), real(ANK_divTol), ank_maxIter, ierr)
+                              real(atol), real(ANK_divTol), int(ank_maxIter, kind=intType), ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call KSPSetResidualHistoryCompat(ANK_KSP, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)

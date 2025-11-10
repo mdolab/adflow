@@ -572,7 +572,7 @@ contains
         cum_nodes_on_block = 0
         ! The nDom loop followed by the sps loop is required to follow
         ! the globalNode ordering such that we can use the pointer from
-        ! vecGetArrayF90
+        ! VecGetArrayCompat
 
         do nn = 1, nDom
             do sps = 1, nTimeIntervalsSpectral
@@ -1022,6 +1022,8 @@ contains
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat, &
+                               VecGetArrayReadCompat, VecRestoreArrayReadCompat
         implicit none
 
         ! PETSc Arguments
@@ -1033,15 +1035,16 @@ contains
         real(kind=realType), pointer :: wb_pointer(:)
 
 #ifndef USE_COMPLEX
-        call VecGetArrayReadF90(vecX, dwb_pointer, ierr)
+        call VecGetArrayReadCompat(vecX, dwb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, wb_pointer, ierr)
+        call VecGetArrayCompat(VecY, wb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
-        call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
+        ! TODO: Add restore or check array is released correctly elsewhere
+        call VecRestoreArrayCompat(vecX, dwb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -1071,6 +1074,8 @@ contains
 #endif
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat, &
+                               VecGetArrayReadCompat, VecRestoreArrayReadCompat
         implicit none
 
         ! PETSc Arguments
@@ -1088,10 +1093,10 @@ contains
 
 #ifndef USE_COMPLEX
 
-        call VecGetArrayReadF90(vecX, wd_pointer, ierr)
+        call VecGetArrayReadCompat(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, dwd_pointer, ierr)
+        call VecGetArrayCompat(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (.not. derivVarsAllocated) then
@@ -1119,10 +1124,10 @@ contains
 
         deallocate (xvDot, Fdot)
 
-        call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
+        call VecRestoreArrayReadCompat(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(VecY, dwd_pointer, ierr)
+        call VecRestoreArrayCompat(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0

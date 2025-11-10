@@ -40,6 +40,7 @@ contains
         use actuatorRegionData, only: nActuatorRegions, actuatorRegions
         use wallDistanceData, only: xSurfVec, xSurf
         use actuatorRegion, only: computeActuatorRegionVolume
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
 
         implicit none
 
@@ -103,7 +104,7 @@ contains
 
                 if (useSpatial) then
 
-                    call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                    call VecGetArrayCompat(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
                     call volume_block
@@ -121,7 +122,7 @@ contains
                     end if
 
                     ! These arrays need to be restored before we can move to the next spectral instance.
-                    call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                    call VecRestoreArrayCompat(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
                 end if
@@ -302,6 +303,7 @@ contains
         use actuatorregion_d, only: computeactuatorregionvolume_d
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input Arguments:
@@ -423,11 +425,11 @@ contains
 
                 ! Get the pointers from the petsc vector for the surface
                 ! perturbation for wall distance.
-                call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call VecGetArrayCompat(xSurfVec(1, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! And it's derivative
-                call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+                call VecGetArrayCompat(xSurfVecd(sps), xSurfd, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 call volume_block_d()
@@ -472,11 +474,11 @@ contains
                 call applyAllBC_block_d(.True.)
 
                 ! These arrays need to be restored before we can move to the next spectral instance.
-                call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call VecRestoreArrayCompat(xSurfVec(1, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! And it's derivative
-                call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+                call VecRestoreArrayCompat(xSurfVecd(sps), xSurfd, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end do
         end do
@@ -668,6 +670,7 @@ contains
 
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input variables:
@@ -840,11 +843,11 @@ contains
             ! Get the pointers from the petsc vector for the wall
             ! surface and it's accumulation. Only necessary for wall
             ! distance.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call VecGetArrayCompat(xSurfVec(1, sps), xSurf, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call VecGetArrayCompat(xSurfVecd(sps), xSurfd, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             !Zero the accumulation vector on a per-time-spectral instance basis
@@ -898,11 +901,11 @@ contains
             end do domainLoop2
 
             ! Restore the petsc pointers.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call VecGetArrayCompat(xSurfVec(1, sps), xSurf, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call VecGetArrayCompat(xSurfVecd(sps), xSurfd, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Now accumulate the xsurfd accumulation by using the wall scatter

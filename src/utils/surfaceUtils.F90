@@ -380,6 +380,7 @@ contains
         use utils, only: setPointers, EChk, setBCPointers
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         !
@@ -469,7 +470,7 @@ contains
             ! scatter.
             dimLoop: do iDim = 1, 3
 
-                call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call VecGetArrayCompat(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
                 localPtr = zero
 
@@ -493,7 +494,7 @@ contains
                 end do
 
                 ! Restore the pointer
-                call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call VecRestoreArrayCompat(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Now scatter this to the zipper
@@ -506,7 +507,7 @@ contains
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! The values we need are precisely what is in zipper%localVal
-                call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+                call VecGetArrayCompat(zipper%localVal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Just copy the received data into the points array. Only root proc.
@@ -514,7 +515,7 @@ contains
                     points(iDim, ii + 1:ii + size(localPtr)) = localPtr
                 end if
                 ! The values we need are precisely what is in zipper%localVal
-                call vecRestoreArrayF90(zipper%localVal, localPtr, ierr)
+                call VecRestoreArrayCompat(zipper%localVal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
             end do dimLoop

@@ -144,6 +144,7 @@ contains
         use oversetData, only: oversetPresent
         use utils, only: setPointers, EChk, terminate, &
                          deallocateTempMemory, allocateTempMemory
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
         !
         !      Subroutine arguments.
@@ -288,7 +289,7 @@ contains
             do sps = 1, nTimeIntervalsSpectral
 
                 ! Now extract the vector of the surface data we need
-                call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+                call VecGetArrayCompat(xSurfVec(level, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 do nn = 1, nDom
@@ -296,7 +297,7 @@ contains
                     call updateWallDistancesQuickly(nn, level, sps)
                 end do
 
-                call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+                call VecRestoreArrayCompat(xSurfVec(level, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
             end do
@@ -2006,6 +2007,7 @@ contains
         use blockPointers
         use inputTimeSpectral
         use utils, only: EChk, setPointers
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! Input Parameters
@@ -2015,7 +2017,7 @@ contains
         integer(kind=intType) :: ii, i, j, k, l, nn, sps, ierr
 
         ! Fill up xVolumeVec
-        call VecGetArrayF90(xVolumeVec(level), xVolume, ierr)
+        call VecGetArrayCompat(xVolumeVec(level), xVolume, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -2034,7 +2036,7 @@ contains
                 end do
             end do
         end do
-        call vecRestoreArrayF90(xVolumeVec(level), xVolume, ierr)
+        call VecRestoreArrayCompat(xVolumeVec(level), xVolume, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Perform the scatter from the global x vector to xSurf. SPS loop since the xSurfVec is done by SPS instance.

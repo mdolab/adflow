@@ -666,6 +666,7 @@ contains
 #include <petsc/finclude/petsc.h>
         use petscvec
         use petscmat
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! PETSc Arguments
@@ -681,7 +682,7 @@ contains
         print *, 'calling pcmatmult'
         call setPCVec(vecX)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Now we can compute the acutal matrix vector product.
@@ -720,7 +721,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -736,6 +737,7 @@ contains
         use communication
 #include <petsc/finclude/petsc.h>
         use petsc
+        use petscCompat, only: VecGetArrayCompat, VecRestoreArrayCompat
         implicit none
 
         ! PETSc Arguments
@@ -749,12 +751,12 @@ contains
         ! into the preconditioned vector.
         call vecCopy(vecX, vecY, ierr)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Do something useful here....
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArrayCompat(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine myShellPCApply
@@ -780,7 +782,7 @@ contains
         ! type(internalCommType) :: internal
         ! integer, dimension(mpi_status_size) :: mpiStatus
 
-        ! call VecGetArrayReadF90(vecX, xPtr, ierr)
+        ! call VecGetArrayReadCompat(vecX, xPtr, ierr)
         ! call EChk(ierr,__FILE__,__LINE__)
 
         ! ! First set all the owned cells...this is basically just a straight
@@ -803,7 +805,7 @@ contains
         ! end do
 
         ! ! Done with the vecX.
-        ! call VecRestorearrayReadF90(vecX, xPtr, ierr)
+        ! call VecRestorearrayReadCompat(vecX, xPtr, ierr)
         ! call EChk(ierr,__FILE__,__LINE__)
 
         ! ! Now we do a custom halo exchange. We can use the same pattern as

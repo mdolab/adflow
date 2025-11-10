@@ -9,7 +9,8 @@ module amg
     use utils, only: EChk
 #include <petsc/finclude/petsc.h>
     use petsc
-    use petscCompat, only: PCASMGetSubKSPCompat, PCASMRestoreSubKSPCompat
+    use petscCompat, only: PCASMGetSubKSPCompat, PCASMRestoreSubKSPCompat, &
+                            VecGetArrayCompat, VecRestoreArrayCompat
     implicit none
 
     ! Structure used for storing the interpolation indices
@@ -244,7 +245,7 @@ contains
             n = 0
             ii = 0
 
-            call VecGetArrayF90(indexVec, indPtr, ierr)
+            call VecGetArrayCompat(indexVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             do nn = 1, nDom
@@ -282,7 +283,7 @@ contains
                     end do
                 end do
             end do
-            call VecRestoreArrayF90(indexVec, indPtr, ierr)
+            call VecRestoreArrayCompat(indexVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             allocate (indicesToGet(8 * ii))
@@ -328,7 +329,7 @@ contains
             call VecScatterEnd(scat, indexVec, recvVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecGetArrayF90(recvVec, indPtr, ierr)
+            call VecGetArrayCompat(recvVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Loop back over at set the coarse indices
@@ -353,7 +354,7 @@ contains
                 end do
             end do
 
-            call VecRestoreArrayF90(recvVec, indPtr, ierr)
+            call VecRestoreArrayCompat(recvVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecScatterDestroy(scat, ierr)
@@ -648,10 +649,10 @@ contains
         integer(kind=intType) :: ierr, n, i, j
 
         ! Restrict x -> y
-        call VecGetArrayF90(x, xPtr, ierr)
+        call VecGetArrayCompat(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(y, yPtr, ierr)
+        call VecGetArrayCompat(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Number of block nodes
@@ -670,10 +671,10 @@ contains
             yPtrBlk(:, j) = yPtrBlk(:, j) + xPtrBlk(:, i)
         end do
 
-        call VecRestoreArrayF90(x, xPtr, ierr)
+        call VecRestoreArrayCompat(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(y, yPtr, ierr)
+        call VecRestoreArrayCompat(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine restrictVec
@@ -691,10 +692,10 @@ contains
 
         ! Prolong vector x -> y
 
-        call VecGetArrayF90(x, xPtr, ierr)
+        call VecGetArrayCompat(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(y, yPtr, ierr)
+        call VecGetArrayCompat(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Number of block nodes
@@ -710,10 +711,10 @@ contains
             yPtrBlk(:, i) = xPtrBlk(:, j)
         end do
 
-        call VecRestoreArrayF90(x, xPtr, ierr)
+        call VecRestoreArrayCompat(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(y, yPtr, ierr)
+        call VecRestoreArrayCompat(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine prolongVec
