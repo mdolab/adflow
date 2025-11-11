@@ -187,7 +187,7 @@ contains
     subroutine KSPSetResidualHistoryCompat(ksp, a, na, reset, ierr)
         implicit none
         KSP, intent(in) :: ksp
-        real(kind=realType), dimension(:), intent(in) :: a
+        real(kind=alwaysRealType), dimension(:), intent(in) :: a
         PetscCount, intent(in) :: na
         logical, intent(in) :: reset
         integer(kind=intType), intent(out) :: ierr
