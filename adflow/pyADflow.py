@@ -360,6 +360,10 @@ class ADFLOW(AeroSolver):
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
             print("+--------------------------------------------------+")
 
+        # Store timings
+        self.solTimes = []
+        self.sensTimes = []
+
     def __del__(self):
         """
         Clean up allocated memory if necessary
