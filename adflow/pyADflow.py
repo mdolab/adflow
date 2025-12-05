@@ -1334,6 +1334,7 @@ class ADFLOW(AeroSolver):
             self.computeStabilityParameters()  # should this be in evalFuncs?
 
         stabilityParameterTime = time.time()
+        self.lastSolTime = stabilityParameterTime - startCallTime
 
         if self.getOption("printTiming") and self.comm.rank == 0:
             print("+-------------------------------------------------+")
@@ -1763,6 +1764,7 @@ class ADFLOW(AeroSolver):
             totalSensEndTime[f] = time.time()
 
         finalEvalSensTime = time.time()
+        self.lastEvalSensTime = finalEvalSensTime - startEvalSensTime
 
         if self.getOption("printTiming") and self.comm.rank == 0:
             print("+--------------------------------------------------+")
