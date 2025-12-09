@@ -360,7 +360,7 @@ class ADFLOW(AeroSolver):
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
             print("+--------------------------------------------------+")
 
-        # Allow for timing data to be stored in the CFD solver object itself as it makes dynamic load balancing easier
+        # TEMP: Allow for timing data to be stored in the CFD solver object itself as it makes dynamic load balancing easier
         self.solTimes = []
         self.sensTimes = []
 
