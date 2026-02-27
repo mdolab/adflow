@@ -531,8 +531,8 @@ contains
 
 !  differentiation of initres_block in reverse (adjoint) mode (with options noisize i4 dr8 r8):
 !   gradient     of useful results: *dw
-!   with respect to varying inputs: *dw
-!   rw status of diff variables: *dw:in-out
+!   with respect to varying inputs: *dw *flowDoms.w *flowDoms.vol
+!   rw status of diff variables: *dw:in-out *flowDoms.w:out *flowDoms.vol:out
 !   plus diff mem management of: dw:in
   subroutine initres_block_b(varstart, varend, nn, sps)
 !
@@ -557,25 +557,33 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
-    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype) :: oneoverdt, tmp, tmpd
     real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
     real(kind=realtype), dimension(:, :, :), pointer :: volsp
     integer :: branch
 ! return immediately of no variables are in the range.
     if (varend .ge. varstart) then
 ! determine the equation mode and act accordingly.
-      select case  (equationmode) 
-      case (steady) 
+      select case  (equationmode)
+      case (steady)
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
-          call pushcontrol2b(1)
+          call pushcontrol3b(1)
         else
-          call pushcontrol2b(0)
+          call pushcontrol3b(0)
+        end if
+      case (timespectral)
+! time spectral computation.
+        if (currentlevel .eq. groundlevel) then
+          call pushcontrol3b(2)
+        else
+          call pushcontrol3b(3)
         end if
       case default
-        call pushcontrol2b(2)
+        call pushcontrol3b(4)
       end select
+! reverse the halo cell zeroing
       do l=varend,varstart,-1
         do j=jl,2,-1
           do i=il,2,-1
@@ -602,8 +610,9 @@ contains
           end do
         end do
       end do
-      call popcontrol2b(branch)
+      call popcontrol3b(branch)
       if (branch .eq. 0) then
+! steady, coarse grid: forward did dw = wr (constant)
         do l=varend,varstart,-1
           do k=kl,2,-1
             do j=jl,2,-1
@@ -614,6 +623,151 @@ contains
           end do
         end do
       else if (branch .eq. 1) then
+! steady, fine grid: forward did dw = zero
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      else if (branch .eq. 2) then
+! time spectral, fine grid
+! reverse the spectral time derivative accumulation
+        jj = sectionid
+        do mm = ntimeintervalsspectral, 1, -1
+          ii = 3 * (mm - 1)
+          do l = varend, varstart, -1
+            if (l .eq. ivx .or. l .eq. ivy .or. l .eq. ivz) then
+! momentum variable
+              if (l .eq. ivx) ll = 3*sps - 2
+              if (l .eq. ivy) ll = 3*sps - 1
+              if (l .eq. ivz) ll = 3*sps
+              do k = kl, 2, -1
+                do j = jl, 2, -1
+                  do i = il, 2, -1
+! recompute tmp from forward pass
+                    tmp = dvector(jj, ll, ii+1) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                        + dvector(jj, ll, ii+2) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                        + dvector(jj, ll, ii+3) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz)
+! adjoint of: dw(i,j,k,l) += tmp * vol_mm * rho_mm
+                    tmpd = flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                         * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) * dwd(i,j,k,l)
+                    flowdomsd(nn, 1, mm)%vol(i,j,k) = flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                        + tmp * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) * dwd(i,j,k,l)
+                    flowdomsd(nn, 1, mm)%w(i,j,k,irho) = flowdomsd(nn, 1, mm)%w(i,j,k,irho) &
+                        + tmp * flowdoms(nn, currentlevel, mm)%vol(i,j,k) * dwd(i,j,k,l)
+! adjoint of: tmp = dvector * velocities
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivx) = flowdomsd(nn, 1, mm)%w(i,j,k,ivx) &
+                        + dvector(jj, ll, ii+1) * tmpd
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivy) = flowdomsd(nn, 1, mm)%w(i,j,k,ivy) &
+                        + dvector(jj, ll, ii+2) * tmpd
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivz) = flowdomsd(nn, 1, mm)%w(i,j,k,ivz) &
+                        + dvector(jj, ll, ii+3) * tmpd
+                  end do
+                end do
+              end do
+            else
+! scalar variable
+! adjoint of: dw(i,j,k,l) += dscalar(jj,sps,mm) * vol_mm * w_mm(l)
+              do k = kl, 2, -1
+                do j = jl, 2, -1
+                  do i = il, 2, -1
+                    flowdomsd(nn, 1, mm)%w(i,j,k,l) = flowdomsd(nn, 1, mm)%w(i,j,k,l) &
+                        + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                        * dwd(i,j,k,l)
+                    flowdomsd(nn, 1, mm)%vol(i,j,k) = flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                        + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%w(i,j,k,l) &
+                        * dwd(i,j,k,l)
+                  end do
+                end do
+              end do
+            end if
+          end do
+        end do
+! reverse of initialization: dw = zero => dwd = 0
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      else if (branch .eq. 3) then
+! time spectral, coarse grid
+! reverse the coarse grid spectral time derivative accumulation
+        jj = sectionid
+        do mm = ntimeintervalsspectral, 1, -1
+          ii = 3 * (mm - 1)
+          do l = varend, varstart, -1
+            if (l .eq. ivx .or. l .eq. ivy .or. l .eq. ivz) then
+! momentum variable
+              if (l .eq. ivx) ll = 3*sps - 2
+              if (l .eq. ivy) ll = 3*sps - 1
+              if (l .eq. ivz) ll = 3*sps
+              do k = kl, 2, -1
+                do j = jl, 2, -1
+                  do i = il, 2, -1
+! recompute tmp from forward pass
+                    tmp = dvector(jj, ll, ii+1) &
+                        * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivx)) &
+                        + dvector(jj, ll, ii+2) &
+                        * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivy)) &
+                        + dvector(jj, ll, ii+3) &
+                        * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                           * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivz))
+! adjoint of: dw += tmp * vol_mm
+                    tmpd = flowdoms(nn, currentlevel, mm)%vol(i,j,k) * dwd(i,j,k,l)
+                    flowdomsd(nn, 1, mm)%vol(i,j,k) = flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                        + tmp * dwd(i,j,k,l)
+! adjoint of tmp = dvector * (rho*vel - rho1*vel1)
+! only w is active, w1 is frozen
+                    flowdomsd(nn, 1, mm)%w(i,j,k,irho) = flowdomsd(nn, 1, mm)%w(i,j,k,irho) &
+                        + (dvector(jj, ll, ii+1) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                         + dvector(jj, ll, ii+2) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                         + dvector(jj, ll, ii+3) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz)) * tmpd
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivx) = flowdomsd(nn, 1, mm)%w(i,j,k,ivx) &
+                        + dvector(jj, ll, ii+1) * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) * tmpd
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivy) = flowdomsd(nn, 1, mm)%w(i,j,k,ivy) &
+                        + dvector(jj, ll, ii+2) * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) * tmpd
+                    flowdomsd(nn, 1, mm)%w(i,j,k,ivz) = flowdomsd(nn, 1, mm)%w(i,j,k,ivz) &
+                        + dvector(jj, ll, ii+3) * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) * tmpd
+                  end do
+                end do
+              end do
+            else
+! scalar variable
+! adjoint of: dw += dscalar * vol_mm * (w_mm - w1_mm)
+! only w is active, w1 is frozen
+              do k = kl, 2, -1
+                do j = jl, 2, -1
+                  do i = il, 2, -1
+                    flowdomsd(nn, 1, mm)%w(i,j,k,l) = flowdomsd(nn, 1, mm)%w(i,j,k,l) &
+                        + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                        * dwd(i,j,k,l)
+                    flowdomsd(nn, 1, mm)%vol(i,j,k) = flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                        + dscalar(jj, sps, mm) &
+                        * (flowdoms(nn, currentlevel, mm)%w(i,j,k,l) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,l)) * dwd(i,j,k,l)
+                  end do
+                end do
+              end do
+            end if
+          end do
+        end do
+! reverse of initialization: dw = wr (constant) => dwd = 0
         do l=varend,varstart,-1
           do k=kl,2,-1
             do j=jl,2,-1

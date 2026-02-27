@@ -508,8 +508,8 @@ contains
 
 !  differentiation of initres_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: *dw
-!   rw status of diff variables: *dw:in-out
+!   with respect to varying inputs: *dw *flowDoms.w *flowDoms.vol
+!   rw status of diff variables: *dw:in-out *flowDoms.w:in *flowDoms.vol:in
 !   plus diff mem management of: dw:in
   subroutine initres_block_d(varstart, varend, nn, sps)
 !
@@ -534,7 +534,7 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
-    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype) :: oneoverdt, tmp, tmpd
     real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
     real(kind=realtype), dimension(:, :, :), pointer :: volsp
 ! return immediately of no variables are in the range.
@@ -542,8 +542,8 @@ contains
       return
     else
 ! determine the equation mode and act accordingly.
-      select case  (equationmode) 
-      case (steady) 
+      select case  (equationmode)
+      case (steady)
 ! steady state computation.
 ! determine the currently active multigrid level.
         if (currentlevel .eq. groundlevel) then
@@ -570,6 +570,163 @@ contains
                   dw(i, j, k, l) = wr(i, j, k, l)
                 end do
               end do
+            end do
+          end do
+        end if
+      case (timespectral)
+! time spectral computation.
+        jj = sectionid
+        if (currentlevel .eq. groundlevel) then
+! fine grid: initialize to zero, then accumulate spectral time derivative
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dwd(i, j, k, l) = 0.0_8
+                  dw(i, j, k, l) = zero
+                end do
+              end do
+            end do
+          end do
+! loop over spectral instances
+          do mm = 1, ntimeintervalsspectral
+            ii = 3 * (mm - 1)
+            do l = varstart, varend
+              if (l .eq. ivx .or. l .eq. ivy .or. l .eq. ivz) then
+! momentum variable
+                if (l .eq. ivx) ll = 3*sps - 2
+                if (l .eq. ivy) ll = 3*sps - 1
+                if (l .eq. ivz) ll = 3*sps
+                do k = 2, kl
+                  do j = 2, jl
+                    do i = 2, il
+! tangent of: tmp = dvector * velocities
+                      tmpd = dvector(jj, ll, ii+1) * flowdomsd(nn, 1, mm)%w(i,j,k,ivx) &
+                           + dvector(jj, ll, ii+2) * flowdomsd(nn, 1, mm)%w(i,j,k,ivy) &
+                           + dvector(jj, ll, ii+3) * flowdomsd(nn, 1, mm)%w(i,j,k,ivz)
+                      tmp = dvector(jj, ll, ii+1) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                          + dvector(jj, ll, ii+2) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                          + dvector(jj, ll, ii+3) * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz)
+! tangent of: dw += tmp * vol_mm * rho_mm
+                      dwd(i,j,k,l) = dwd(i,j,k,l) &
+                          + tmpd * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                          + tmp * flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                            * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                          + tmp * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdomsd(nn, 1, mm)%w(i,j,k,irho)
+                      dw(i,j,k,l) = dw(i,j,k,l) &
+                          + tmp * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdoms(nn, currentlevel, mm)%w(i,j,k,irho)
+                    end do
+                  end do
+                end do
+              else
+! scalar variable
+                do k = 2, kl
+                  do j = 2, jl
+                    do i = 2, il
+! tangent of: dw += dscalar * vol_mm * w_mm
+                      dwd(i,j,k,l) = dwd(i,j,k,l) &
+                          + dscalar(jj, sps, mm) * flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                            * flowdoms(nn, currentlevel, mm)%w(i,j,k,l) &
+                          + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdomsd(nn, 1, mm)%w(i,j,k,l)
+                      dw(i,j,k,l) = dw(i,j,k,l) &
+                          + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdoms(nn, currentlevel, mm)%w(i,j,k,l)
+                    end do
+                  end do
+                end do
+              end if
+            end do
+          end do
+        else
+! coarse grid level
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dwd(i, j, k, l) = 0.0_8
+                  dw(i, j, k, l) = wr(i, j, k, l)
+                end do
+              end do
+            end do
+          end do
+! loop over spectral instances (coarse grid correction)
+          do mm = 1, ntimeintervalsspectral
+            ii = 3 * (mm - 1)
+            do l = varstart, varend
+              if (l .eq. ivx .or. l .eq. ivy .or. l .eq. ivz) then
+! momentum variable
+                if (l .eq. ivx) ll = 3*sps - 2
+                if (l .eq. ivy) ll = 3*sps - 1
+                if (l .eq. ivz) ll = 3*sps
+                do k = 2, kl
+                  do j = 2, jl
+                    do i = 2, il
+! tangent of: tmp = dvector * (rho*vel - rho1*vel1)
+! w1 is frozen so w1d = 0
+                      tmpd = dvector(jj, ll, ii+1) &
+                          * (flowdomsd(nn, 1, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                           + flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdomsd(nn, 1, mm)%w(i,j,k,ivx)) &
+                           + dvector(jj, ll, ii+2) &
+                          * (flowdomsd(nn, 1, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                           + flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdomsd(nn, 1, mm)%w(i,j,k,ivy)) &
+                           + dvector(jj, ll, ii+3) &
+                          * (flowdomsd(nn, 1, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz) &
+                           + flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdomsd(nn, 1, mm)%w(i,j,k,ivz))
+                      tmp = dvector(jj, ll, ii+1) &
+                          * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivx) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivx)) &
+                          + dvector(jj, ll, ii+2) &
+                          * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivy) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivy)) &
+                          + dvector(jj, ll, ii+3) &
+                          * (flowdoms(nn, currentlevel, mm)%w(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w(i,j,k,ivz) &
+                           - flowdoms(nn, currentlevel, mm)%w1(i,j,k,irho) &
+                             * flowdoms(nn, currentlevel, mm)%w1(i,j,k,ivz))
+! tangent of: dw += tmp * vol_mm
+                      dwd(i,j,k,l) = dwd(i,j,k,l) &
+                          + tmpd * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                          + tmp * flowdomsd(nn, 1, mm)%vol(i,j,k)
+                      dw(i,j,k,l) = dw(i,j,k,l) &
+                          + tmp * flowdoms(nn, currentlevel, mm)%vol(i,j,k)
+                    end do
+                  end do
+                end do
+              else
+! scalar variable
+                do k = 2, kl
+                  do j = 2, jl
+                    do i = 2, il
+! tangent of: dw += dscalar * vol_mm * (w_mm - w1_mm)
+! w1 is frozen so w1d = 0
+                      dwd(i,j,k,l) = dwd(i,j,k,l) &
+                          + dscalar(jj, sps, mm) * flowdomsd(nn, 1, mm)%vol(i,j,k) &
+                            * (flowdoms(nn, currentlevel, mm)%w(i,j,k,l) &
+                               - flowdoms(nn, currentlevel, mm)%w1(i,j,k,l)) &
+                          + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * flowdomsd(nn, 1, mm)%w(i,j,k,l)
+                      dw(i,j,k,l) = dw(i,j,k,l) &
+                          + dscalar(jj, sps, mm) * flowdoms(nn, currentlevel, mm)%vol(i,j,k) &
+                            * (flowdoms(nn, currentlevel, mm)%w(i,j,k,l) &
+                               - flowdoms(nn, currentlevel, mm)%w1(i,j,k,l))
+                    end do
+                  end do
+                end do
+              end if
             end do
           end do
         end if

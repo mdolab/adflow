@@ -695,6 +695,7 @@ contains
             end select
 
             !===========================================================
+#endif
 
         case (timeSpectral)
 
@@ -736,8 +737,10 @@ contains
                     ! Also store in ii the offset needed for vector
                     ! quantities.
 
+#ifndef USE_TAPENADE
                     wsp => flowDoms(nn, currentLevel, mm)%w
                     volsp => flowDoms(nn, currentLevel, mm)%vol
+#endif
                     ii = 3 * (mm - 1)
 
                     ! Loop over the number of variables to be set.
@@ -768,17 +771,29 @@ contains
                                         ! Store the matrix vector product with the
                                         ! velocity in tmp.
 
+#ifdef USE_TAPENADE
+                                        tmp = dvector(jj, ll, ii + 1) * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivx) &
+                                              + dvector(jj, ll, ii + 2) * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivy) &
+                                              + dvector(jj, ll, ii + 3) * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivz)
+#else
                                         tmp = dvector(jj, ll, ii + 1) * wsp(i, j, k, ivx) &
                                               + dvector(jj, ll, ii + 2) * wsp(i, j, k, ivy) &
                                               + dvector(jj, ll, ii + 3) * wsp(i, j, k, ivz)
+#endif
 
                                         ! Update the residual. Note the
                                         ! multiplication with the density to obtain
                                         ! the correct time derivative for the
                                         ! momentum variable.
 
+#ifdef USE_TAPENADE
+                                        dw(i, j, k, l) = dw(i, j, k, l) &
+                                                         + tmp * flowDoms(nn, currentLevel, mm)%vol(i, j, k) &
+                                                         * flowDoms(nn, currentLevel, mm)%w(i, j, k, irho)
+#else
                                         dw(i, j, k, l) = dw(i, j, k, l) &
                                                          + tmp * volsp(i, j, k) * wsp(i, j, k, irho)
+#endif
 
                                     end do
                                 end do
@@ -793,9 +808,16 @@ contains
                             do k = 2, kl
                                 do j = 2, jl
                                     do i = 2, il
+#ifdef USE_TAPENADE
+                                        dw(i, j, k, l) = dw(i, j, k, l) &
+                                                         + dscalar(jj, sps, mm) &
+                                                         * flowDoms(nn, currentLevel, mm)%vol(i, j, k) &
+                                                         * flowDoms(nn, currentLevel, mm)%w(i, j, k, l)
+#else
                                         dw(i, j, k, l) = dw(i, j, k, l) &
                                                          + dscalar(jj, sps, mm) &
                                                          * volsp(i, j, k) * wsp(i, j, k, l)
+#endif
 
                                     end do
                                 end do
@@ -836,9 +858,11 @@ contains
                     ! Furthermore store in ii the offset needed for
                     ! vector quantities.
 
+#ifndef USE_TAPENADE
                     wsp => flowDoms(nn, currentLevel, mm)%w
                     wsp1 => flowDoms(nn, currentLevel, mm)%w1
                     volsp => flowDoms(nn, currentLevel, mm)%vol
+#endif
                     ii = 3 * (mm - 1)
 
                     ! Loop over the number of variables to be set.
@@ -873,6 +897,23 @@ contains
                                         ! Store the matrix vector product with the
                                         ! momentum in tmp.
 
+#ifdef USE_TAPENADE
+                                        tmp = dvector(jj, ll, ii + 1) &
+                                              * (flowDoms(nn, currentLevel, mm)%w(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivx) &
+                                                 - flowDoms(nn, currentLevel, mm)%w1(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w1(i, j, k, ivx)) &
+                                              + dvector(jj, ll, ii + 2) &
+                                              * (flowDoms(nn, currentLevel, mm)%w(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivy) &
+                                                 - flowDoms(nn, currentLevel, mm)%w1(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w1(i, j, k, ivy)) &
+                                              + dvector(jj, ll, ii + 3) &
+                                              * (flowDoms(nn, currentLevel, mm)%w(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w(i, j, k, ivz) &
+                                                 - flowDoms(nn, currentLevel, mm)%w1(i, j, k, irho) &
+                                                 * flowDoms(nn, currentLevel, mm)%w1(i, j, k, ivz))
+#else
                                         tmp = dvector(jj, ll, ii + 1) &
                                               * (wsp(i, j, k, irho) * wsp(i, j, k, ivx) &
                                                  - wsp1(i, j, k, irho) * wsp1(i, j, k, ivx)) &
@@ -882,13 +923,19 @@ contains
                                               + dvector(jj, ll, ii + 3) &
                                               * (wsp(i, j, k, irho) * wsp(i, j, k, ivz) &
                                                  - wsp1(i, j, k, irho) * wsp1(i, j, k, ivz))
+#endif
 
                                         ! Add tmp to the residual. Multiply it by
                                         ! the volume to obtain the finite volume
                                         ! formulation of the  derivative of the
                                         ! momentum.
 
+#ifdef USE_TAPENADE
+                                        dw(i, j, k, l) = dw(i, j, k, l) &
+                                                         + tmp * flowDoms(nn, currentLevel, mm)%vol(i, j, k)
+#else
                                         dw(i, j, k, l) = dw(i, j, k, l) + tmp * volsp(i, j, k)
+#endif
 
                                     end do
                                 end do
@@ -903,10 +950,18 @@ contains
                             do k = 2, kl
                                 do j = 2, jl
                                     do i = 2, il
+#ifdef USE_TAPENADE
+                                        dw(i, j, k, l) = dw(i, j, k, l) &
+                                                         + dscalar(jj, sps, mm) &
+                                                         * flowDoms(nn, currentLevel, mm)%vol(i, j, k) &
+                                                         * (flowDoms(nn, currentLevel, mm)%w(i, j, k, l) &
+                                                            - flowDoms(nn, currentLevel, mm)%w1(i, j, k, l))
+#else
                                         dw(i, j, k, l) = dw(i, j, k, l) &
                                                          + dscalar(jj, sps, mm) &
                                                          * volsp(i, j, k) &
                                                          * (wsp(i, j, k, l) - wsp1(i, j, k, l))
+#endif
                                     end do
                                 end do
                             end do
@@ -917,7 +972,6 @@ contains
 
                 end do timeLoopCoarse
             end if spectralLevelTest
-#endif
         end select
 
         ! Set the residual in the halo cells to zero. This is just
