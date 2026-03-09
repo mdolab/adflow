@@ -46,9 +46,7 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
             def getUndeformedSurfaceNodes(self):
                 self.MDGroup = self.aeroSolver.allWallsGroup
 
-                self.cfdPts0 = self.aeroSolver.getSurfaceCoordinates(
-                    self.MDGroup, includeZipper=False
-                )
+                self.cfdPts0 = self.aeroSolver.getSurfaceCoordinates(self.MDGroup, includeZipper=False)
 
             def setDisplacements(self):
                 xRot = self.xRot
@@ -69,15 +67,8 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
                     ss = numpy.sin(ptch_loc)
 
                     for j in range(N_pts):
-                        cfdPoints_deformed[j, 0] = (
-                            cc * (cfdPoints_init[j, 0] - xRot)
-                            + ss * cfdPoints_init[j, 1]
-                            + xRot
-                        )
-                        cfdPoints_deformed[j, 1] = (
-                            -ss * (cfdPoints_init[j, 0] - xRot)
-                            + cc * cfdPoints_init[j, 1]
-                        )
+                        cfdPoints_deformed[j, 0] = cc * (cfdPoints_init[j, 0] - xRot) + ss * cfdPoints_init[j, 1] + xRot
+                        cfdPoints_deformed[j, 1] = -ss * (cfdPoints_init[j, 0] - xRot) + cc * cfdPoints_init[j, 1]
                         cfdPoints_deformed[j, 2] = cfdPoints_init[j, 2]
 
                     self.cfdPts.append(cfdPoints_deformed)
@@ -172,21 +163,15 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
 
     def test_adjoint(self):
-        utils.assert_adjoint_sens_allclose(
-            self.handler, self.CFDSolver, self.ap, tol=1e-10
-        )
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
 
     def test_adjoint2(self):
-        utils.assert_adjoint2_sens_allclose(
-            self.handler, self.CFDSolver, self.ap, tol=1e-10
-        )
+        utils.assert_adjoint2_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
 
     def test_adjoint_states(self):
-        utils.assert_adjoint_states_allclose(
-            self.handler, self.CFDSolver, self.ap, tol=1e-10
-        )
+        utils.assert_adjoint_states_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
 
 
