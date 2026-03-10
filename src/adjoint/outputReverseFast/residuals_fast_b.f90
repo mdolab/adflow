@@ -698,8 +698,8 @@ branch = myIntStack(myIntPtr)
                 do k=kl,2,-1
                   do j=jl,2,-1
                     do i=il,2,-1
-                      flowdomsd(nn, 1, mm)%w(i, j, k, l) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, l) + &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, l) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, l) + &
 &                       dscalar(jj, sps, mm)*flowdoms(nn, currentlevel, &
 &                       mm)%vol(i, j, k)*dwd(i, j, k, l)
                     end do
@@ -714,28 +714,28 @@ branch = myIntStack(myIntPtr)
                       tempd = dvector(jj, ll, ii+1)*tmpd
                       tempd0 = dvector(jj, ll, ii+2)*tmpd
                       tempd1 = dvector(jj, ll, ii+3)*tmpd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, irho)&
-&                      = flowdomsd(nn, 1, mm)%w(i, j, k, irho&
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho)&
+&                      = flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       ) + flowdoms(nn, currentlevel, mm)%w(i, j, k, &
 &                       ivz)*tempd1
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivz) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivz) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivz) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivz) &
 &                       + flowdoms(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       )*tempd1
-                      flowdomsd(nn, 1, mm)%w(i, j, k, irho)&
-&                      = flowdomsd(nn, 1, mm)%w(i, j, k, irho&
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho)&
+&                      = flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       ) + flowdoms(nn, currentlevel, mm)%w(i, j, k, &
 &                       ivy)*tempd0
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivy) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivy) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivy) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivy) &
 &                       + flowdoms(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       )*tempd0
-                      flowdomsd(nn, 1, mm)%w(i, j, k, irho)&
-&                      = flowdomsd(nn, 1, mm)%w(i, j, k, irho&
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho)&
+&                      = flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       ) + flowdoms(nn, currentlevel, mm)%w(i, j, k, &
 &                       ivx)*tempd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivx) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivx) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivx) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivx) &
 &                       + flowdoms(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       )*tempd
                     end do
@@ -771,8 +771,8 @@ branch = myIntStack(myIntPtr)
                 do k=kl,2,-1
                   do j=jl,2,-1
                     do i=il,2,-1
-                      flowdomsd(nn, 1, mm)%w(i, j, k, l) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, l) + &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, l) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, l) + &
 &                       dscalar(jj, sps, mm)*flowdoms(nn, currentlevel, &
 &                       mm)%vol(i, j, k)*dwd(i, j, k, l)
                     end do
@@ -786,17 +786,17 @@ branch = myIntStack(myIntPtr)
 &                       )*dwd(i, j, k, l)
                       tmpd = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
 &                       irho)*tempd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, irho)&
-&                      = flowdomsd(nn, 1, mm)%w(i, j, k, irho&
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho)&
+&                      = flowdomsd(nn, currentlevel, mm)%w(i, j, k, irho&
 &                       ) + tmp*tempd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivx) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivx) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivx) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivx) &
 &                       + dvector(jj, ll, ii+1)*tmpd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivy) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivy) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivy) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivy) &
 &                       + dvector(jj, ll, ii+2)*tmpd
-                      flowdomsd(nn, 1, mm)%w(i, j, k, ivz) = &
-&                       flowdomsd(nn, 1, mm)%w(i, j, k, ivz) &
+                      flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivz) = &
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivz) &
 &                       + dvector(jj, ll, ii+3)*tmpd
                     end do
                   end do

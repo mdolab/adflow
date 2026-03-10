@@ -141,11 +141,6 @@ for f in os.listdir(DIR_ORI):
             if m:
                 line = line.replace("integer*4", "integer")
 
-            # flowdomsd is only allocated for 1 multigrid level, so we must
-            # replace flowdomsd(nn, currentlevel, mm) with flowdomsd(nn, 1, mm)
-            if "flowdomsd" in line and "currentlevel" in line:
-                line = line.replace("flowdomsd(nn, currentlevel, mm)", "flowdomsd(nn, 1, mm)")
-
             # # See if we need to modify the line
             # m = patt_module_start.match(line)
             # if m:
