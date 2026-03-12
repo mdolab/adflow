@@ -552,30 +552,7 @@ varloopfine:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) then
-                  ll = 3*sps - 2
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                end if
-                if (l .eq. ivy) then
-                  ll = 3*sps - 1
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                end if
-                if (l .eq. ivz) then
-                  ll = 3*sps
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                end if
+                ll = 3*sps - 2 + (l-ivx)
 ! loop over the owned cell centers to add the
 ! contribution from wsp.
                 do k=2,kl
@@ -624,30 +601,7 @@ varloopcoarse:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) then
-                  ll = 3*sps - 2
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                end if
-                if (l .eq. ivy) then
-                  ll = 3*sps - 1
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                end if
-                if (l .eq. ivz) then
-                  ll = 3*sps
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 1
-                else
-myIntPtr = myIntPtr + 1
- myIntStack(myIntPtr) = 0
-                end if
+                ll = 3*sps - 2 + (l-ivx)
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
               else
@@ -741,15 +695,6 @@ branch = myIntStack(myIntPtr)
                     end do
                   end do
                 end do
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .ne. 0) call popinteger4(ll)
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .eq. 0) call popinteger4(ll)
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .eq. 0) call popinteger4(ll)
               end if
             end do
           end do
@@ -801,15 +746,6 @@ branch = myIntStack(myIntPtr)
                     end do
                   end do
                 end do
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .ne. 0) call popinteger4(ll)
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .eq. 0) call popinteger4(ll)
-branch = myIntStack(myIntPtr)
- myIntPtr = myIntPtr - 1
-                if (branch .eq. 0) call popinteger4(ll)
               end if
             end do
           end do
@@ -945,9 +881,7 @@ varloopfine:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! loop over the owned cell centers to add the
 ! contribution from wsp.
                 do k=2,kl
@@ -1019,9 +953,7 @@ varloopcoarse:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! add the contribution of wps to the correction
 ! of the time derivative. the difference between
 ! the current time derivative and the one when

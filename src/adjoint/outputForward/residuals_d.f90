@@ -625,9 +625,7 @@ varloopfine:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! loop over the owned cell centers to add the
 ! contribution from wsp.
                 do k=2,kl
@@ -719,9 +717,7 @@ varloopcoarse:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! add the contribution of wps to the correction
 ! of the time derivative. the difference between
 ! the current time derivative and the one when
@@ -943,9 +939,7 @@ varloopfine:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! loop over the owned cell centers to add the
 ! contribution from wsp.
                 do k=2,kl
@@ -1017,9 +1011,7 @@ varloopcoarse:do l=varstart,varend
 ! are stored instead of the momentum. set the
 ! coefficient ll, which defines the row of the
 ! matrix used later on.
-                if (l .eq. ivx) ll = 3*sps - 2
-                if (l .eq. ivy) ll = 3*sps - 1
-                if (l .eq. ivz) ll = 3*sps
+                ll = 3*sps - 2 + (l-ivx)
 ! add the contribution of wps to the correction
 ! of the time derivative. the difference between
 ! the current time derivative and the one when

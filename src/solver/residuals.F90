@@ -757,9 +757,7 @@ contains
                             ! coefficient ll, which defines the row of the
                             ! matrix used later on.
 
-                            if (l == ivx) ll = 3 * sps - 2
-                            if (l == ivy) ll = 3 * sps - 1
-                            if (l == ivz) ll = 3 * sps
+                            ll = 3 * sps - 2 + (l - ivx)
 
                             ! Loop over the owned cell centers to add the
                             ! contribution from wsp.
@@ -879,9 +877,7 @@ contains
                             ! coefficient ll, which defines the row of the
                             ! matrix used later on.
 
-                            if (l == ivx) ll = 3 * sps - 2
-                            if (l == ivy) ll = 3 * sps - 1
-                            if (l == ivz) ll = 3 * sps
+                            ll = 3 * sps - 2 + (l - ivx)
 
                             ! Add the contribution of wps to the correction
                             ! of the time derivative. The difference between
