@@ -162,6 +162,7 @@ contains
 
         integer(kind=intType) :: nn, mm, kk, nAvail
         integer(kind=intType) :: iEnd, jEnd, kEnd
+        integer(kind=intType) :: solTrim, extPos
 
         character(len=7) :: intString
 
@@ -225,8 +226,18 @@ contains
                     nTimeStepsRestart + 1 - nn
                 intString = adjustl(intString)
 
-                volSolFileNames(nn) = trim(solfile)//"&
-                     &Timestep"//trim(intString)
+                solTrim = len_trim(solFile)
+                extPos = 0
+                if (solTrim >= 5) then
+                    if (solFile(solTrim - 4:solTrim) == ".cgns") extPos = solTrim - 4
+                end if
+
+                if (extPos > 1) then
+                    volSolFileNames(nn) = trim(solFile(1:extPos - 1))//"_Timestep"// &
+                                          trim(intString)//".cgns"
+                else
+                    volSolFileNames(nn) = trim(solFile)//"_Timestep"//trim(intString)
+                end if
             end do
 
             ! Determine the number of volume solution files to write.
