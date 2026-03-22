@@ -114,7 +114,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
 
     def test_actuator_thrust(self):
-        "Tests if the correct amount of momentum is added to the flow by the actuator"
+        """Tests if the correct amount of momentum is added to the flow by the actuator"""
 
         # set the az force
         az_force = 600.0
@@ -182,7 +182,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         np.testing.assert_allclose(my_power, az_power, rtol=1.5e-3)
 
     def test_actuator_heat(self):
-        "Tests if the correct amount of heat is added to the flow by the actuator"
+        """Tests if the correct amount of heat is added to the flow by the actuator"""
 
         # set the az heat
         az_heat = 1e5
@@ -247,7 +247,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         np.testing.assert_allclose(cfd_heat, az_heat, rtol=1.5e-3)
 
     def test_actuator_thrust_and_heat(self):
-        "Tests if the correct amount of momentum and heat is added to the flow by the actuator"
+        """Tests if the correct amount of momentum and heat is added to the flow by the actuator"""
 
         # set the az force
         az_force = 600.0
@@ -326,7 +326,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("all functionals", funcs, rtol=1e-12, atol=1e-12)
 
     def test_actuator_adjoint(self):
-        "Tests if the adjoint sensitivities are correct for the AZ DVs"
+        """Tests if the adjoint sensitivities are correct for the AZ DVs"""
 
         # define user functions
         my_force_functions = [
@@ -453,7 +453,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("mavgvi sens", funcsSens["actuator_pipe_mavgvi_out"], rtol=1e-12, atol=1e-12)
 
     def test_actuator_flowpower_adjoint(self):
-        "we test this adjoint separately because we need to have a finite thrust for this to actually test"
+        """We test this adjoint separately because we need to have a finite thrust for this to actually test"""
 
         # set the az force
         az_force = 600.0
@@ -701,7 +701,7 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
 
     def cmplx_test_actuator_adjoint(self):
-        "Tests if the adjoint sensitivities are correct for the AZ DVs"
+        """Tests if the adjoint sensitivities are correct for the AZ DVs"""
 
         # define user functions
         my_force_functions = [
@@ -864,7 +864,7 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         np.testing.assert_allclose(funcsSensCS["heat"]["mavgvi_out"], ref_val, atol=1e-10, rtol=1e-10)
 
     def cmplx_test_actuator_flowpower_adjoint(self):
-        "we test this adjoint separately because we need to have a finite thrust for this to actually test"
+        """We test this adjoint separately because we need to have a finite thrust for this to actually test"""
 
         # set the az force
         az_force = 600.0

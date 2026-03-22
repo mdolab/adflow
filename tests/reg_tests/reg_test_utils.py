@@ -14,6 +14,27 @@ def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwarg
     handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=rtol, atol=atol)
 
 
+def assert_adjoint2_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwargs):
+    rtol, atol = getTol(**kwargs)
+    funcsSens = {}
+    CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
+    CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
+    handler.root_print("Eval Functions Sens:")
+    handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=rtol, atol=atol)
+
+
+def assert_adjoint_states_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwargs):
+    rtol, atol = getTol(**kwargs)
+    funcsSens = {}
+    CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
+    states1 = CFDSolver.getStates()
+    CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
+    states2 = CFDSolver.getStates()
+    resNorm = numpy.sqrt((1 / CFDSolver.getStateSize()) * numpy.sum((states1 - states2) ** 2))
+    handler.root_print("Adjoint States")
+    handler.par_add_norm("Adjoint States", resNorm, rtol=rtol, atol=atol)
+
+
 def assert_problem_size_equal(handler, CFDSolver, **kwargs):
     rtol, atol = getTol(**kwargs)
     # Now a few simple checks
