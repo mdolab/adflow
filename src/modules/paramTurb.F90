@@ -5,26 +5,26 @@ module paramTurb
 !       routines.
 !
     use constants, only: realType, intType
+    use inputPhysics, only: SAConsts
     implicit none
     save
 !
 !       Spalart-Allmaras constants.
 !
-    real(kind=realType), parameter :: rsaK = 0.41_realType
-    real(kind=realType), parameter :: rsaCb1 = 0.1355_realType
-    real(kind=realType), parameter :: rsaCb2 = 0.622_realType
-    real(kind=realType), parameter :: rsaCb3 = 0.66666666667_realType
-    real(kind=realType), parameter :: rsaCv1 = 7.1_realType
-    real(kind=realType), parameter :: rsaCw1 = rsaCb1 / (rsaK * rsaK) &
-                                      + (1.+rsaCb2) / rsaCb3
-    real(kind=realType), parameter :: rsaCw2 = 0.3_realType
-    real(kind=realType), parameter :: rsaCw3 = 2.0_realType
-    real(kind=realType), parameter :: rsaCt1 = 1.0_realType
-    real(kind=realType), parameter :: rsaCt2 = 2.0_realType
-    real(kind=realType), parameter :: rsaCt3 = 1.2_realType
-    real(kind=realType), parameter :: rsaCt4 = 0.5_realType
-    real(kind=realType), parameter :: rsaCrot = 2.0_realType
-
+       real(kind=realType) :: rsaK   = 0.41_realType
+       real(kind=realType) :: rsaCb1 = 0.1355_realType
+       real(kind=realType) :: rsaCb2 = 0.622_realType
+       real(kind=realType) :: rsaCb3 = 0.66666666667_realType
+       real(kind=realType) :: rsaCv1 = 7.1_realType
+       real(kind=realType) :: rsaCw1! = rsaCb1/(rsaK**2) &
+                                               !         + (1.+rsaCb2)/rsaCb3
+       real(kind=realType) :: rsaCw2 = 0.3_realType
+       real(kind=realType) :: rsaCw3 = 2.0_realType
+       real(kind=realType) :: rsaCt1 = 1.0_realType
+       real(kind=realType) :: rsaCt2 = 2.0_realType
+       real(kind=realType) :: rsaCt3 = 1.2_realType
+       real(kind=realType) :: rsaCt4 = 0.5_realType
+       real(kind=realType) :: rsaCrot = 2.0_realType
 !
 !       K-omega constants.
 !
@@ -124,5 +124,26 @@ module paramTurb
 #endif
 
     logical, dimension(:), allocatable :: tuLogFit
+
+! Now reassign SA constants
+
+contains
+    subroutine saAssign
+        rsaK   = SAConsts(1)
+        rsaCb1 = SAConsts(2)
+        rsaCb2 = SAConsts(3)
+        rsaCb3 = SAConsts(4)
+        rsaCv1 = SAConsts(5)
+        rsaCw1 = rsaCb1/(rsaK**2) & 
+                + (1.+rsaCb2)/rsaCb3
+        rsaCw2 = SAConsts(6)
+        rsaCw3 = SAConsts(7)
+        rsaCt1 = SAConsts(8)
+        rsaCt2 = SAConsts(9)
+        rsaCt3 = SAConsts(10) 
+        rsaCt4 = SAConsts(11)
+        rsaCrot = SAConsts(12)
+
+    end subroutine saAssign
 
 end module paramTurb

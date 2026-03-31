@@ -1206,6 +1206,7 @@ python module libadflow
          real(kind=realtype) :: cavitationnumber
          real(kind=realtype) :: cpmin_rho
          real(kind=realtype) :: sepsenmaxrho
+         real(kind=realtype) dimension(12) :: saconsts
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90

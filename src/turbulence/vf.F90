@@ -112,6 +112,8 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
+        call saAssign
+
         ! Set model constants
 
         sig1 = rvfSigv1
@@ -1092,6 +1094,8 @@ contains
         logical, dimension(2:il, 2:jl), target :: flagK2, flagKl
 
         logical, dimension(:, :), pointer :: flag
+
+        call saAssign
 
         ! Set model constants
 

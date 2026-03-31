@@ -40,6 +40,8 @@ contains
         !
         integer(kind=intType) :: nn, sps
 
+        call saAssign
+
         ! Set the arrays for the boundary condition treatment.
         call bcTurbTreatment
 
@@ -116,6 +118,8 @@ contains
         real(kind=realType) :: omegax, omegay, omegaz
         real(kind=realType) :: strainMag2, strainProd, vortProd
         real(kind=realType), parameter :: xminn = 1.e-10_realType
+
+        call saAssign
 
         ! Set model constants
         cv13 = rsaCv1**3
@@ -358,6 +362,8 @@ contains
         real(kind=realType) :: xa, ya, za, ttm, ttp, cnud, cam, cap
         real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
         real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
+
+        call saAssign
 
         ! Set model constants
         cv13 = rsaCv1**3
@@ -736,6 +742,8 @@ contains
         logical, dimension(2:il, 2:kl), target :: flagJ2, flagJl
         logical, dimension(2:il, 2:jl), target :: flagK2, flagKl
         logical, dimension(:, :), pointer :: flag
+
+        call saAssign
 
         ! Initialize the wall function flags to .false.
 

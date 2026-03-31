@@ -167,6 +167,8 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
+        call saAssign
+
         ! Set model constants
 
         rktGam1 = rktBeta1 / rktBetas &
