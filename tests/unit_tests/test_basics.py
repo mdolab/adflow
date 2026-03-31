@@ -60,10 +60,7 @@ class BasicTests(unittest.TestCase):
 
             # Note: When running in complex mode the parameters set from python are real, but are in most cases complex in fortran.
             # There is no need to check the type as the assertion should pass (imag part is zero).
-            if type(value) is list:
-                np.testing.assert_allclose(value, fortranValue)
-            else:
-                self.assertEqual(value, fortranValue)
+            self.assertEqual(value, fortranValue)
 
     def cmplx_test_options(self):
         """
@@ -92,27 +89,39 @@ class BasicTests(unittest.TestCase):
         options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
         CFDSolver = ADFLOW(options=options, debug=False)
 
-        expected_defaults = [0.41, 0.1355, 0.622, 0.66666666667, 7.1, 0.3, 2.0, 1.0, 2.0, 1.2, 0.5, 2.0]
-        fortran_sa_consts = CFDSolver.adflow.inputphysics.saconsts
-
-        np.testing.assert_allclose(fortran_sa_consts, expected_defaults, rtol=1e-10)
+        defaults = {
+            "SAKappa": 0.41,
+            "SAcb1": 0.1355,
+            "SAcb2": 0.622,
+            "SAsigma": 0.66666666667,
+            "SAcv1": 7.1,
+            "SAcw2": 0.3,
+            "SAcw3": 2.0,
+            "SAct1": 1.0,
+            "SAct2": 2.0,
+            "SAct3": 1.2,
+            "SAct4": 0.5,
+            "SAcrot": 2.0,
+        }
+        for name, expected in defaults.items():
+            fortranValue = getattr(CFDSolver.adflow.inputphysics, name.lower())
+            np.testing.assert_allclose(fortranValue, expected, rtol=1e-14)
 
     def test_sa_coefficients_custom(self):
         """
         Test that custom SA turbulence model coefficients are correctly
-        propagated from Python to Fortran when set via the SAConsts option.
+        propagated from Python to Fortran when set via individual SA options.
         """
         gridFile = "input_files/cube_4x4x4.cgns"
-        custom_sa_consts = [0.40, 0.14, 0.60, 0.667, 7.0, 0.3, 2.0, 1.0, 2.0, 1.2, 0.5, 2.0]
         options = {
             "gridfile": os.path.join(baseDir, "../../", gridFile),
-            "SAConsts": custom_sa_consts,
+            "SAKappa": 0.40,
+            "SAcv1": 7.5,
         }
         CFDSolver = ADFLOW(options=options, debug=False)
 
-        fortran_sa_consts = CFDSolver.adflow.inputphysics.saconsts
-
-        np.testing.assert_allclose(fortran_sa_consts, custom_sa_consts, rtol=1e-10)
+        np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sakappa, 0.40, rtol=1e-14)
+        np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sacv1, 7.5, rtol=1e-14)
 
 
 if __name__ == "__main__":

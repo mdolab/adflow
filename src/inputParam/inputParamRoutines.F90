@@ -2087,7 +2087,7 @@ contains
         ! kPresent and eddyModel to .False., which indicates an inviscid
         ! computation. For ns and rans this will be corrected.
 
-        call saAssign
+        rsaCw1 = rsaCb1/(rsaK**2) + (1._realType + rsaCb2)/rsaCb3
 
         nwf = 5
         nt1 = 6

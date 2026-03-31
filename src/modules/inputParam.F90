@@ -579,7 +579,8 @@ module inputPhysics
     ! sepSenMaxRho           The rho parameter used with the KS-based separation sensor.
     ! sepSenMaxFamily     The maximum sepsensor value for a given surface family that does not use
     !                      KS-aggregation, but rather an exact max computation.
-    ! SAConsts             List of 12 SA turbulence model parameters
+    ! SAKappa, SAcb1, SAcb2, SAsigma, SAcv1, SAcw2, SAcw3, SAct1, SAct2, SAct3, SAct4, SAcrot
+    !                      Spalart-Allmaras turbulence model constants
 
     integer(kind=intType) :: equations, equationMode, flowType
     integer(kind=intType) :: turbModel, cpModel, turbProd
@@ -608,7 +609,8 @@ module inputPhysics
     real(kind=realType), dimension(:), allocatable :: cpmin_family
     real(kind=realType) :: sepSenMaxRho
     real(kind=realType), dimension(:), allocatable :: sepSenMaxFamily
-    real(kind=realType), dimension(12) :: SAConsts
+    real(kind=realType) :: SAKappa, SAcb1, SAcb2, SAsigma, SAcv1
+    real(kind=realType) :: SAcw2, SAcw3, SAct1, SAct2, SAct3, SAct4, SAcrot
 
 #ifndef USE_TAPENADE
     real(kind=realType) :: alphad, betad

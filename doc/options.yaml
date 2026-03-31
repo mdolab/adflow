@@ -372,12 +372,41 @@ cpMinRho:
     KS aggregation is used to compute the differentiable min Cp within the given family group.
     A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
 
-SAConsts:
-  desc: >
-    A list of 12 Spalart-Allmaras turbulence model constants, in the following order:
-    ``[kappa, cb1, cb2, sigma, cv1, cw2, cw3, ct1, ct2, ct3, ct4, crot]``.
-    The defaults correspond to the standard SA model coefficients.
-    This option allows users to tune the SA model constants without recompilation.
+SAKappa:
+  desc: Von Karman constant used in the Spalart-Allmaras turbulence model.
+
+SAcb1:
+  desc: SA model constant cb1, coefficient on the production term.
+
+SAcb2:
+  desc: SA model constant cb2, coefficient on the cross-diffusion production term.
+
+SAsigma:
+  desc: SA model constant sigma (cb3 in some formulations), the diffusion coefficient.
+
+SAcv1:
+  desc: SA model constant cv1, used in the viscous damping function fv1.
+
+SAcw2:
+  desc: SA model constant cw2, used in the destruction term function fw.
+
+SAcw3:
+  desc: SA model constant cw3, used in the destruction term function fw.
+
+SAct1:
+  desc: SA model constant ct1, used in the trip term ft1.
+
+SAct2:
+  desc: SA model constant ct2, used in the trip term ft2.
+
+SAct3:
+  desc: SA model constant ct3, used in the laminar suppression function ft2.
+
+SAct4:
+  desc: SA model constant ct4, used in the laminar suppression function ft2.
+
+SAcrot:
+  desc: SA model constant crot, scaling factor for the rotation correction term.
 
 nCycles:
   desc: >
