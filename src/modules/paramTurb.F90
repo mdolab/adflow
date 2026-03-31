@@ -134,13 +134,13 @@ contains
         rsaCb2 = SAConsts(3)
         rsaCb3 = SAConsts(4)
         rsaCv1 = SAConsts(5)
-        rsaCw1 = rsaCb1/(rsaK**2) & 
+        rsaCw1 = rsaCb1/(rsaK**2) &
                 + (1.+rsaCb2)/rsaCb3
         rsaCw2 = SAConsts(6)
         rsaCw3 = SAConsts(7)
         rsaCt1 = SAConsts(8)
         rsaCt2 = SAConsts(9)
-        rsaCt3 = SAConsts(10) 
+        rsaCt3 = SAConsts(10)
         rsaCt4 = SAConsts(11)
         rsaCrot = SAConsts(12)
 

@@ -1186,7 +1186,7 @@ contains
         integer(Kind=intType) :: i, j, k
 
         call saAssign
-        
+
         ! Set model constants
         cv13 = rsaCv1**3
         kar2Inv = one / (rsaK**2)

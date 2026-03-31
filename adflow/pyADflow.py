@@ -5706,7 +5706,7 @@ class ADFLOW(AeroSolver):
             "infChangeCorrectionType": [str, ["offset", "rotate"]],
             "cavitationNumber": [float, 1.4],
             "cpMinRho": [float, 100.0],
-            'SAConsts':[list, [0.41, 0.1355, 0.622, 0.66666666667, 7.1, 0.3, 2.0, 1.0, 2.0, 1.2, 0.5, 2.0]],
+            "SAConsts": [list, [0.41, 0.1355, 0.622, 0.66666666667, 7.1, 0.3, 2.0, 1.0, 2.0, 1.2, 0.5, 2.0]],
             # Common Parameters
             "nCycles": [int, 2000],
             "timeLimit": [float, -1.0],

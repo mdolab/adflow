@@ -2088,7 +2088,7 @@ contains
         ! computation. For ns and rans this will be corrected.
 
         call saAssign
-        
+
         nwf = 5
         nt1 = 6
 
