@@ -372,6 +372,13 @@ cpMinRho:
     KS aggregation is used to compute the differentiable min Cp within the given family group.
     A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
 
+SAConsts:
+  desc: >
+    A list of 12 Spalart-Allmaras turbulence model constants, in the following order:
+    ``[kappa, cb1, cb2, sigma, cv1, cw2, cw3, ct1, ct2, ct3, ct4, crot]``.
+    The defaults correspond to the standard SA model coefficients.
+    This option allows users to tune the SA model constants without recompilation.
+
 nCycles:
   desc: >
     The maximum number of "iterations" to run.
