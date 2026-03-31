@@ -112,7 +112,6 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
-        call saAssign
 
         ! Set model constants
 
@@ -1095,7 +1094,6 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
-        call saAssign
 
         ! Set model constants
 

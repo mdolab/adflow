@@ -60,7 +60,10 @@ class BasicTests(unittest.TestCase):
 
             # Note: When running in complex mode the parameters set from python are real, but are in most cases complex in fortran.
             # There is no need to check the type as the assertion should pass (imag part is zero).
-            self.assertEqual(value, fortranValue)
+            if type(value) is list:
+                np.testing.assert_allclose(value, fortranValue)
+            else:
+                self.assertEqual(value, fortranValue)
 
     def cmplx_test_options(self):
         """

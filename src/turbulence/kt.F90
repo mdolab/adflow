@@ -167,7 +167,6 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
-        call saAssign
 
         ! Set model constants
 

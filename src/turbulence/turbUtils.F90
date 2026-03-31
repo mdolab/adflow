@@ -351,7 +351,6 @@ contains
         !
         real(kind=realType) :: cv13, chi, chi2, chi3, chi4, f, df, dchi
 
-        call saAssign
 
         ! Take care of the exceptional cases.
 
@@ -676,7 +675,6 @@ contains
         integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
         real(kind=realType) :: chi, chi3, fv1, rnuSA, cv13
 
-        call saAssign
 
         ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
 
@@ -776,7 +774,6 @@ contains
         integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
         real(kind=realType) :: t1, t2, arg2, f2, vortMag
 
-        call saAssign
 
         ! Compute the vorticity squared in the cell centers. The reason
         ! for computing the vorticity squared is that a routine exists
@@ -1665,7 +1662,6 @@ contains
         real(kind=realType), dimension(:, :), pointer :: rrlv, rrev
         real(kind=realType), dimension(:, :), pointer :: dd2Wall
 
-        call saAssign
 
         ! Compute time and length scale
 
@@ -1792,7 +1788,6 @@ contains
         real(kind=realType) :: tkea, tepa, tv2a, supi, rn2
         real(kind=realType) :: rsct, rscl2, rnu, rstrain
 
-        call saAssign
 
         ! Some constants in the model.
 
@@ -2045,7 +2040,6 @@ contains
         integer(kind=intType) :: i, j, k, ip, jp, kp
         real(kind=realType) :: rhoi, tmp
 
-        call saAssign
 
         ! Loop over the owned cells of the block.
 
