@@ -139,6 +139,6 @@ class TestSolutionFileNamesUnsteady(unittest.TestCase):
         finally:
             self._cleanup_output_files(output_dir)
 
-    
+
 if __name__ == "__main__":
     unittest.main()
