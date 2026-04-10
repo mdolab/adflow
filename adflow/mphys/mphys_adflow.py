@@ -206,7 +206,11 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
         tmp = {}
         for args, _ in ap_vars:
             name = args[0]
-            tmp[name] = inputs[name]
+            # This is a fix to support Numpy 2.4 until OpenMDAO supports it
+            if np.shape(inputs[name]) == (1,):
+                tmp[name] = inputs[name][0]
+            else:
+                tmp[name] = inputs[name]
 
         ap.setDesignVars(tmp)
         if solver.comm.rank == 0 and print_dict:
