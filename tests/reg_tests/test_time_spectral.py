@@ -25,7 +25,7 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
     """
 
     N_PROCS = 2
-    ref_file = "adjoint_euler_time_spectral_naca64A010.json"
+    ref_file = "euler_time_spectral_naca64A010.json"
 
     def setUp(self):
         # Introduce a transfer class for displacement transfer from struct to aero.
@@ -137,7 +137,7 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
         alpha *= deltaAlpha
 
         # Create the solver
-        self.CFDSolver = ADFLOW(options=options, debug=True)
+        self.CFDSolver = ADFLOW(options=options, debug=False)
 
         # Deform the mesh
         mesh = USMesh(options=meshOptions)
@@ -153,11 +153,11 @@ class TestAdjointTimeSpectral(reg_test_classes.RegTest):
         # Solve
         self.CFDSolver(self.ap)
 
-        # Check solution
-        self.assert_solution_failure()
-
         # Initialize residual for adjoint tests
         self.CFDSolver.getResidual(self.ap)
+
+    def test_solution_failure(self):
+        self.assert_solution_failure()
 
     def test_functions(self):
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
