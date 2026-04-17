@@ -114,6 +114,37 @@ class TestSolutionFileNamesUnsteady(unittest.TestCase):
             if os.path.isfile(full_path):
                 os.remove(full_path)
 
+    def _new_output_files(self, output_dir, before):
+        after = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
+        return {
+            fname
+            for fname in after - before
+            if fname != "README.md" and os.path.isfile(os.path.join(output_dir, fname))
+        }
+
+    def _expected_output_files(self, ap_name):
+        base_name = f"{ap_name}_000"
+        expected_files = {
+            f"{base_name}_surf_Timestep0001.cgns",
+            f"{base_name}_surf_Timestep0001.plt",
+            f"{base_name}_surf_Timestep0002.cgns",
+            f"{base_name}_surf_Timestep0002.plt",
+        }
+
+        for timestep in range(self.options["nTimeStepsFine"] + 1):
+            expected_files.add(f"{base_name}_vol_Timestep{timestep:04d}.cgns")
+
+        return expected_files
+
+    def _expected_large_timestep_output_files(self, ap_name):
+        base_name = f"{ap_name}_000"
+        return {
+            f"{base_name}_surf_Timestep10000.cgns",
+            f"{base_name}_surf_Timestep10000.plt",
+            f"{base_name}_vol_Timestep10000.cgns",
+            f"{base_name}_vol_Timestep9999.cgns",
+        }
+
     def test_unsteady_file_names(self):
         output_dir = self.options["outputDirectory"]
         before = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
@@ -124,18 +155,26 @@ class TestSolutionFileNamesUnsteady(unittest.TestCase):
             CFDSolver.setAeroProblem(ap)
             CFDSolver(ap)
 
-            after = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
-            new_files = sorted(after - before)
-            for fname in new_files:
-                if fname == "README.md":
-                    continue
-                full_path = os.path.join(output_dir, fname)
-                if not os.path.isfile(full_path):
-                    continue
-                self.assertTrue(
-                    fname.endswith(".cgns") or fname.endswith(".plt"),
-                    msg=f"Unexpected output file extension: {fname}",
-                )
+            new_files = self._new_output_files(output_dir, before)
+            self.assertSetEqual(new_files, self._expected_output_files(ap.name))
+        finally:
+            self._cleanup_output_files(output_dir)
+
+    def test_unsteady_file_names_large_timestep(self):
+        output_dir = self.options["outputDirectory"]
+        before = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
+
+        try:
+            CFDSolver = ADFLOW(options=self.options)
+            ap = copy.copy(ap_tutorial_wing)
+            CFDSolver.setAeroProblem(ap)
+            CFDSolver.curAP.adflowData.callCounter = 0
+            CFDSolver.adflow.monitor.timestepunsteady = 10000
+
+            CFDSolver.writeSolution()
+
+            new_files = self._new_output_files(output_dir, before)
+            self.assertSetEqual(new_files, self._expected_large_timestep_output_files(ap.name))
         finally:
             self._cleanup_output_files(output_dir)
 

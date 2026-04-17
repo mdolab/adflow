@@ -200,7 +200,7 @@ contains
             ! Set the names of the files.
 
             do nn = 1, nAvail
-                write (intString, "(i7)") timeStepUnsteady + &
+                write (intString, "(i7.4)") timeStepUnsteady + &
                     nTimeStepsRestart + 1 - nn
                 intString = adjustl(intString)
 
