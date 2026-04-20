@@ -29,4 +29,3 @@ clean:
 adflow_build:
 	ln -sf config/config.mk config.mk;
 	(cd src/build/ && make)
-

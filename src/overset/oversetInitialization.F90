@@ -355,29 +355,29 @@ contains
         do mm = 1, nBocos
             select case (BCFaceID(mm))
             case (iMin)
-                iStart = 2; iEnd = 2; 
+                iStart = 2; iEnd = 2;
                 jStart = BCData(mm)%inBeg + 1; jEnd = BCData(mm)%inEnd
                 kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
             case (iMax)
-                iStart = il; iEnd = il; 
+                iStart = il; iEnd = il;
                 jStart = BCData(mm)%inBeg + 1; jEnd = BCData(mm)%inEnd
                 kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
             case (jMin)
                 iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-                jStart = 2; jEnd = 2; 
+                jStart = 2; jEnd = 2;
                 kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
             case (jMax)
                 iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-                jStart = jl; jEnd = jl; 
+                jStart = jl; jEnd = jl;
                 kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
             case (kMin)
                 iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
                 jStart = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-                kStart = 2; kEnd = 2; 
+                kStart = 2; kEnd = 2;
             case (kMax)
                 iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
                 jStart = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-                kStart = kl; kEnd = kl; 
+                kStart = kl; kEnd = kl;
             end select
 
             famInclude: if (famInList(BCdata(mm)%famID, famList)) then

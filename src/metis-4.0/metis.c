@@ -19803,4 +19803,3 @@ int log2(int a)
   for (i=1; a > 1; i++, a = a>>1);
   return i-1;
 }
-

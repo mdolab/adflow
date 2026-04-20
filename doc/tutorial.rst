@@ -223,8 +223,3 @@ where ``<PID>`` is the process id of the mpi process.
 These signals are often used when debugging. For instance, the ``-USR1`` signal can be useful to write out a semi-converged solution for further investigation, and the ``-USR2`` can be used to stop a stalled solution without loss of data.
 Other use-cases are also possible.
 To obtain the ``<PID>``, one can for example use ``top`` or ``ps -ef``.
-
-
-
-
-

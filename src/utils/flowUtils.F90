@@ -1694,10 +1694,10 @@ contains
         real(kind=realType) :: sx, sx1, sy, sy1, sz, sz1
 
         ! Zero all nodeal gradients:
-        ux = zero; uy = zero; uz = zero; 
-        vx = zero; vy = zero; vz = zero; 
-        wx = zero; wy = zero; wz = zero; 
-        qx = zero; qy = zero; qz = zero; 
+        ux = zero; uy = zero; uz = zero;
+        vx = zero; vy = zero; vz = zero;
+        wx = zero; wy = zero; wz = zero;
+        qx = zero; qy = zero; qz = zero;
         ! First part. Contribution in the k-direction.
         ! The contribution is scattered to both the left and right node
         ! in k-direction.

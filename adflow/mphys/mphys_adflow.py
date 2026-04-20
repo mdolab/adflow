@@ -43,9 +43,9 @@ def print_func_call(component):
         message += f" for {component.ap.name} problem"
 
     if component.comm.rank == 0:
-        print(f"\n{'='*len(message)}", flush=True)
+        print(f"\n{'=' * len(message)}", flush=True)
         print(message, flush=True)
-        print(f"{'='*len(message)}", flush=True)
+        print(f"{'=' * len(message)}", flush=True)
 
 
 def set_vol_coords(solver, inputs):
@@ -309,7 +309,7 @@ class ADflowMesh(ExplicitComponent):
 
                 # Now go around the face and add a triangle for each adjacent pair
                 # of points. This assumes an ordered connectivity from the
-                # meshwarping
+                # mesh warping
                 for i in range(faceSize):
                     idx = faceNodes[i]
                     p0.append(avgPt)

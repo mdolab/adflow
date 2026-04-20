@@ -1004,6 +1004,7 @@ contains
         integer(kind=intType) :: i, j, k
         real(kind=realType) :: term1Fact
 
+
         ! Set model constants
         cv13 = rsaCv1**3
         kar2Inv = one / (rsaK**2)
@@ -1182,6 +1183,7 @@ contains
         real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
         real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs, nu
         integer(Kind=intType) :: i, j, k
+
 
         ! Set model constants
         cv13 = rsaCv1**3

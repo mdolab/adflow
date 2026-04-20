@@ -1,5 +1,8 @@
 syntax:glob
 
+# Ignore pre-commit config
+.pre-commit-config.yaml
+
 *.mod
 *.o
 *.a

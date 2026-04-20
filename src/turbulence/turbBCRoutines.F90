@@ -825,6 +825,7 @@ contains
         real(kind=realType), dimension(:, :, :), pointer :: bvt, ww2
         real(kind=realType), dimension(:, :), pointer :: rlv2, dd2Wall
 
+
         ! Determine the turbulence model used and loop over the faces
         ! of the subface and set the values of bmt and bvt for an
         ! implicit treatment.

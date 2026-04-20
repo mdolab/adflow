@@ -17,4 +17,3 @@ University of Michigan's Multidisciplinary Design Optimization Laboratory (MDO L
 College of Engineering, Aerospace Engineering Department\
 http://mdolab.engin.umich.edu/
 ______________________________________________________________________________
-

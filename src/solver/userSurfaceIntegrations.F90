@@ -561,11 +561,11 @@ contains
 
                     select case (BCFaceID(mm))
                     case (iMin)
-                        iStart = 1; iEnd = 1; 
+                        iStart = 1; iEnd = 1;
                         jStart = BCData(mm)%icBeg; jEnd = BCData(mm)%icEnd
                         kStart = BCData(mm)%jcBeg; kEnd = BCData(mm)%jcEnd
                     case (iMax)
-                        iStart = ie; iEnd = ie; 
+                        iStart = ie; iEnd = ie;
                         jStart = BCData(mm)%icBeg; jEnd = BCData(mm)%icEnd
                         kStart = BCData(mm)%jcBeg; kEnd = BCData(mm)%jcEnd
                     case (jMin)
@@ -574,16 +574,16 @@ contains
                         kStart = BCData(mm)%jcBeg; kEnd = BCData(mm)%jcEnd
                     case (jMax)
                         iStart = BCData(mm)%icBeg; iEnd = BCData(mm)%icEnd
-                        jStart = je; jEnd = je; 
+                        jStart = je; jEnd = je;
                         kStart = BCData(mm)%jcBeg; kEnd = BCData(mm)%jcEnd
                     case (kMin)
                         iStart = BCData(mm)%icBeg; iEnd = BCData(mm)%icEnd
                         jStart = BCData(mm)%jcBeg; jEnd = BCData(mm)%jcEnd
-                        kStart = 1; kEnd = 1; 
+                        kStart = 1; kEnd = 1;
                     case (kMax)
                         iStart = BCData(mm)%icBeg; iEnd = BCData(mm)%icEnd
                         jStart = BCData(mm)%jcBeg; jEnd = BCData(mm)%jcEnd
-                        kStart = ke; kEnd = ke; 
+                        kStart = ke; kEnd = ke;
                     end select
 
                     if (BCType(mm) == OversetOuterBound) then

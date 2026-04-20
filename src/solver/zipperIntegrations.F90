@@ -105,7 +105,7 @@ contains
                 validTrianlge: if (triIsValid) then
 
                     ! Compute the averaged values for this triangle
-                    vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero; gammam = zero; 
+                    vxm = zero; vym = zero; vzm = zero; rhom = zero; pm = zero; MNm = zero; gammam = zero;
                     sF = zero
                     do j = 1, 3
                         rhom = rhom + vars(conn(j, i), iRho)

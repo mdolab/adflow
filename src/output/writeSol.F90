@@ -77,4 +77,3 @@ subroutine writeSol(famList, nFamList)
 #endif
 
 end subroutine writeSol
-
