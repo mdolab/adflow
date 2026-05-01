@@ -186,8 +186,8 @@ sa%saResScale(scratch, dw) > \
 residuals%sourceTerms_block(w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) > \
                            (w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) \
 \
-residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > \
-                       (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) \
+residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol) > \
+                       (dw, fw, flowDoms%w, flowDoms%vol) \
 \
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > \
                           (w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) \
