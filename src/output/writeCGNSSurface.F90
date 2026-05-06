@@ -282,6 +282,7 @@ contains
         integer :: ierr
 
         integer(kind=intType) :: nn
+        integer(kind=intType) :: solTrim, extPos
 
         character(len=7) :: intString
 
@@ -322,11 +323,21 @@ contains
             ! Unsteady computation. A suffix is added depending on the
             ! time step.
 
-            write (intString, "(i4.4)") timeStepUnsteady + nTimeStepsRestart
+            write (intString, "(i7.4)") timeStepUnsteady + nTimeStepsRestart
             intString = adjustl(intString)
 
-            surfSolFileNames(1) = trim(surfaceSolFile)//"&
-                 &Timestep"//trim(intString)
+            solTrim = len_trim(surfaceSolFile)
+            extPos = 0
+            if (solTrim >= 5) then
+                if (surfaceSolFile(solTrim - 4:solTrim) == ".cgns") extPos = solTrim - 4
+            end if
+
+            if (extPos > 1) then
+                surfSolFileNames(1) = trim(surfaceSolFile(1:extPos - 1))//"_Timestep"// &
+                                      trim(intString)//".cgns"
+            else
+                surfSolFileNames(1) = trim(surfaceSolFile)//"_Timestep"//trim(intString)
+            end if
 
             !===============================================================
 
