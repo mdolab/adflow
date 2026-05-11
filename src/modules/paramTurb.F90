@@ -5,26 +5,19 @@ module paramTurb
 !       routines.
 !
     use constants, only: realType, intType
+    use inputPhysics, only: rsaK => SAKappa, rsaCb1 => SAcb1, rsaCb2 => SAcb2, &
+                            rsaCb3 => SAsigma, rsaCv1 => SAcv1, rsaCw2 => SAcw2, &
+                            rsaCw3 => SAcw3, rsaCt1 => SAct1, rsaCt2 => SAct2, &
+                            rsaCt3 => SAct3, rsaCt4 => SAct4, rsaCrot => SAcrot
     implicit none
     save
 !
-!       Spalart-Allmaras constants.
+!       Spalart-Allmaras constants. rsaK, rsaCb1, rsaCb2, rsaCb3, rsaCv1,
+!       rsaCw2, rsaCw3, rsaCt1, rsaCt2, rsaCt3, rsaCt4, rsaCrot are imported
+!       directly from inputPhysics via USE renaming above.
+!       rsaCw1 is derived: cb1/kappa^2 + (1+cb2)/sigma, computed at init.
 !
-    real(kind=realType), parameter :: rsaK = 0.41_realType
-    real(kind=realType), parameter :: rsaCb1 = 0.1355_realType
-    real(kind=realType), parameter :: rsaCb2 = 0.622_realType
-    real(kind=realType), parameter :: rsaCb3 = 0.66666666667_realType
-    real(kind=realType), parameter :: rsaCv1 = 7.1_realType
-    real(kind=realType), parameter :: rsaCw1 = rsaCb1 / (rsaK * rsaK) &
-                                      + (1.+rsaCb2) / rsaCb3
-    real(kind=realType), parameter :: rsaCw2 = 0.3_realType
-    real(kind=realType), parameter :: rsaCw3 = 2.0_realType
-    real(kind=realType), parameter :: rsaCt1 = 1.0_realType
-    real(kind=realType), parameter :: rsaCt2 = 2.0_realType
-    real(kind=realType), parameter :: rsaCt3 = 1.2_realType
-    real(kind=realType), parameter :: rsaCt4 = 0.5_realType
-    real(kind=realType), parameter :: rsaCrot = 2.0_realType
-
+    real(kind=realType) :: rsaCw1
 !
 !       K-omega constants.
 !
