@@ -16,17 +16,16 @@ from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_naca64A010_time_spectral
 import reg_test_classes
 
-
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
-class TestSolve(reg_test_classes.RegTest):
+class TestAdjointTimeSpectral(reg_test_classes.RegTest):
     """
-    Tests for time spectral case for an airfoil.
+    Tests for time spectral adjoint on the NACA 64A010 case.
     """
 
     N_PROCS = 2
-    ref_file = "solve_euler_time_spectral_naca64A010.json"
+    ref_file = "euler_time_spectral_naca64A010.json"
 
     def setUp(self):
         # Introduce a transfer class for displacement transfer from struct to aero.
@@ -52,8 +51,8 @@ class TestSolve(reg_test_classes.RegTest):
             def setDisplacements(self):
                 xRot = self.xRot
                 ntimeintervalsspectral = self.ntimeintervalsspectral
-                alpha = self.alpha  # notice a shallow copy introduced here; dont change the underlying obj!
-                cfdPoints_init = self.cfdPts0  # notice a shallow copy introduced here; dont change the underlying obj!
+                alpha = self.alpha
+                cfdPoints_init = self.cfdPts0
 
                 N_pts = cfdPoints_init.shape[0]
 
@@ -104,7 +103,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "equationtype": "Euler",
                 "equationmode": "time spectral",
                 "mgcycle": "sg",
-                "l2convergence": 1e-15,
+                "l2convergence": 1e-13,
                 "ncycles": 200000,
                 "monitorvariables": ["resrho", "cl"],
                 "usenksolver": True,
@@ -118,6 +117,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "timeintervals": ntimeintervalsspectral,
                 "useexternaldynamicmesh": True,
                 "usetsinterpolatedgridvelocity": True,
+                "adjointl2convergence": 1e-14,
             }
         )
 
@@ -138,7 +138,6 @@ class TestSolve(reg_test_classes.RegTest):
 
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)
-        # self.CFDSolver.addSlices("z", [0.5])
 
         # Deform the mesh
         mesh = USMesh(options=meshOptions)
@@ -151,15 +150,29 @@ class TestSolve(reg_test_classes.RegTest):
         TSTransfer.setDisplacements()
         TSTransfer.setVolumeMesh()
 
-    def test_solve(self):
-        # do the solve
+        # Solve
         self.CFDSolver(self.ap)
 
-        # check if the solution failed
+        # Initialize residual for adjoint tests
+        self.CFDSolver.getResidual(self.ap)
+
+    def test_solution_failure(self):
         self.assert_solution_failure()
 
-        # check its accuracy
+    def test_functions(self):
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
+
+    def test_adjoint(self):
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
+
+    def test_adjoint2(self):
+        utils.assert_adjoint2_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
+
+    def test_adjoint_states(self):
+        utils.assert_adjoint_states_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
 
 
 if __name__ == "__main__":
