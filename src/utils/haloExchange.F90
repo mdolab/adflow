@@ -2738,6 +2738,14 @@ contains
 
         spectralLoop: do mm = 1, nTimeIntervalsSpectral
 
+
+            ! Correct the periodic halos of the external communication
+            ! pattern.
+
+            call correctPeriodicCoor_b(level, mm,                            &
+                 commPatternNode_1st(level)%nPeriodic, &
+                 commPatternNode_1st(level)%periodicData)
+
             ! Send the coordinates i have to send. The data is first copied
             ! into the send buffer and this buffer is sent.
 
@@ -2809,6 +2817,13 @@ contains
 
             end do send
 
+            ! Correct the periodic halos of the internal communication
+            ! pattern
+
+            call correctPeriodicCoor_b(level, mm,                          &
+                 internalNode_1st(level)%nPeriodic,  &
+                 internalNode_1st(level)%periodicData)
+
             ! Copy the local data.
             !DIR$ NOVECTOR
             localCopy: do i = 1, internalNode_1st(level)%nCopy
@@ -2834,13 +2849,6 @@ contains
                 end do
             end do localCopy
 
-            ! Correct the periodic halos of the internal communication
-            ! pattern
-
-            ! NOT IMPLEMENTED
-            ! call correctPeriodicCoor(level, mm,                          &
-            !      internalNode_1st(level)%nPeriodic,  &
-            !      internalNode_1st(level)%periodicData)
 
             ! Complete the nonblocking receives in an arbitrary sequence and
             ! copy the coordinates from the buffer into the halo's.
@@ -2878,12 +2886,6 @@ contains
 
             end do completeSends
 
-            ! Correct the periodic halos of the external communication
-            ! pattern.
-            ! NOT IMLEMENTED
-            ! call correctPeriodicCoor(level, mm,                            &
-            !      commPatternNode_1st(level)%nPeriodic, &
-            !      commPatternNode_1st(level)%periodicData)
 
             ! Complete the nonblocking sends.
 
@@ -2896,6 +2898,85 @@ contains
         end do spectralLoop
 
     end subroutine exchangeCoor_b
+    subroutine correctPeriodicCoor_b(level, sp, nPeriodic, periodicData)
+        !
+        !       correctPeriodicCoor_b applies the periodic transformation to
+        !       the DERIVATIVE of coordinates of the nodal halo's in periodicData
+        !       in reverse mode.
+        !
+        !       This is a simple derivative
+        !       the primal function is effectively doing
+        !       x_out = R * x_in + c
+        !       where c = -R * rot_center + translation + rotCenter
+        !       the constant term just drops out in the derivative and since R is a rotation matrix
+        !       then the reverse mode derivative is just 
+        !       x_ind = R^T * x_outd
+        !       in place operation on the seeds
+        !
+        !       WARNING: If at any point we are allowing translation or rotation to change by allowing
+        !       periodic boundaries to move via mesh warping then this routine needs to be updated to 
+        !       account for this
+        use block
+        use communication
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: level, sp, nPeriodic
+        type(periodicDataType), dimension(:), pointer :: periodicData
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: nn, mm, ii, i, j, k
+        real(kind=realType), dimension(3) :: dx_ind
+
+        real(kind=realType), dimension(3, 3) :: rotMatrixT
+        ! real(kind=realType), dimension(3) :: rotCenter, translation
+
+        ! Loop over the number of periodic transformations.
+
+        do nn = 1, nPeriodic
+
+            ! Store the TRANSPOSE of the rotation matrix
+            ! We don't need the rest since they are constants
+
+            rotMatrixT = transpose(periodicData(nn)%rotMatrix)
+            ! rotCenter = periodicData(nn)%rotCenter
+            ! translation = periodicData(nn)%translation + rotCenter
+
+            ! Loop over the number of halo nodes for this transformation.
+            !DIR$ NOVECTOR
+            do ii = 1, periodicData(nn)%nHalos
+
+                ! Store the block and the indices a bit easier.
+
+                mm = periodicData(nn)%block(ii)
+                i = periodicData(nn)%indices(ii, 1)
+                j = periodicData(nn)%indices(ii, 2)
+                k = periodicData(nn)%indices(ii, 3)
+
+                ! Apply the transposed rotation matrix to the x coordinates
+                ! Use a holding variable so as not to overwrite immediately
+
+                dx_ind(1) = rotMatrixT(1, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrixT(1, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrixT(1, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+                dx_ind(2) = rotMatrixT(2, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrixT(2, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrixT(2, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+                dx_ind(3) = rotMatrixT(3, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrixT(3, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrixT(3, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+
+                ! Store the updated seeds in place 
+                flowDomsd(mm, level, sp)%x(i, j, k, 1) =  dx_ind(1)
+                flowDomsd(mm, level, sp)%x(i, j, k, 2) =  dx_ind(2)
+                flowDomsd(mm, level, sp)%x(i, j, k, 3) =  dx_ind(3)
+
+            end do
+        end do
+
+    end subroutine correctPeriodicCoor_b
     subroutine exchangeCoor_d(level)
         !
         !       ExchangeCoor_d exchanges the *derivatives* of the given grid
@@ -3024,10 +3105,9 @@ contains
             ! Correct the periodic halos of the internal communication
             ! pattern
 
-            ! NOT IMPLEMENTED
-            ! call correctPeriodicCoor(level, mm,                          &
-            !      internalNode_1st(level)%nPeriodic,  &
-            !      internalNode_1st(level)%periodicData)
+            call correctPeriodicCoor_d(level, mm,                          &
+                 internalNode_1st(level)%nPeriodic,  &
+                 internalNode_1st(level)%periodicData)
 
             ! Complete the nonblocking receives in an arbitrary sequence and
             ! copy the coordinates from the buffer into the halo's.
@@ -3067,10 +3147,10 @@ contains
 
             ! Correct the periodic halos of the external communication
             ! pattern.
-            ! NOT IMLEMENTED
-            ! call correctPeriodicCoor(level, mm,                            &
-            !      commPatternNode_1st(level)%nPeriodic, &
-            !      commPatternNode_1st(level)%periodicData)
+
+            call correctPeriodicCoor_d(level, mm,                            &
+                 commPatternNode_1st(level)%nPeriodic, &
+                 commPatternNode_1st(level)%periodicData)
 
             ! Complete the nonblocking sends.
 
@@ -3083,6 +3163,84 @@ contains
         end do spectralLoop
 
     end subroutine exchangeCoor_d
+    subroutine correctPeriodicCoor_d(level, sp, nPeriodic, periodicData)
+        !
+        !       correctPeriodicCoor_d applies the periodic transformation to
+        !       the DERIVATIVE of coordinates of the nodal halo's in periodicData
+        !
+        !       This is a simple derivative
+        !       the primal function is effectively doing
+        !       x_out = R * x_in + c
+        !       where c = -R * rot_center + translation + rotCenter
+        !       the constant term just drops out in the derivative and since R is a rotation matrix
+        !       then the reverse mode derivative is just 
+        !       x_ind = R^T * x_outd
+        !       in place operation on the seeds
+        !
+        !       WARNING: If at any point we are allowing translation or rotation to change by allowing
+        !       periodic boundaries to move via mesh warping then this routine needs to be updated to 
+        !       account for this
+        use block
+        use communication
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: level, sp, nPeriodic
+        type(periodicDataType), dimension(:), pointer :: periodicData
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: nn, mm, ii, i, j, k
+        real(kind=realType), dimension(3) :: dx_ind
+
+        real(kind=realType), dimension(3, 3) :: rotMatrix
+        ! real(kind=realType), dimension(3) :: rotCenter, translation
+
+        ! Loop over the number of periodic transformations.
+
+        do nn = 1, nPeriodic
+
+            ! Store the rotation matrix
+            ! We don't need the rest since they are constants
+
+            rotMatrix = periodicData(nn)%rotMatrix
+            ! rotCenter = periodicData(nn)%rotCenter
+            ! translation = periodicData(nn)%translation + rotCenter
+
+            ! Loop over the number of halo nodes for this transformation.
+            !DIR$ NOVECTOR
+            do ii = 1, periodicData(nn)%nHalos
+
+                ! Store the block and the indices a bit easier.
+
+                mm = periodicData(nn)%block(ii)
+                i = periodicData(nn)%indices(ii, 1)
+                j = periodicData(nn)%indices(ii, 2)
+                k = periodicData(nn)%indices(ii, 3)
+
+                ! Apply the rotation matrix to the x coordinate deer
+                ! Use a holding variable so as not to overwrite immediately
+
+                dx_ind(1) = rotMatrix(1, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrix(1, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrix(1, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+                dx_ind(2) = rotMatrix(2, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrix(2, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrix(2, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+                dx_ind(3) = rotMatrix(3, 1) * flowDomsd(mm, level, sp)%x(i, j, k, 1) &
+                            + rotMatrix(3, 2) * flowDomsd(mm, level, sp)%x(i, j, k, 2) &
+                            + rotMatrix(3, 3) * flowDomsd(mm, level, sp)%x(i, j, k, 3)
+
+                ! Store the updated seeds in place 
+                flowDomsd(mm, level, sp)%x(i, j, k, 1) =  dx_ind(1)
+                flowDomsd(mm, level, sp)%x(i, j, k, 2) =  dx_ind(2)
+                flowDomsd(mm, level, sp)%x(i, j, k, 3) =  dx_ind(3)
+
+            end do
+        end do
+
+    end subroutine correctPeriodicCoor_d
 
     ! -----------------------------------------------------------------
     !              Comm routines for zippers

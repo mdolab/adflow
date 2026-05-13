@@ -413,6 +413,73 @@ class ADflowWarper(ExplicitComponent):
                     d_inputs[X_AERO] += dxS.flatten()
 
 
+class ADflowShearer(ExplicitComponent):
+    """
+    OpenMDAO component that shears a mesh uniformly about a plane.
+
+    """
+
+    def initialize(self):
+        self.options.declare("aero_solver", recordable=False)
+        # self.options.declare('use_OM_KSP', default=False, types=bool,
+        #    desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
+
+    def setup(self):
+        # self.set_check_partial_options(wrt='*',directional=True)
+
+        self.solver = self.options["aero_solver"]
+        solver = self.solver
+
+        # self.ap_vars,_ = get_dvs_and_cons(ap=ap)
+
+        # state inputs and outputs
+        local_volume_coord_size = solver.mesh.getSolverGrid().size
+
+
+        self.add_input("adflow_vol_coords", distributed=True, shape=local_volume_coord_size, tags=["mphys_coupling"])
+        self.add_input("shear_angle", val=0.0, distributed=False, units="deg", tags=["mphys_coupling"])
+        self.add_output("adflow_vol_coords_sheared", distributed=True, shape=local_volume_coord_size, tags=["mphys_coupling"])
+
+        # self.declare_partials(of='adflow_vol_coords', wrt='x_aero')
+
+    def compute(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
+        vol_grid = inputs["adflow_vol_coords"].reshape((-1, 3))
+        shear_angle = np.deg2rad(inputs["shear_angle"])
+
+        # apply the shear
+        vol_grid[:,0] = vol_grid[:,0] + np.tan(shear_angle)*vol_grid[:,2]
+
+        outputs["adflow_vol_coords_sheared"] = vol_grid.flatten()
+
+    def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
+        shear_angle = np.deg2rad(inputs["shear_angle"])
+        coord_in = inputs["adflow_vol_coords"]
+
+        if mode == "fwd":
+            if "adflow_vol_coords_sheared" in d_outputs:
+                if "adflow_vol_coords" in d_inputs:
+                    d_input = d_inputs["adflow_vol_coords"].reshape(-1,3)
+                    d_out = d_input.copy()
+                    d_out[:,0] += np.tan(shear_angle)*d_input[:,2] # additional d_input[:,0] already included in initial copy
+                if "shear_angle" in d_inputs:
+                    d_out = np.zeros_like(coord_in)
+                    d_out[:,0] += (coord_in[:,2]/np.cos(shear_angle)**2)*(np.pi/180.)*d_inputs["shear_angle"]
+                d_outputs["adflow_vol_coords_sheared"] += d_out.flatten()
+        elif mode == "rev":
+            if "adflow_vol_coords_sheared" in d_outputs:
+                d_out = d_outputs["adflow_vol_coords_sheared"].reshape(-1,3)
+                if "adflow_vol_coords" in d_inputs:
+                    d_input = d_out.copy()
+                    d_input[:,0] += np.tan(shear_angle)*d_out[:,2] # additional d_out[:,0] already included in initial copy
+                    d_inputs["adflow_vol_coords"] += d_input.flatten()
+                if "shear_angle" in d_inputs:
+                    d_inputs["shear_angle"] += (np.pi/180.)*np.sum((coord_in[:,2]/np.cos(shear_angle)**2)*d_out[:,0])
+
+
 class ADflowSolver(ImplicitComponent):
     """
     OpenMDAO component that wraps the ADflow flow solver
@@ -1329,6 +1396,37 @@ class ADflowMeshGroup(Group):
         return self.surface_mesh.mphys_get_triangulated_surface()
 
 
+class ADflowWarpShearGroup(Group):
+    def initialize(self):
+        self.options.declare("aero_solver", recordable=False)
+
+    def setup(self):
+        aero_solver = self.options["aero_solver"]
+
+        self.add_subsystem(
+            "mesh_warp",
+            ADflowWarper(aero_solver=aero_solver),
+            promotes_inputs=[X_AERO],
+            # promotes_outputs=["adflow_vol_coords"],
+        )
+        self.add_subsystem(
+            "mesh_shear",
+            ADflowShearer(aero_solver=aero_solver),
+            promotes_inputs=["shear_angle"],
+            promotes_outputs=[("adflow_vol_coords_sheared","adflow_vol_coords")],
+        )
+
+        self.connect("mesh_warp.adflow_vol_coords","mesh_shear.adflow_vol_coords")
+
+    def mphys_add_coordinate_input(self):
+        # just pass through the call
+        return self.surface_mesh.mphys_add_coordinate_input()
+
+    def mphys_get_triangulated_surface(self):
+        # just pass through the call
+        return self.surface_mesh.mphys_get_triangulated_surface()
+
+
 class ADflowBuilder(Builder):
     def __init__(
         self,
@@ -1434,6 +1532,8 @@ class ADflowBuilder(Builder):
         # flag to enable heat transfer coupling variables
         # TODO AY-JA: Can you rename heat_transfer to thermal_coupling to be consistent with other flags?
         self.heat_transfer = False
+        # flag to use a combination warp + shear pre coupling operation for 2.5D
+        self.warp_shear_group = False
 
         # depending on the scenario we are building for, we adjust a few internal parameters:
         if scenario.lower() == "aerodynamic":
@@ -1450,6 +1550,9 @@ class ADflowBuilder(Builder):
 
         elif scenario.lower() == "aerothermal":
             self.heat_transfer = True
+
+        elif scenario.lower() == "aerodynamic2p5d":
+            self.warp_shear_group = True
 
         # flag to determine if we want to restart a failed solution from free stream
         self.restart_failed_analysis = restart_failed_analysis
@@ -1526,6 +1629,8 @@ class ADflowBuilder(Builder):
         if self.warp_in_solver:
             # if we warp in the solver, then we wont have any pre-coupling systems
             return None
+        elif self.warp_shear_group:
+            return ADflowWarpShearGroup(aero_solver=self.solver)
         else:
             # we warp as a pre-processing step
             return ADflowWarper(aero_solver=self.solver)
