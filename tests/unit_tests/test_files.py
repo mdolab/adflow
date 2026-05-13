@@ -11,6 +11,9 @@ sys.path.append(os.path.join(baseDir, "../reg_tests"))
 
 from reg_aeroproblems import ap_tutorial_wing  # noqa E402
 
+# Set to True to keep test output files on disk for post-run inspection.
+KEEP_OUTPUT_FILES = False
+
 
 class _OutputFilesTestBase(unittest.TestCase):
     """Base class that isolates each test's outputs in its own subdirectory of output_files/."""
@@ -21,6 +24,8 @@ class _OutputFilesTestBase(unittest.TestCase):
         self._remove_output_files()
 
     def tearDown(self):
+        if KEEP_OUTPUT_FILES:
+            return
         self._remove_output_files()
         try:
             os.rmdir(self.output_dir)
