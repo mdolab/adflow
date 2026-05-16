@@ -862,6 +862,81 @@ contains
 
     end subroutine solveAdjoint
 
+    subroutine solveAdjointBlock(RHS, psi, nState, nFunc, useInitialGuess)
+        !
+        ! Block-solve [dR/dW]^T . PSI = RHS for nFunc RHS columns simultaneously
+        ! using KSPMatSolve. RHS and psi are (nState, nFunc) Fortran arrays;
+        ! MatCreateDense aliases them directly — no copy required.
+        !
+        use ADjointPETSc, only: adjointKSP
+        use killsignals, only: adjointFailed
+        use inputADjoint, only: adjAbsTol, adjDivTol, adjMaxIter, adjRelTol, printTiming
+        use communication, only: myid, adflow_comm_world
+        use utils, only: EChk
+#include <petsc/finclude/petsc.h>
+        use petsc
+        implicit none
+
+        integer(kind=intType), intent(in) :: nState, nFunc
+        real(kind=realType), dimension(nState, nFunc), intent(in) :: RHS
+        real(kind=realType), dimension(nState, nFunc), intent(inout) :: psi
+        logical, intent(in) :: useInitialGuess
+
+        Mat :: Bmat, Xmat
+        PetscErrorCode :: ierr
+        KSPConvergedReason :: reason
+
+#ifndef USE_COMPLEX
+        if (myid == 0 .and. printTiming) then
+            write (*, "(A, I3, A)") " Solving block ADjoint (nFunc=", nFunc, ") via PETSc/HPDDM..."
+        end if
+
+        ! Alias the caller's arrays as dense Mats. PETSc owns the Mat metadata
+        ! but NOT the buffer — destroying Bmat/Xmat does not free RHS/psi.
+        call MatCreateDense(adflow_comm_world, &
+                            PETSC_DECIDE, PETSC_DECIDE, nState, nFunc, &
+                            RHS, Bmat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyBegin(Bmat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyEnd(Bmat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call MatCreateDense(adflow_comm_world, &
+                            PETSC_DECIDE, PETSC_DECIDE, nState, nFunc, &
+                            psi, Xmat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyBegin(Xmat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyEnd(Xmat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        if (useInitialGuess) then
+            call KSPSetInitialGuessNonzero(adjointKSP, PETSC_TRUE, ierr)
+        else
+            call KSPSetInitialGuessNonzero(adjointKSP, PETSC_FALSE, ierr)
+        end if
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call KSPSetTolerances(adjointKSP, adjRelTol, adjAbsTol, adjDivTol, adjMaxIter, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call KSPMatSolve(adjointKSP, Bmat, Xmat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call KSPGetConvergedReason(adjointKSP, reason, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! psi has been written through Xmat alias; no copy-back needed.
+        call MatDestroy(Bmat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatDestroy(Xmat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        adjointFailed = (reason < 0)
+#endif
+
+    end subroutine solveAdjointBlock
+
     subroutine setupPETScKsp
 
         use ADjointPETSc, only: drdwpret, drdwt, adjointKSP

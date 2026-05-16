@@ -822,6 +822,14 @@ python module libadflow
            integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
          end subroutine solveadjoint
 
+         subroutine solveadjointblock(rhs,psi,nstate,nfunc,useinitialguess) ! in :adflow:src/adjoint/adjointAPI.F90:adjointapi
+           real(kind=8) dimension(nstate,nfunc),intent(in) :: rhs
+           real(kind=8) dimension(nstate,nfunc),intent(inout),depend(nstate,nfunc) :: psi
+           integer(kind=4),optional,intent(in),check(shape(rhs,0)==nstate),depend(rhs) :: nstate=shape(rhs,0)
+           integer(kind=4),optional,intent(in),check(shape(rhs,1)==nfunc),depend(rhs) :: nfunc=shape(rhs,1)
+           logical intent(in) :: useinitialguess
+         end subroutine solveadjointblock
+
          subroutine solveadjointforrhs(invec,outvec,ndof,relativetolerance) ! in :test:matrixFreeRoutines.F90
            real(kind=realtype) dimension(ndof),intent(in) :: invec
            real(kind=realtype) dimension(ndof),intent(out),depend(ndof) :: outvec
