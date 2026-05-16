@@ -891,10 +891,13 @@ contains
             write (*, "(A, I3, A)") " Solving block ADjoint (nFunc=", nFunc, ") via PETSc/HPDDM..."
         end if
 
-        ! Alias the caller's arrays as dense Mats. PETSc owns the Mat metadata
-        ! but NOT the buffer — destroying Bmat/Xmat does not free RHS/psi.
+        ! Alias the caller's arrays as dense Mats. nState is the LOCAL row count
+        ! on this rank; PETSC_DETERMINE lets PETSc sum across ranks for the global
+        ! size. Columns are replicated (not distributed) so local cols = global cols.
+        ! PETSc owns the Mat metadata but NOT the buffer — destroying Bmat/Xmat
+        ! does not free RHS/psi.
         call MatCreateDense(adflow_comm_world, &
-                            PETSC_DECIDE, PETSC_DECIDE, nState, nFunc, &
+                            nState, nFunc, PETSC_DETERMINE, nFunc, &
                             RHS, Bmat, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         call MatAssemblyBegin(Bmat, MAT_FINAL_ASSEMBLY, ierr)
@@ -903,7 +906,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         call MatCreateDense(adflow_comm_world, &
-                            PETSC_DECIDE, PETSC_DECIDE, nState, nFunc, &
+                            nState, nFunc, PETSC_DETERMINE, nFunc, &
                             psi, Xmat, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         call MatAssemblyBegin(Xmat, MAT_FINAL_ASSEMBLY, ierr)
@@ -993,7 +996,8 @@ contains
                                   matrixOrdering, FillLevel, innerPreConIts)
         else if (PreCondType == 'mg') then
 
-            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, adjointPCSide, &
+            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, adjRecycleSize, &
+                                        adjHpddmDeflationTol, adjointPCSide, &
                                         overlap, outerPreconIts, matrixOrdering, fillLevel, innerPreConIts, &
                                         overlapCoarse, fillLevelCoarse, innerPreConItsCoarse)
         end if

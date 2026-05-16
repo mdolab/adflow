@@ -422,8 +422,8 @@ contains
                                   0.0_realType, preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
                                   localOrdering, NK_iluFill, NK_innerPreConIts)
         else
-            call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
-                                        preConSide, NK_asmOverlap, NK_outerPreConIts, &
+            call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, 0_intType, &
+                                        0.0_realType, preConSide, NK_asmOverlap, NK_outerPreConIts, &
                                         localOrdering, NK_iluFill, NK_innerPreConIts, &
                                         NK_asmOverlapCoarse, NK_iluFillCoarse, NK_innerPreConItsCoarse)
         end if
@@ -2026,8 +2026,8 @@ contains
                                   0.0_realType, preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
         else if (ANK_precondType == 'mg') then
-            call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
-                                        preConSide, ANK_asmOverlap, outerPreConIts, &
+            call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, 0_intType, &
+                                        0.0_realType, preConSide, ANK_asmOverlap, outerPreConIts, &
                                         localOrdering, ANK_iluFill, ANK_innerPreConIts, &
                                         ANK_asmOverlapCoarse, ANK_iluFillCoarse, ANK_innerPreConItsCoarse)
         end if

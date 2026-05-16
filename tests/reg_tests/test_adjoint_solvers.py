@@ -3,6 +3,9 @@
 Tests that GCRODR, BGMRES, and BGCRODR produce sensitivities matching GMRES
 within tolerance, and that avoidRedundantAdjoints correctly handles rank-
 deficient RHS vectors (e.g. clp+clv=cl).
+
+Uses naca0012_rans-L2.cgns throughout — large enough for adjointAMGLevels=2
+and gives non-trivial sensitivities for all tested functions.
 """
 import os
 import sys
@@ -15,12 +18,11 @@ from parameterized import parameterized_class
 from adflow import ADFLOW
 from baseclasses import AeroProblem
 
-# Allow running from any directory by inserting the reg_tests dir into path
 baseDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, baseDir)
 from reg_default_options import adflowDefOpts
 
-gridFile = os.path.join(baseDir, "../../input_files/cube_4x4x4.cgns")
+gridFile = os.path.join(baseDir, "../../input_files/naca0012_rans-L2.cgns")
 
 
 def _makeSolver(adjointSolver, extra=None):
@@ -28,14 +30,21 @@ def _makeSolver(adjointSolver, extra=None):
     opts.update(
         {
             "gridFile": gridFile,
+            "outputDirectory": os.path.join(baseDir, adflowDefOpts["outputDirectory"]),
+            "equationType": "RANS",
             "MGCycle": "sg",
-            "L2Convergence": 1e-12,
-            "adjointL2Convergence": 1e-10,
+            "L2Convergence": 1e-10,
+            "adjointL2Convergence": 1e-8,
             "adjointSolver": adjointSolver,
             "adjointSubspaceSize": 100,
-            # cube_4x4x4 has only 64 cells; 2-level AMG coarsens to 8 cells which
-            # is smaller than the 14-point stencil → MatCreateBAIJ error. Use 1 level.
-            "adjointAMGLevels": 1,
+            "adjointAMGLevels": 2,
+            "useANKSolver": True,
+            "useNKSolver": True,
+            "ANKSwitchTol": 10.0,
+            "ANKSecondOrdSwitchTol": 1e-3,
+            "ANKCoupledSwitchTol": 1e-6,
+            "NKSwitchTol": 1e-8,
+            "useBlockettes": False,
             "writeSurfaceSolution": False,
             "writeVolumeSolution": False,
         }
@@ -45,15 +54,20 @@ def _makeSolver(adjointSolver, extra=None):
     return ADFLOW(options=opts, comm=MPI.COMM_WORLD)
 
 
-def _makeAP():
+def _makeAP(evalFuncs=None):
+    if evalFuncs is None:
+        evalFuncs = ["cl", "cd", "cmz"]
     return AeroProblem(
-        name="cube",
-        alpha=1.0,
-        mach=0.5,
-        altitude=1000.0,
+        name="naca0012",
+        alpha=2.77,
+        mach=0.6,
+        reynolds=4800000.0,
+        reynoldsLength=1.0,
+        T=280.0,
+        R=287.085,
         areaRef=1.0,
         chordRef=1.0,
-        evalFuncs=["cl", "cd", "cmz"],
+        evalFuncs=evalFuncs,
     )
 
 
@@ -65,7 +79,7 @@ class TestSolverEquivalence(unittest.TestCase):
     shared across test methods.
     """
 
-    N_PROCS = 1
+    N_PROCS = 2
 
     def _compare(self, adjointSolver, atol=1e-5, rtol=1e-5, extra=None):
         refAP = _makeAP()
@@ -105,12 +119,16 @@ class TestSolverEquivalence(unittest.TestCase):
         {"adjointSolver": "GCRODR", "globalPreconditioner": "additive Schwarz"},
         {"adjointSolver": "BGMRES", "globalPreconditioner": "additive Schwarz"},
         {"adjointSolver": "BGCRODR", "globalPreconditioner": "additive Schwarz"},
+        {"adjointSolver": "GMRES", "globalPreconditioner": "multigrid"},
+        {"adjointSolver": "GCRODR", "globalPreconditioner": "multigrid"},
+        {"adjointSolver": "BGMRES", "globalPreconditioner": "multigrid"},
+        {"adjointSolver": "BGCRODR", "globalPreconditioner": "multigrid"},
     ]
 )
 class TestSweep(unittest.TestCase):
     """Parametric solver x preconditioner sweep with independent and rank-deficient RHS."""
 
-    N_PROCS = 1
+    N_PROCS = 2
 
     def _make(self, evalFuncs, avoidRedundant=False):
         return _makeSolver(
@@ -121,20 +139,9 @@ class TestSweep(unittest.TestCase):
             },
         )
 
-    def _makeAP(self, evalFuncs):
-        return AeroProblem(
-            name="cube",
-            alpha=1.0,
-            mach=0.5,
-            altitude=1000.0,
-            areaRef=1.0,
-            chordRef=1.0,
-            evalFuncs=evalFuncs,
-        )
-
     def test_independent_rhs(self):
         evalFuncs = ["cl", "cd", "cmz"]
-        ap = self._makeAP(evalFuncs)
+        ap = _makeAP(evalFuncs)
         solver = self._make(evalFuncs)
         solver(ap)
         sens = {}
@@ -147,13 +154,13 @@ class TestSweep(unittest.TestCase):
     def test_rank_deficient_rhs(self):
         # clp + clv = cl, cdp + cdv = cd — 2 exact linear dependencies.
         evalFuncs = ["clp", "clv", "cl", "cdp", "cdv", "cd", "cmz"]
-        ap_ref = self._makeAP(evalFuncs)
+        ap_ref = _makeAP(evalFuncs)
         ref = _makeSolver("GMRES", extra={"avoidRedundantAdjoints": False})
         ref(ap_ref)
         refSens = {}
         ref.evalFunctionsSens(ap_ref, refSens, evalFuncs)
 
-        ap = self._makeAP(evalFuncs)
+        ap = _makeAP(evalFuncs)
         solver = self._make(evalFuncs, avoidRedundant=True)
         solver(ap)
         sens = {}

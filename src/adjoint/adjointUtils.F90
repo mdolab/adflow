@@ -1617,7 +1617,8 @@ contains
 
     end subroutine setupStandardKSP
 
-    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, preConSide, &
+    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, recycleSize, &
+                                      deflationTol, preConSide, &
                                       ASMOverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts, &
                                       ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse)
 
@@ -1634,43 +1635,82 @@ contains
         ! Inputs
         KSP kspObject
         character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
-        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts, localPreConIts
+        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, recycleSize
+        integer(kind=intType), intent(in) :: outerPreconIts, localPreConIts
         integer(kind=intType), intent(in) :: ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse
+        real(kind=realType), intent(in) :: deflationTol
 
         ! Working Variables
         PC shellPC
         integer(kind=intType) :: ierr
+        character(len=16) :: intStr
+        character(len=32) :: realStr
+        logical :: isHpddm
 
-        call KSPSetType(kspObject, kspObjectType, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+        isHpddm = (trim(kspObjectType) == 'gcrodr' .or. &
+                   trim(kspObjectType) == 'bgmres' .or. &
+                   trim(kspObjectType) == 'bgcrodr')
 
-        ! Set the preconditioner side from option:
-        if (trim(preConSide) == 'right') then
-            call KSPSetPCSide(kspObject, PC_RIGHT, ierr)
+        if (isHpddm) then
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_type', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_recycle', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_deflation_tol', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_gmres_restart', ierr)
+
+            call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_type', trim(kspObjectType), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            write (intStr, '(I16)') gmresRestart
+            call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_gmres_restart', trim(adjustl(intStr)), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            if (trim(kspObjectType) == 'gcrodr' .or. trim(kspObjectType) == 'bgcrodr') then
+                write (intStr, '(I16)') recycleSize
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_recycle', trim(adjustl(intStr)), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            if ((trim(kspObjectType) == 'bgmres' .or. trim(kspObjectType) == 'bgcrodr') &
+                .and. deflationTol > 0.0_realType) then
+                write (realStr, '(ES24.16)') deflationTol
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_deflation_tol', &
+                                          trim(adjustl(realStr)), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            select case (trim(GMRESOrthogType))
+            case ('modified_gram_schmidt')
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', 'mgs', ierr)
+            case default
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', 'cgs', ierr)
+            end select
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPSetType(kspObject, 'hpddm', ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+            call KSPSetFromOptions(kspObject, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
         else
-            call KSPSetPCSide(kspObject, PC_LEFT, ierr)
+            call KSPSetType(kspObject, kspObjectType, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Set the orthogonalization method for GMRES
+            select case (GMRESOrthogType)
+            case ('modified_gram_schmidt')
+                call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
+            case ('cgs_never_refine')
+                call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_NEVER, ierr)
+            case ('cgs_refine_if_needed')
+                call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
+            case ('cgs_always_refine')
+                call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_ALWAYS, ierr)
+            end select
+            call EChk(ierr, __FILE__, __LINE__)
         end if
-        call EChk(ierr, __FILE__, __LINE__)
-
-        call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
-        ! Set the orthogonalization method for GMRES
-        select case (GMRESOrthogType)
-        case ('modified_gram_schmidt')
-            ! Use modified Gram-Schmidt
-            call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
-        case ('cgs_never_refine')
-            ! Use classical Gram-Schmidt with no refinement
-            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_NEVER, ierr)
-        case ('cgs_refine_if_needed')
-            ! Use classical Gram-Schmidt with refinement if needed
-            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
-        case ('cgs_always_refine')
-            ! Use classical Gram-Schmidt with refinement at every iteration
-            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_ALWAYS, ierr)
-        end select
-        call EChk(ierr, __FILE__, __LINE__)
 
         call KSPGetPC(kspObject, shellPC, ierr)
         call EChk(ierr, __FILE__, __LINE__)
