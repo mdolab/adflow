@@ -81,6 +81,9 @@ def pivotedQR(vecs, rtol=1e-12):
         pivotNorm = np.sqrt(max(res2[step], 0.0))
         if step == 0:
             firstPivotNorm = pivotNorm
+            if firstPivotNorm == 0.0:
+                rank = 0
+                break
         if pivotNorm < rtol * firstPivotNorm:
             rank = step
             break

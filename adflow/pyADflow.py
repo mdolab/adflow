@@ -1729,68 +1729,45 @@ class ADFLOW(AeroSolver):
             tmp.append(f.lower())
         evalFuncs = tmp
 
-        adjointStartTime = {}
-        adjointEndTime = {}
-        totalSensEndTime = {}
-
-        # Do the functions one at a time:
+        # Validate all requested functions up front
         for f in evalFuncs:
-            if f in self.adflowCostFunctions:
-                pass
-            elif f in self.adflowUserCostFunctions:
-                pass
-            else:
+            if f not in self.adflowCostFunctions and f not in self.adflowUserCostFunctions:
                 raise Error("Supplied %s function is not known to ADflow." % f)
 
-            adjointStartTime[f] = time.time()
+        # Stage 1: set up adjoint matrices and compute all RHS vectors up front
+        self._setupAdjoint()
+        rhsStart = time.time()
+        rhsList = self._computeAdjointRHSAll(evalFuncs)
+        rhsEnd = time.time()
 
+        # Stage 2: solve all adjoints in one batched call
+        solveStart = time.time()
+        if not self.curAP.adjointFailed:
             if self.comm.rank == 0:
-                print("Solving adjoint: %s" % f)
+                print("Solving adjoint(s): %s" % ", ".join(evalFuncs))
+            self._solveAdjointBatch(evalFuncs, rhsList)
+        solveEnd = time.time()
 
+        # Stage 3: compute total derivatives for every function
+        sensStart = time.time()
+        for f in evalFuncs:
+            if self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint"):
+                break
             key = self.curAP.name + "_%s" % f
-
-            # Set dict structure for this derivative
             funcsSens[key] = OrderedDict()
-
-            # Solve adjoint equation
-            self.solveAdjoint(aeroProblem, f)
-
-            adjointEndTime[f] = time.time()
-            # Now, due to the use of the super combined
-            # computeJacobianVectorProductBwd() routine, we can complete
-            # the total derivative computation in a single call. We
-            # simply seed resBar with *NEGATIVE* of the adjoint we
-            # just computed along with 1.0 for the objective and then
-            # everything completely falls out. This saves doing 4
-            # individual calls to: getdRdXvTPsi, getdIdx, getdIda,
-            # getdIdaTPsi.
-
-            # These are the reverse mode seeds
             psi = -self.getAdjoint(f)
-
-            # Compute everything and update into the dictionary
             funcsSens[key].update(
                 self.computeJacobianVectorProductBwd(resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True)
             )
-
-            totalSensEndTime[f] = time.time()
+        sensEnd = time.time()
 
         finalEvalSensTime = time.time()
 
         if self.getOption("printTiming") and self.comm.rank == 0:
             print("+--------------------------------------------------+")
-            print("|")
-            print("| Adjoint Times:")
-            print("|")
-            for f in evalFuncs:
-                print(
-                    "| %-30s: %10.3f sec" % ("Adjoint Solve Time - %s" % (f), adjointEndTime[f] - adjointStartTime[f])
-                )
-                print(
-                    "| %-30s: %10.3f sec"
-                    % ("Total Sensitivity Time - %s" % (f), totalSensEndTime[f] - adjointEndTime[f])
-                )
-            print("|")
+            print("| Adjoint RHS time:        %10.3f sec" % (rhsEnd - rhsStart))
+            print("| Adjoint solve time:      %10.3f sec" % (solveEnd - solveStart))
+            print("| Total sensitivity time:  %10.3f sec" % (sensEnd - sensStart))
             print("| %-30s: %10.3f sec" % ("Complete Sensitivity Time", finalEvalSensTime - startEvalSensTime))
             print("+--------------------------------------------------+")
 
@@ -4340,6 +4317,8 @@ class ADFLOW(AeroSolver):
         arrays so MatCreateDense can alias them without a copy.
         Fortran calls KSPSetInitialGuessNonzero(TRUE) when doWarmStart is True.
         """
+        if not funcs:
+            return
         nState = rhsList[0].size
         nFunc = len(funcs)
         rhsMat = numpy.empty((nState, nFunc), order="F", dtype=float)
