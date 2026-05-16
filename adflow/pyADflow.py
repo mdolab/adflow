@@ -4252,6 +4252,113 @@ class ADFLOW(AeroSolver):
 
         return outVec
 
+    def _computeAdjointRHSAll(self, evalFuncs):
+        """Compute and cache the adjoint RHS for every function in evalFuncs.
+
+        Returns a list of numpy arrays in evalFuncs order (cached copies).
+        """
+        rhsList = []
+        for f in evalFuncs:
+            if f not in self.curAP.adflowData.adjointRHS:
+                rhs = self.computeJacobianVectorProductBwd(funcsBar=self._getFuncsBar(f), wDeriv=True)
+                self.curAP.adflowData.adjointRHS[f] = rhs.copy()
+            rhsList.append(self.curAP.adflowData.adjointRHS[f].copy())
+        return rhsList
+
+    def _solveAdjointBatch(self, evalFuncs, rhsList):
+        """Solve adjoint for every RHS in evalFuncs, dispatching to block or sequential.
+
+        Runs column-pivoted QR when avoidRedundantAdjoints is True or when a
+        block solver is in use (HPDDM crashes on rank-deficient initial blocks).
+        """
+        from .adjointLinAlg import pivotedQR, wrapNumpyAsVec
+
+        solverName = self.getOption("adjointSolver").lower()
+        isBlock = solverName in ("bgmres", "bgcrodr")
+        doRunQR = isBlock or self.getOption("avoidRedundantAdjoints")
+        doWarmStart = self.getOption("restartAdjoint")
+
+        nStateLocal = rhsList[0].size if rhsList else 0
+        for f in evalFuncs:
+            if f not in self.curAP.adflowData.adjoints:
+                self.curAP.adflowData.adjoints[f] = numpy.zeros(nStateLocal, float)
+
+        if doRunQR and len(evalFuncs) > 1:
+            vecs = [wrapNumpyAsVec(rhs) for rhs in rhsList]
+            try:
+                indep, dep, C, Q, _ = pivotedQR(vecs, rtol=1e-12)
+            finally:
+                for v in vecs:
+                    v.destroy()
+            for q in Q:
+                q.destroy()
+        else:
+            indep = list(range(len(evalFuncs)))
+            dep = []
+            C = None
+
+        indepFuncs = [evalFuncs[ii] for ii in indep]
+        indepRHS = [rhsList[ii] for ii in indep]
+
+        if isBlock:
+            self._solveBlock(indepFuncs, indepRHS, doWarmStart)
+        else:
+            self._solveSequential(indepFuncs, indepRHS, doWarmStart)
+
+        for jj, depIdx in enumerate(dep):
+            depFunc = evalFuncs[depIdx]
+            psi = numpy.zeros(nStateLocal)
+            for kk, indepIdx in enumerate(indep):
+                psi += C[kk, jj] * self.curAP.adflowData.adjoints[evalFuncs[indepIdx]]
+            self.curAP.adflowData.adjoints[depFunc] = psi
+
+    def _solveSequential(self, funcs, rhsList, doWarmStart):
+        """Solve adjoint one RHS at a time via the existing Fortran solveadjoint.
+
+        Recycling KSPs (gcrodr) naturally retain their subspace across calls
+        because adjointKSP is reused between solves.
+        """
+        for f, rhs in zip(funcs, rhsList):
+            if doWarmStart:
+                psi = self.curAP.adflowData.adjoints[f].copy()
+            else:
+                psi = numpy.zeros_like(self.curAP.adflowData.adjoints[f])
+
+            self.adflow.adjointapi.solveadjoint(rhs, psi, True)
+            self.curAP.adflowData.adjoints[f] = psi
+
+            if self.adflow.killsignals.adjointfailed:
+                self.curAP.adjointFailed = True
+                if self.getOption("skipafterfailedadjoint"):
+                    self.curAP.adflowData.adjoints[f][:] = 0.0
+                    return
+
+    def _solveBlock(self, funcs, rhsList, doWarmStart):
+        """Block KSPMatSolve via Fortran solveAdjointBlock.
+
+        Stacks all RHS/psi columns into Fortran-contiguous (column-major)
+        arrays so MatCreateDense can alias them without a copy.
+        Fortran calls KSPSetInitialGuessNonzero(TRUE) when doWarmStart is True.
+        """
+        nState = rhsList[0].size
+        nFunc = len(funcs)
+        rhsMat = numpy.empty((nState, nFunc), order="F", dtype=float)
+        psiMat = numpy.empty((nState, nFunc), order="F", dtype=float)
+        for jj, (f, rhs) in enumerate(zip(funcs, rhsList)):
+            rhsMat[:, jj] = rhs
+            if doWarmStart:
+                psiMat[:, jj] = self.curAP.adflowData.adjoints[f]
+            else:
+                psiMat[:, jj] = 0.0
+
+        self.adflow.adjointapi.solveadjointblock(rhsMat, psiMat, doWarmStart)
+
+        for jj, f in enumerate(funcs):
+            self.curAP.adflowData.adjoints[f] = psiMat[:, jj].copy()
+
+        if self.adflow.killsignals.adjointfailed:
+            self.curAP.adjointFailed = True
+
     def solveDirectForRHS(self, inVec, relTol=None):
         """
         Solve the direct system with an arbitary RHS vector.
