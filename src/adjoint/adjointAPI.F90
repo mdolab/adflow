@@ -912,7 +912,8 @@ contains
         if (PreCondType == 'asm') then
             ! Run the super-dee-duper function to setup the ksp object:
 
-            call setupStandardKSP(adjointKSP, ADjointSolverType, adjRestart, adjointpcside, &
+            call setupStandardKSP(adjointKSP, ADjointSolverType, adjRestart, adjRecycleSize, &
+                                  adjHpddmDeflationTol, adjointpcside, &
                                   PreCondType, overlap, outerPreConIts, localPCType, &
                                   matrixOrdering, FillLevel, innerPreConIts)
         else if (PreCondType == 'mg') then

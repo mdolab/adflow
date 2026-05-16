@@ -418,8 +418,8 @@ contains
 
         ! Set up the KSP using the same code as used for the adjoint
         if (NK_precondType == 'asm') then
-            call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
-                                  preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
+            call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, 0_intType, &
+                                  0.0_realType, preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
                                   localOrdering, NK_iluFill, NK_innerPreConIts)
         else
             call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
@@ -2022,8 +2022,8 @@ contains
 
         ! Set up the KSP using the same code as used for the adjoint
         if (ANK_precondType == 'asm') then
-            call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
-                                  preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+            call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, 0_intType, &
+                                  0.0_realType, preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
         else if (ANK_precondType == 'mg') then
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
@@ -2443,8 +2443,8 @@ contains
             subspace = ANK_subspace
         end if
 
-        call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
-                              preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+        call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, 0_intType, &
+                              0.0_realType, preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                               localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
         ! Don't do iterative refinement

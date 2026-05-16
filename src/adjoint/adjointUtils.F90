@@ -1371,7 +1371,8 @@ contains
 
     end subroutine MyKSPMonitor
 
-    subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, &
+    subroutine setupStandardKSP(kspObject, kspObjectType, gmresRestart, recycleSize, &
+                                deflationTol, preConSide, &
                                 globalPCType, ASMOverlap, globalPreConIts, localPCType, &
                                 localMatrixOrdering, localFillLevel, localPreConIts)
 
@@ -1414,24 +1415,79 @@ contains
         character(len=*), intent(in) :: globalPCType, localPCType
         character(len=*), intent(in) :: localMatrixOrdering
         integer(kind=intType), intent(in) :: ASMOverlap, localFillLevel, gmresRestart
+        integer(kind=intType), intent(in) :: recycleSize
+        real(kind=realType), intent(in) :: deflationTol
         integer(kind=intType), intent(in) :: globalPreConIts, localPreConIts
 
         ! Working Variables
         PC master_PC, globalPC, subpc
         KSP master_PC_KSP, subksp
         integer(kind=intType) :: nlocal, first, ierr
+        character(len=16) :: intStr
+        character(len=32) :: realStr
+        logical :: isHpddm
 
-        ! First, KSPSetFromOptions MUST be called
-        call KSPSetFromOptions(kspObject, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+        isHpddm = (trim(kspObjectType) == 'gcrodr' .or. &
+                   trim(kspObjectType) == 'bgmres' .or. &
+                   trim(kspObjectType) == 'bgcrodr')
 
-        ! Set the type of solver to use:
-        call KSPSetType(kspObject, kspObjectType, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+        if (isHpddm) then
+            ! HPDDM contract: KSPSetType('hpddm') MUST come before KSPSetFromOptions,
+            ! otherwise KSPSetUp_HPDDM silently falls back to plain GMRES(30).
+            ! Push options into the global PETSc DB first, then call setType + setFromOptions.
 
-        ! If we're using GMRES set the possible gmres restart
-        call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+            ! Clear any stale HPDDM keys from a previous call.
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_type', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_recycle', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_deflation_tol', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', ierr)
+            call PetscOptionsClearValue(PETSC_NULL_OPTIONS, '-ksp_gmres_restart', ierr)
+
+            call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_type', trim(kspObjectType), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            write (intStr, '(I16)') gmresRestart
+            call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_gmres_restart', trim(adjustl(intStr)), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            if (trim(kspObjectType) == 'gcrodr' .or. trim(kspObjectType) == 'bgcrodr') then
+                write (intStr, '(I16)') recycleSize
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_recycle', trim(adjustl(intStr)), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            if ((trim(kspObjectType) == 'bgmres' .or. trim(kspObjectType) == 'bgcrodr') &
+                .and. deflationTol > 0.0_realType) then
+                write (realStr, '(ES24.16)') deflationTol
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_deflation_tol', &
+                                          trim(adjustl(realStr)), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! HPDDM reads its own orthogonalization option (not ksp_gmres_modifiedgramschmidt).
+            select case (trim(GMRESOrthogType))
+            case ('modified_gram_schmidt')
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', 'mgs', ierr)
+            case default
+                call PetscOptionsSetValue(PETSC_NULL_OPTIONS, '-ksp_hpddm_orthogonalization', 'cgs', ierr)
+            end select
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPSetType(kspObject, 'hpddm', ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+            call KSPSetFromOptions(kspObject, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+        else
+            ! Non-HPDDM: preserve existing ADflow ordering (setFromOptions then setType).
+            call KSPSetFromOptions(kspObject, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPSetType(kspObject, kspObjectType, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+        end if
 
         ! Set the orthogonalization method for GMRES
         select case (GMRESOrthogType)
