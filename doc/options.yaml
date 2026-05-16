@@ -1462,11 +1462,34 @@ adjointSolver:
   desc: >
     Type of linear solver for the adjoint.
     See PETSc documentation for details.
-  GMRES: GMRES. Typically gives the best performance.
+    The HPDDM-based types (GCRODR, BGMRES, BGCRODR) require PETSc to be built
+    with HPDDM support (``--download-hpddm`` or ``--with-hpddm-dir``).
+    ADflow raises an error at initialisation time if an HPDDM solver is selected
+    but the installed PETSc does not include HPDDM.
+  GMRES: GMRES. Typically gives the best performance for a single RHS.
   TFQMR: Transpose free QMR
   Richardson: Preconditioned Richardson iterative method
   BCGS: BiCGStab
   IBCGS: Improved BiCGStab
+  GCRODR: >
+    GCRO-DR (recycled GMRES) via PETSc/HPDDM.
+    Retains a small deflation subspace of approximate eigenvectors across
+    restarts to accelerate convergence on slowly-decaying modes.
+    The subspace size is controlled by :py:data:`adjointRecycleSize`.
+    Solves RHS vectors sequentially; best for cases with 1–3 functions.
+  BGMRES: >
+    Block-GMRES via PETSc/HPDDM.
+    Solves all adjoint RHS vectors simultaneously in a single block Krylov
+    iteration, amortising the dominant preconditioner-apply cost across the
+    whole RHS batch.
+    Rank-deficient RHS (e.g. ``clp + clv = cl``) are detected automatically
+    via column-pivoted QR before the block solve; dependent solutions are
+    reconstructed by linearity.
+    Best for cases with 4 or more functions.
+  BGCRODR: >
+    Block-GCRO-DR via PETSc/HPDDM.
+    Combines block Krylov iteration with subspace recycling.
+    The subspace size is controlled by :py:data:`adjointRecycleSize`.
 
 GMRESOrthogonalizationType:
   desc: >
@@ -1484,6 +1507,36 @@ adjointMaxIter:
 adjointSubspaceSize:
   desc: >
     The size of the Krylov subspace for the adjoint solution.
+
+adjointRecycleSize:
+  desc: >
+    Number of Ritz vectors retained across restarts for the recycling adjoint
+    solvers GCRODR and BGCRODR.
+    Ignored for non-recycling solver types (GMRES, BGMRES, etc.).
+    Typical values are O(5); HPDDM enforces the internal constraint
+    ``adjointRecycleSize <= adjointSubspaceSize / 2``.
+    Smaller values (2–5) are usually optimal; larger values increase per-restart
+    cost without proportional residual reduction.
+
+avoidRedundantAdjoints:
+  desc: >
+    When set to ``True``, ADflow performs a column-pivoted QR decomposition on
+    the adjoint RHS vectors before solving to detect linearly dependent cost
+    functions (e.g. ``clp + clv = cl``).
+    Dependent solutions are not solved; instead they are reconstructed from the
+    independent solutions by linearity, reducing the number of KSP solves.
+    For block solvers (BGMRES, BGCRODR) this rank detection is always performed
+    regardless of this option, because HPDDM's initial-block orthogonalisation
+    fails on rank-deficient input.
+
+adjointHPDDMDeflationTol:
+  desc: >
+    Deflation tolerance passed to HPDDM for block solvers (BGMRES, BGCRODR).
+    When set to a positive value, HPDDM discards Krylov vectors whose
+    contribution falls below this tolerance, reducing memory for near-rank-
+    deficient right-hand-side batches encountered mid-solve.
+    A value of ``0.0`` (the default) disables deflation.
+    This option has no effect for non-block solvers.
 
 adjointMonitorStep:
   desc: >
