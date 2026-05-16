@@ -87,6 +87,10 @@ class TestSolverEquivalence(unittest.TestCase):
     N_PROCS = 2
 
     def test_solver(self):
+        """Given a converged RANS flow, if adjoint sensitivities are computed
+        with self.adjointSolver and with GMRES as a reference, then they agree
+        within atol=rtol=1e-5 for all cost functions and design variables.
+        """
         refAP = _makeAP()
         refSolver = _makeSolver("GMRES")
         refSolver(refAP)
@@ -130,6 +134,11 @@ class TestSweep(unittest.TestCase):
         )
 
     def test_independent_rhs(self):
+        """Given a RANS solver using self.adjointSolver and self.globalPreconditioner,
+        if evalFunctionsSens is called with 3 linearly independent cost functions,
+        then the adjoint converges without failure and sensitivity keys are present
+        for every requested function.
+        """
         evalFuncs = ["cl", "cd", "cmz"]
         ap = _makeAP(evalFuncs)
         solver = self._make(evalFuncs)
@@ -142,6 +151,11 @@ class TestSweep(unittest.TestCase):
             self.assertIn(key, sens)
 
     def test_rank_deficient_rhs(self):
+        """Given clp+clv=cl and cdp+cdv=cd as exact linear dependencies in the RHS,
+        if avoidRedundantAdjoints=True is used with self.adjointSolver and
+        self.globalPreconditioner, then the sensitivities for all 7 functions
+        match a full GMRES reference solve within atol=rtol=1e-5.
+        """
         # clp + clv = cl, cdp + cdv = cd — 2 exact linear dependencies.
         evalFuncs = ["clp", "clv", "cl", "cdp", "cdv", "cd", "cmz"]
         ap_ref = _makeAP(evalFuncs)

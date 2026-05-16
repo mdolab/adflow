@@ -16,6 +16,9 @@ class TestPivotedQR(unittest.TestCase):
         return [wrapNumpyAsVec(M[:, jj].copy()) for jj in range(M.shape[1])]
 
     def test_full_rank_random(self):
+        """Given 3 random linearly independent vectors, if pivotedQR is run,
+        then all 3 are returned as independent, dep is empty, and C is None.
+        """
         rng = np.random.default_rng(0)
         M = rng.standard_normal((20, 3))
         vecs = self._vecsFromColumns(M)
@@ -29,6 +32,11 @@ class TestPivotedQR(unittest.TestCase):
             v.destroy()
 
     def test_one_exact_dependency(self):
+        """Given 2 independent vectors and a third that is their exact linear
+        combination (2*v0 - v1), if pivotedQR is run, then 2 are independent,
+        1 is dependent, and the reconstruction coefficients reproduce the
+        dependent column to within atol=1e-10.
+        """
         rng = np.random.default_rng(1)
         M = rng.standard_normal((20, 2))
         M_dep = np.concatenate([M, (2 * M[:, 0:1] - M[:, 1:2])], axis=1)
@@ -44,6 +52,11 @@ class TestPivotedQR(unittest.TestCase):
             v.destroy()
 
     def test_wind_body_frame(self):
+        """Given CL and CD as independent vectors and CFx/CFz as their exact
+        linear combinations under a wind-to-body rotation, if pivotedQR is run,
+        then 2 are independent, 2 are dependent, and each dependent column is
+        reconstructed to within atol=1e-10.
+        """
         # CL, CD independent. CFx = cos(a)*CD - sin(a)*CL; CFz = sin(a)*CD + cos(a)*CL.
         rng = np.random.default_rng(2)
         cl = rng.standard_normal(30)
@@ -66,6 +79,10 @@ class TestPivotedQR(unittest.TestCase):
             v.destroy()
 
     def test_threshold_at_rtol(self):
+        """Given two orthogonal vectors where v2 has norm 1e-8 relative to v1,
+        if pivotedQR is run with rtol=1e-6, then v2 is classified as dependent;
+        if run with rtol=1e-12, then v2 is classified as independent.
+        """
         # v1 is unit-ish in the x direction, v2 is orthogonal to v1 with
         # norm 1e-8 * ||v1||. After projecting out v1, the residual of v2
         # is 1e-8 * ||v1||. So at rtol=1e-6 (1e-8 < 1e-6) → v2 classified
@@ -87,6 +104,9 @@ class TestPivotedQR(unittest.TestCase):
                 v.destroy()
 
     def test_single_rhs(self):
+        """Given a single non-zero vector, if pivotedQR is run, then it is
+        classified as independent, dep is empty, and C is None.
+        """
         vecs = self._vecsFromColumns(np.ones((10, 1)))
         indep, dep, C, Q, _ = pivotedQR(vecs)
         self.assertEqual(indep, [0])
@@ -98,6 +118,10 @@ class TestPivotedQR(unittest.TestCase):
             v.destroy()
 
     def test_empty_vecs(self):
+        """Given an empty list of input vectors, if pivotedQR is run, then it
+        returns empty indep and dep lists, C is None, Q is empty, and R has
+        shape (0, 0).
+        """
         indep, dep, C, Q, R = pivotedQR([])
         self.assertEqual(indep, [])
         self.assertEqual(dep, [])
@@ -106,6 +130,10 @@ class TestPivotedQR(unittest.TestCase):
         self.assertEqual(R.shape, (0, 0))
 
     def test_all_zero_cols(self):
+        """Given one non-zero column followed by two all-zero columns, if
+        pivotedQR is run, then 1 vector is classified as independent and 2 as
+        dependent.
+        """
         M = np.zeros((10, 3))
         M[0, 0] = 1.0  # first col is nonzero; rest are zero
         vecs = self._vecsFromColumns(M)
