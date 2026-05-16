@@ -1743,22 +1743,25 @@ class ADFLOW(AeroSolver):
         # Stage 2: solve all adjoints in one batched call
         solveStart = time.time()
         if not self.curAP.adjointFailed:
-            if self.comm.rank == 0:
-                print("Solving adjoint(s): %s" % ", ".join(evalFuncs))
             self._solveAdjointBatch(evalFuncs, rhsList)
         solveEnd = time.time()
 
-        # Stage 3: compute total derivatives for every function
+        # Stage 3: compute total derivatives for every function.
+        # _suppressGeoWarnings ensures "No mesh/DVGeo" is emitted only once.
         sensStart = time.time()
-        for f in evalFuncs:
-            if self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint"):
-                break
-            key = self.curAP.name + "_%s" % f
-            funcsSens[key] = OrderedDict()
-            psi = -self.getAdjoint(f)
-            funcsSens[key].update(
-                self.computeJacobianVectorProductBwd(resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True)
-            )
+        self._suppressGeoWarnings = False
+        try:
+            for f in evalFuncs:
+                if self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint"):
+                    break
+                key = self.curAP.name + "_%s" % f
+                funcsSens[key] = OrderedDict()
+                psi = -self.getAdjoint(f)
+                funcsSens[key].update(
+                    self.computeJacobianVectorProductBwd(resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True)
+                )
+        finally:
+            self._suppressGeoWarnings = False
         sensEnd = time.time()
 
         finalEvalSensTime = time.time()
@@ -4295,7 +4298,10 @@ class ADFLOW(AeroSolver):
         Recycling KSPs (gcrodr) naturally retain their subspace across calls
         because adjointKSP is reused between solves.
         """
+        solverName = self.getOption("adjointSolver")
         for f, rhs in zip(funcs, rhsList):
+            if self.comm.rank == 0:
+                print(f"Solving {f} adjoint with PETSc {solverName}")
             if doWarmStart:
                 psi = self.curAP.adflowData.adjoints[f].copy()
             else:
@@ -4319,6 +4325,9 @@ class ADFLOW(AeroSolver):
         """
         if not funcs:
             return
+        if self.comm.rank == 0:
+            solverName = self.getOption("adjointSolver")
+            print(f"Solving {', '.join(funcs)} adjoints with PETSc {solverName}")
         nState = rhsList[0].size
         nFunc = len(funcs)
         rhsMat = numpy.empty((nState, nFunc), order="F", dtype=float)
@@ -5095,15 +5104,17 @@ class ADFLOW(AeroSolver):
                             self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name)
                         )
                     else:
-                        if self.comm.rank == 0:
+                        if self.comm.rank == 0 and not getattr(self, "_suppressGeoWarnings", False):
                             ADFLOWWarning(
                                 "No DVGeo object is present or it has no "
                                 "design variables specified. No geometric "
                                 "derivatives computed."
                             )
+                        self._suppressGeoWarnings = True
                 else:
-                    if self.comm.rank == 0:
+                    if self.comm.rank == 0 and not getattr(self, "_suppressGeoWarnings", False):
                         ADFLOWWarning("No mesh object is present. No geometric derivatives computed.")
+                    self._suppressGeoWarnings = True
 
                 # Include aero derivatives here:
                 xdvbar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))

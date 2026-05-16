@@ -698,11 +698,6 @@ contains
         Vec adjointRes, RHSVec
 
 #ifndef USE_COMPLEX
-        ! Send some feedback to screen.
-
-        if (myid == 0 .and. printTiming) &
-            write (*, "(A)") "Solving ADjoint Transpose with PETSc..."
-
         call cpu_time(time(1))
 
         ! Make sure the derivative memory is allocated and zeroed.
@@ -885,11 +880,12 @@ contains
         Mat :: Bmat, Xmat
         PetscErrorCode :: ierr
         KSPConvergedReason :: reason
+        real(kind=alwaysRealType) :: timeAdjLocal, timeAdj, norm
+        real(kind=alwaysRealType), dimension(2) :: time
+        integer(kind=intType) :: adjConvIts
 
 #ifndef USE_COMPLEX
-        if (myid == 0 .and. printTiming) then
-            write (*, "(A, I3, A)") " Solving block ADjoint (nFunc=", nFunc, ") via PETSc/HPDDM..."
-        end if
+        call cpu_time(time(1))
 
         ! Alias the caller's arrays as dense Mats. nState is the LOCAL row count
         ! on this rank; PETSC_DETERMINE lets PETSc sum across ranks for the global
@@ -928,6 +924,27 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
         call KSPGetConvergedReason(adjointKSP, reason, ierr)
         call EChk(ierr, __FILE__, __LINE__)
+
+        call cpu_time(time(2))
+        timeAdjLocal = time(2) - time(1)
+        call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, mpi_max, 0, adflow_comm_world, ierr)
+
+        call KSPGetIterationNumber(adjointKSP, adjConvIts, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call KSPGetResidualNorm(adjointKSP, norm, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        if (myid == 0 .and. printTiming) then
+            write (*, timeFormat) "Solving block ADjoint with PETSc/HPDDM time (s) =", timeAdj
+            write (*, "(1X, A, 1X, ES10.4, 4X, A, 1X, I4)") "Norm of error =", norm, "Iterations =", adjConvIts
+            write (*, *) "------------------------------------------------"
+            if (adjConvIts .lt. 0) then
+                write (*, exitFormat) "PETSc block solver diverged after", -adjConvIts, "iterations..."
+            else
+                write (*, exitFormat) "PETSc block solver converged after", adjConvIts, "iterations."
+            end if
+            write (*, *) "------------------------------------------------"
+        end if
 
         ! psi has been written through Xmat alias; no copy-back needed.
         call MatDestroy(Bmat, ierr)
