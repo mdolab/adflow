@@ -51,6 +51,16 @@ class TestAdjointSolverOptions(unittest.TestCase):
         solver = ADFLOW(options=self.opts)
         self.assertAlmostEqual(solver.getOption("adjointHPDDMDeflationTol"), 1e-4)
 
+    def test_hpddm_unavailable_raises(self):
+        from adflow.adjointLinAlg import isHPDDMAvailable
+
+        if isHPDDMAvailable():
+            self.skipTest("HPDDM is available; cannot test the error path")
+        self.opts["adjointSolver"] = "GCRODR"
+        with self.assertRaises(Exception) as ctx:
+            ADFLOW(options=self.opts)
+        self.assertIn("HPDDM", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

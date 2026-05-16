@@ -162,6 +162,19 @@ class ADFLOW(AeroSolver):
         # Initialize PETSc in case the user has not already
         self.adflow.adjointutils.initializepetsc()
 
+        # Raise early if the user chose an HPDDM-backed solver but PETSc was
+        # not built with HPDDM support.
+        from .adjointLinAlg import isHPDDMAvailable, adjointSolverNeedsHPDDM
+
+        if adjointSolverNeedsHPDDM(self.getOption("adjointSolver")):
+            if not isHPDDMAvailable():
+                raise Error(
+                    "adjointSolver '%s' requires HPDDM, but the installed PETSc was not "
+                    "built with HPDDM support. Rebuild PETSc with --download-hpddm "
+                    "(or --with-hpddm-dir=...) and reinstall petsc4py."
+                    % self.getOption("adjointSolver")
+                )
+
         # Set the stand-alone adflow flag to false...this changes how
         # terminate calls are handled.
         self.adflow.iteration.standalonemode = False
