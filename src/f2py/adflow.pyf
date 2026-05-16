@@ -1238,6 +1238,8 @@ python module libadflow
          integer(kind=inttype) :: filllevel
          integer(kind=inttype) :: adjmaxiter
          integer(kind=inttype) :: adjrestart
+         integer(kind=inttype) :: adjrecyclesize
+         real(kind=8) :: adjhpddmdeflationtol
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
          integer(kind=inttype) :: adjamglevels

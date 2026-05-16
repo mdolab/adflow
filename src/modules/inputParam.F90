@@ -827,6 +827,8 @@ module inputADjoint
     real(kind=realType) :: adjMaxL2Dev
     integer(kind=intType) :: adjMaxIter
     integer(kind=intType) :: adjRestart
+    integer(kind=intType) :: adjRecycleSize
+    real(kind=realType) :: adjHpddmDeflationTol
     integer(kind=intType) :: adjMonStep
 
     ! outerPCIts : Number of iterations to run for on (global) preconditioner
