@@ -1767,11 +1767,12 @@ class ADFLOW(AeroSolver):
         finalEvalSensTime = time.time()
 
         if self.getOption("printTiming") and self.comm.rank == 0:
+            fmt = "| %-26s %10.3f sec"
             print("+--------------------------------------------------+")
-            print("| Adjoint RHS time:        %10.3f sec" % (rhsEnd - rhsStart))
-            print("| Adjoint solve time:      %10.3f sec" % (solveEnd - solveStart))
-            print("| Total sensitivity time:  %10.3f sec" % (sensEnd - sensStart))
-            print("| %-30s: %10.3f sec" % ("Complete Sensitivity Time", finalEvalSensTime - startEvalSensTime))
+            print(fmt % ("Adjoint RHS time:", rhsEnd - rhsStart))
+            print(fmt % ("Adjoint solve time:", solveEnd - solveStart))
+            print(fmt % ("Total sensitivity time:", sensEnd - sensStart))
+            print(fmt % ("Complete sensitivity time:", finalEvalSensTime - startEvalSensTime))
             print("+--------------------------------------------------+")
 
     def propagateUncertainty(self, aeroProblem, evalFuncs=None, UQDict=None):
