@@ -10,6 +10,7 @@ and gives non-trivial sensitivities for all tested functions.
 import os
 import sys
 import unittest
+from itertools import product
 
 import numpy as np
 from mpi4py import MPI
@@ -23,6 +24,9 @@ sys.path.insert(0, baseDir)
 from reg_default_options import adflowDefOpts
 
 gridFile = os.path.join(baseDir, "../../input_files/naca0012_rans-L2.cgns")
+
+HPDDM_SOLVERS = ["GCRODR", "BGMRES", "BGCRODR"]
+PRECONDITIONERS = ["additive Schwarz", "multigrid"]
 
 
 def _makeSolver(adjointSolver, extra=None):
@@ -71,8 +75,9 @@ def _makeAP(evalFuncs=None):
     )
 
 
+@parameterized_class([{"adjointSolver": s} for s in HPDDM_SOLVERS])
 class TestSolverEquivalence(unittest.TestCase):
-    """Verify HPDDM solver types produce sensitivities matching GMRES.
+    """Verify each HPDDM solver type produces sensitivities matching GMRES.
 
     Each test runs its own GMRES reference because testflo's MPI runner
     executes each test in a separate process, so setUpClass state is not
@@ -81,7 +86,7 @@ class TestSolverEquivalence(unittest.TestCase):
 
     N_PROCS = 2
 
-    def _compare(self, adjointSolver, atol=1e-5, rtol=1e-5, extra=None):
+    def test_solver(self):
         refAP = _makeAP()
         refSolver = _makeSolver("GMRES")
         refSolver(refAP)
@@ -89,7 +94,7 @@ class TestSolverEquivalence(unittest.TestCase):
         refSolver.evalFunctionsSens(refAP, refSens, refAP.evalFuncs)
 
         ap = _makeAP()
-        solver = _makeSolver(adjointSolver, extra)
+        solver = _makeSolver(self.adjointSolver)
         solver(ap)
         sens = {}
         solver.evalFunctionsSens(ap, sens, ap.evalFuncs)
@@ -98,31 +103,16 @@ class TestSolverEquivalence(unittest.TestCase):
                 np.testing.assert_allclose(
                     sens[k][dvKey],
                     refSens[k][dvKey],
-                    atol=atol,
-                    rtol=rtol,
-                    err_msg=f"{adjointSolver} mismatch on {k}/{dvKey}",
+                    atol=1e-5,
+                    rtol=1e-5,
+                    err_msg=f"{self.adjointSolver} mismatch on {k}/{dvKey}",
                 )
-
-    def test_gcrodr(self):
-        self._compare("GCRODR")
-
-    def test_bgmres(self):
-        self._compare("BGMRES")
-
-    def test_bgcrodr(self):
-        self._compare("BGCRODR")
 
 
 @parameterized_class(
     [
-        {"adjointSolver": "GMRES", "globalPreconditioner": "additive Schwarz"},
-        {"adjointSolver": "GCRODR", "globalPreconditioner": "additive Schwarz"},
-        {"adjointSolver": "BGMRES", "globalPreconditioner": "additive Schwarz"},
-        {"adjointSolver": "BGCRODR", "globalPreconditioner": "additive Schwarz"},
-        {"adjointSolver": "GMRES", "globalPreconditioner": "multigrid"},
-        {"adjointSolver": "GCRODR", "globalPreconditioner": "multigrid"},
-        {"adjointSolver": "BGMRES", "globalPreconditioner": "multigrid"},
-        {"adjointSolver": "BGCRODR", "globalPreconditioner": "multigrid"},
+        {"adjointSolver": s, "globalPreconditioner": pc}
+        for s, pc in product(["GMRES"] + HPDDM_SOLVERS, PRECONDITIONERS)
     ]
 )
 class TestSweep(unittest.TestCase):
