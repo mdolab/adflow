@@ -11,6 +11,43 @@ sys.path.append(os.path.join(baseDir, "../reg_tests"))
 
 from reg_aeroproblems import ap_tutorial_wing  # noqa E402
 
+# Set to True to keep test output files on disk for post-run inspection.
+KEEP_OUTPUT_FILES = False
+
+
+class _OutputFilesTestBase(unittest.TestCase):
+    """Base class that isolates each test's outputs in its own subdirectory of output_files/."""
+
+    def setUp(self):
+        self.output_dir = os.path.join(baseDir, "../output_files", self.id().replace(".", "_"))
+        os.makedirs(self.output_dir, exist_ok=True)
+        self._remove_output_files()
+
+    def tearDown(self):
+        if KEEP_OUTPUT_FILES:
+            return
+        self._remove_output_files()
+        try:
+            os.rmdir(self.output_dir)
+        except OSError:
+            pass
+
+    def _remove_output_files(self):
+        if not os.path.isdir(self.output_dir):
+            return
+        for fname in os.listdir(self.output_dir):
+            full = os.path.join(self.output_dir, fname)
+            if os.path.isfile(full):
+                os.remove(full)
+
+    def _files_in_output(self):
+        if not os.path.isdir(self.output_dir):
+            return set()
+        return {f for f in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, f))}
+
+    def assertOutputFiles(self, expected):
+        self.assertSetEqual(self._files_in_output(), set(expected))
+
 
 @parameterized_class(
     [
@@ -24,58 +61,39 @@ from reg_aeroproblems import ap_tutorial_wing  # noqa E402
         },
     ]
 )
-class TestSolutionFileNames(unittest.TestCase):
+class TestSolutionFileNames(_OutputFilesTestBase):
     N_PROCS = 1
 
     def setUp(self):
+        super().setUp()
         self.options = {
-            "outputDirectory": os.path.join(baseDir, "../output_files"),
+            "outputDirectory": self.output_dir,
             "writeSolutionDigits": self.writeSolutionDigits,
             "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "writeSurfaceSolution": False,
         }
 
     def test_failed_mesh(self):
-        # Create the solver
         CFDSolver = ADFLOW(options=self.options)
         ap = copy.copy(ap_tutorial_wing)
 
         # Pretend mesh warping failed
         CFDSolver.adflow.killsignals.fatalfail = True
-
-        # Solve
         CFDSolver(ap)
 
-        if self.writeSolutionDigits == 3:
-            self.mesh_file = os.path.join(self.options["outputDirectory"], f"failed_mesh_{ap.name}_000.cgns")
-        elif self.writeSolutionDigits == 5:
-            self.mesh_file = os.path.join(self.options["outputDirectory"], f"failed_mesh_{ap.name}_00000.cgns")
-
-        # Check that a mesh file with this name exists
-        self.assertTrue(os.path.isfile(self.mesh_file))
+        digits = self.writeSolutionDigits
+        self.assertOutputFiles({f"failed_mesh_{ap.name}_{'0' * digits}.cgns"})
 
     def test_volume_solution(self):
-        # Create the solver
         CFDSolver = ADFLOW(options=self.options)
-
-        # Set the AeroProblem and call counter
         ap = copy.copy(ap_tutorial_wing)
         CFDSolver.setAeroProblem(ap)
         CFDSolver.curAP.adflowData.callCounter = 5
 
         CFDSolver.writeSolution()
 
-        if self.writeSolutionDigits == 3:
-            self.mesh_file = os.path.join(self.options["outputDirectory"], f"{ap.name}_005_vol.cgns")
-        elif self.writeSolutionDigits == 5:
-            self.mesh_file = os.path.join(self.options["outputDirectory"], f"{ap.name}_00005_vol.cgns")
-
-        # Check that a mesh file with this name exists
-        self.assertTrue(os.path.isfile(self.mesh_file))
-
-    def tearDown(self):
-        if os.path.isfile(self.mesh_file):
-            os.remove(self.mesh_file)
+        digits = self.writeSolutionDigits
+        self.assertOutputFiles({f"{ap.name}_{5:0{digits}d}_vol.cgns"})
 
 
 @parameterized_class(
@@ -86,12 +104,13 @@ class TestSolutionFileNames(unittest.TestCase):
         },
     ]
 )
-class TestSolutionFileNamesUnsteady(unittest.TestCase):
+class TestSolutionFileNamesUnsteady(_OutputFilesTestBase):
     N_PROCS = 1
 
     def setUp(self):
+        super().setUp()
         self.options = {
-            "outputDirectory": os.path.join(baseDir, "../output_files"),
+            "outputDirectory": self.output_dir,
             "writeSolutionDigits": self.writeSolutionDigits,
             "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "writeSurfaceSolution": True,
@@ -102,39 +121,17 @@ class TestSolutionFileNamesUnsteady(unittest.TestCase):
             "equationMode": "unsteady",
         }
 
-    def _cleanup_output_files(self, output_dir):
-        if not os.path.isdir(output_dir):
-            return
-        for fname in os.listdir(output_dir):
-            if fname == "README.md":
-                continue
-            if not (fname.endswith(".cgns") or fname.endswith(".plt")):
-                continue
-            full_path = os.path.join(output_dir, fname)
-            if os.path.isfile(full_path):
-                os.remove(full_path)
-
-    def _new_output_files(self, output_dir, before):
-        after = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
-        return {
-            fname
-            for fname in after - before
-            if fname != "README.md" and os.path.isfile(os.path.join(output_dir, fname))
-        }
-
     def _expected_output_files(self, ap_name):
         base_name = f"{ap_name}_000"
-        expected_files = {
+        expected = {
             f"{base_name}_surf_Timestep0001.cgns",
             f"{base_name}_surf_Timestep0001.plt",
             f"{base_name}_surf_Timestep0002.cgns",
             f"{base_name}_surf_Timestep0002.plt",
         }
-
         for timestep in range(self.options["nTimeStepsFine"] + 1):
-            expected_files.add(f"{base_name}_vol_Timestep{timestep:04d}.cgns")
-
-        return expected_files
+            expected.add(f"{base_name}_vol_Timestep{timestep:04d}.cgns")
+        return expected
 
     def _expected_large_timestep_output_files(self, ap_name):
         base_name = f"{ap_name}_000"
@@ -146,37 +143,23 @@ class TestSolutionFileNamesUnsteady(unittest.TestCase):
         }
 
     def test_unsteady_file_names(self):
-        output_dir = self.options["outputDirectory"]
-        before = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
+        CFDSolver = ADFLOW(options=self.options)
+        ap = copy.copy(ap_tutorial_wing)
+        CFDSolver.setAeroProblem(ap)
+        CFDSolver(ap)
 
-        try:
-            CFDSolver = ADFLOW(options=self.options)
-            ap = copy.copy(ap_tutorial_wing)
-            CFDSolver.setAeroProblem(ap)
-            CFDSolver(ap)
-
-            new_files = self._new_output_files(output_dir, before)
-            self.assertSetEqual(new_files, self._expected_output_files(ap.name))
-        finally:
-            self._cleanup_output_files(output_dir)
+        self.assertOutputFiles(self._expected_output_files(ap.name))
 
     def test_unsteady_file_names_large_timestep(self):
-        output_dir = self.options["outputDirectory"]
-        before = set(os.listdir(output_dir)) if os.path.isdir(output_dir) else set()
+        CFDSolver = ADFLOW(options=self.options)
+        ap = copy.copy(ap_tutorial_wing)
+        CFDSolver.setAeroProblem(ap)
+        CFDSolver.curAP.adflowData.callCounter = 0
+        CFDSolver.adflow.monitor.timestepunsteady = 10000
 
-        try:
-            CFDSolver = ADFLOW(options=self.options)
-            ap = copy.copy(ap_tutorial_wing)
-            CFDSolver.setAeroProblem(ap)
-            CFDSolver.curAP.adflowData.callCounter = 0
-            CFDSolver.adflow.monitor.timestepunsteady = 10000
+        CFDSolver.writeSolution()
 
-            CFDSolver.writeSolution()
-
-            new_files = self._new_output_files(output_dir, before)
-            self.assertSetEqual(new_files, self._expected_large_timestep_output_files(ap.name))
-        finally:
-            self._cleanup_output_files(output_dir)
+        self.assertOutputFiles(self._expected_large_timestep_output_files(ap.name))
 
 
 if __name__ == "__main__":
