@@ -1279,7 +1279,7 @@ bocoloop:do mm=1,nbocos
 loopbocos:do mm=1,nbocos
 ! the actual correction of the coordinates only takes
 ! place for symmetry planes.
-      if (bctype(mm) .eq. symm) then
+      if (bctype(mm) .eq. symm .or. bctype(mm) .eq. antisymm) then
 ! set some variables, depending on the block face on
 ! which the subface is located.
         call pushreal8(norm(1))
@@ -1781,7 +1781,7 @@ loopbocos:do mm=1,nbocos
 loopbocos:do mm=1,nbocos
 ! the actual correction of the coordinates only takes
 ! place for symmetry planes.
-      if (bctype(mm) .eq. symm) then
+      if (bctype(mm) .eq. symm .or. bctype(mm) .eq. antisymm) then
 ! set some variables, depending on the block face on
 ! which the subface is located.
         norm(1) = bcdata(mm)%symnorm(1)

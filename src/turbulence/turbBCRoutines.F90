@@ -762,7 +762,7 @@ contains
 #endif
             !=============================================================
 
-            case (Symm, SymmPolar, EulerWall)
+            case (Symm, AntiSymm, SymmPolar, EulerWall)
 
             ! Symmetry, polar symmetry or inviscid wall. Treatment of
             ! the turbulent equations is identical.
