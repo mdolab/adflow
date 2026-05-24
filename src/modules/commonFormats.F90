@@ -35,4 +35,7 @@ module commonFormats
     ! Integers written with 5 characters
     character(len=maxStringLen) :: int5 = '(*(I5))'
 
+    ! Integers written with 7 characters
+    character(len=maxStringLen) :: int7 = '(*(I7))'
+
 end module commonFormats
