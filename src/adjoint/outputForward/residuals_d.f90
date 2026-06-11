@@ -508,9 +508,12 @@ contains
 
 !  differentiation of initres_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: *dw
-!   rw status of diff variables: *dw:in-out
-!   plus diff mem management of: dw:in
+!   with respect to varying inputs: *(flowdoms.vol) *(flowdoms.w)
+!                *dw
+!   rw status of diff variables: *(flowdoms.vol):in *(flowdoms.w):in
+!                *dw:in-out
+!   plus diff mem management of: flowdoms.vol:in flowdoms.w:in
+!                dw:in
   subroutine initres_block_d(varstart, varend, nn, sps)
 !
 !       initres initializes the given range of the residual. either to
@@ -535,8 +538,18 @@ contains
 !
     integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
     real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype) :: tmpd
     real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
     real(kind=realtype), dimension(:, :, :), pointer :: volsp
+    real(kind=realtype) :: temp
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: temp2
+    real(kind=realtype) :: temp3
+    real(kind=realtype) :: temp4
+    real(kind=realtype) :: temp5
+    real(kind=realtype) :: temp6
+    real(kind=realtype) :: temp7
 ! return immediately of no variables are in the range.
     if (varend .lt. varstart) then
       return
@@ -572,6 +585,217 @@ contains
               end do
             end do
           end do
+        end if
+      case (timespectral) 
+! time spectral computation. the time derivative of the
+! current solution is given by a linear combination of
+! all other solutions, i.e. a matrix vector product.
+! first store the section to which this block belongs
+! in jj.
+        jj = sectionid
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+! finest multigrid level. the residual must be
+! initialized to the time derivative.
+! initialize it to zero.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dwd(i, j, k, l) = 0.0_8
+                  dw(i, j, k, l) = zero
+                end do
+              end do
+            end do
+          end do
+! loop over the number of terms which contribute
+! to the time derivative.
+timeloopfine:do mm=1,ntimeintervalsspectral
+! store the pointer for the variable to be used to
+! compute the unsteady source term and the volume.
+! also store in ii the offset needed for vector
+! quantities.
+            ii = 3*(mm-1)
+! loop over the number of variables to be set.
+varloopfine:do l=varstart,varend
+! test for a momentum variable.
+              if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variable. a special treatment is
+! needed because it is a vector and the velocities
+! are stored instead of the momentum. set the
+! coefficient ll, which defines the row of the
+! matrix used later on.
+                ll = 3*sps - 2 + (l-ivx)
+! loop over the owned cell centers to add the
+! contribution from wsp.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+! store the matrix vector product with the
+! velocity in tmp.
+                      temp = dvector(jj, ll, ii+1)
+                      temp0 = dvector(jj, ll, ii+2)
+                      temp1 = dvector(jj, ll, ii+3)
+                      tmpd = temp*flowdomsd(nn, currentlevel, mm)%w(i, j&
+&                       , k, ivx) + temp0*flowdomsd(nn, currentlevel, mm&
+&                       )%w(i, j, k, ivy) + temp1*flowdomsd(nn, &
+&                       currentlevel, mm)%w(i, j, k, ivz)
+                      tmp = temp*flowdoms(nn, currentlevel, mm)%w(i, j, &
+&                       k, ivx) + temp0*flowdoms(nn, currentlevel, mm)%w&
+&                       (i, j, k, ivy) + temp1*flowdoms(nn, currentlevel&
+&                       , mm)%w(i, j, k, ivz)
+! update the residual. note the
+! multiplication with the density to obtain
+! the correct time derivative for the
+! momentum variable.
+                      temp1 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       irho)
+                      temp0 = flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )
+                      dwd(i, j, k, l) = dwd(i, j, k, l) + temp1*(temp0*&
+&                       tmpd+tmp*flowdomsd(nn, currentlevel, mm)%vol(i, &
+&                       j, k)) + tmp*temp0*flowdomsd(nn, currentlevel, &
+&                       mm)%w(i, j, k, irho)
+                      dw(i, j, k, l) = dw(i, j, k, l) + tmp*temp0*temp1
+                    end do
+                  end do
+                end do
+              else
+! scalar variable.  loop over the owned cells to
+! add the contribution of wsp to the time
+! derivative.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+                      temp1 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       l)
+                      temp0 = flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )
+                      dwd(i, j, k, l) = dwd(i, j, k, l) + dscalar(jj, &
+&                       sps, mm)*(temp1*flowdomsd(nn, currentlevel, mm)%&
+&                       vol(i, j, k)+temp0*flowdomsd(nn, currentlevel, &
+&                       mm)%w(i, j, k, l))
+                      dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
+&                       , mm)*(temp0*temp1)
+                    end do
+                  end do
+                end do
+              end if
+            end do varloopfine
+          end do timeloopfine
+        else
+! coarse grid level. initialize the owned cells to the
+! residual forcing term plus a correction for the
+! multigrid treatment of the time derivative term.
+! initialization to the residual forcing term.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dwd(i, j, k, l) = 0.0_8
+                  dw(i, j, k, l) = wr(i, j, k, l)
+                end do
+              end do
+            end do
+          end do
+! loop over the number of terms which contribute
+! to the time derivative.
+timeloopcoarse:do mm=1,ntimeintervalsspectral
+! store the pointer for the variable to be used to
+! compute the unsteady source term and the pointers
+! for wsp1, the solution when entering this mg level
+! and for the volume.
+! furthermore store in ii the offset needed for
+! vector quantities.
+            ii = 3*(mm-1)
+! loop over the number of variables to be set.
+varloopcoarse:do l=varstart,varend
+! test for a momentum variable.
+              if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variable. a special treatment is
+! needed because it is a vector and the velocities
+! are stored instead of the momentum. set the
+! coefficient ll, which defines the row of the
+! matrix used later on.
+                ll = 3*sps - 2 + (l-ivx)
+! add the contribution of wps to the correction
+! of the time derivative. the difference between
+! the current time derivative and the one when
+! entering this grid level must be added, because
+! the residual forcing term only takes the spatial
+! part of the coarse grid residual into account.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+! store the matrix vector product with the
+! momentum in tmp.
+                      temp1 = dvector(jj, ll, ii+1)
+                      temp0 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       ivx)
+                      temp = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       irho)
+                      temp2 = dvector(jj, ll, ii+2)
+                      temp3 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       ivy)
+                      temp4 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       irho)
+                      temp5 = dvector(jj, ll, ii+3)
+                      temp6 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       ivz)
+                      temp7 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       irho)
+                      tmpd = temp1*(temp0*flowdomsd(nn, currentlevel, mm&
+&                       )%w(i, j, k, irho)+temp*flowdomsd(nn, &
+&                       currentlevel, mm)%w(i, j, k, ivx)) + temp2*(&
+&                       temp3*flowdomsd(nn, currentlevel, mm)%w(i, j, k&
+&                       , irho)+temp4*flowdomsd(nn, currentlevel, mm)%w(&
+&                       i, j, k, ivy)) + temp5*(temp6*flowdomsd(nn, &
+&                       currentlevel, mm)%w(i, j, k, irho)+temp7*&
+&                       flowdomsd(nn, currentlevel, mm)%w(i, j, k, ivz))
+                      tmp = temp1*(temp*temp0-flowdoms(nn, currentlevel&
+&                       , mm)%w1(i, j, k, irho)*flowdoms(nn, &
+&                       currentlevel, mm)%w1(i, j, k, ivx)) + temp2*(&
+&                       temp4*temp3-flowdoms(nn, currentlevel, mm)%w1(i&
+&                       , j, k, irho)*flowdoms(nn, currentlevel, mm)%w1(&
+&                       i, j, k, ivy)) + temp5*(temp7*temp6-flowdoms(nn&
+&                       , currentlevel, mm)%w1(i, j, k, irho)*flowdoms(&
+&                       nn, currentlevel, mm)%w1(i, j, k, ivz))
+! add tmp to the residual. multiply it by
+! the volume to obtain the finite volume
+! formulation of the  derivative of the
+! momentum.
+                      temp7 = flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )
+                      dwd(i, j, k, l) = dwd(i, j, k, l) + temp7*tmpd + &
+&                       tmp*flowdomsd(nn, currentlevel, mm)%vol(i, j, k)
+                      dw(i, j, k, l) = dw(i, j, k, l) + tmp*temp7
+                    end do
+                  end do
+                end do
+              else
+! scalar variable. loop over the owned cells
+! to add the contribution of wsp to the correction
+! of the time derivative.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+                      temp7 = flowdoms(nn, currentlevel, mm)%w(i, j, k, &
+&                       l) - flowdoms(nn, currentlevel, mm)%w1(i, j, k, &
+&                       l)
+                      temp6 = flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )
+                      dwd(i, j, k, l) = dwd(i, j, k, l) + dscalar(jj, &
+&                       sps, mm)*(temp7*flowdomsd(nn, currentlevel, mm)%&
+&                       vol(i, j, k)+temp6*flowdomsd(nn, currentlevel, &
+&                       mm)%w(i, j, k, l))
+                      dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
+&                       , mm)*(temp6*temp7)
+                    end do
+                  end do
+                end do
+              end if
+            end do varloopcoarse
+          end do timeloopcoarse
         end if
       end select
 ! set the residual in the halo cells to zero. this is just
@@ -676,6 +900,170 @@ contains
               end do
             end do
           end do
+        end if
+      case (timespectral) 
+! time spectral computation. the time derivative of the
+! current solution is given by a linear combination of
+! all other solutions, i.e. a matrix vector product.
+! first store the section to which this block belongs
+! in jj.
+        jj = sectionid
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+! finest multigrid level. the residual must be
+! initialized to the time derivative.
+! initialize it to zero.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = zero
+                end do
+              end do
+            end do
+          end do
+! loop over the number of terms which contribute
+! to the time derivative.
+timeloopfine:do mm=1,ntimeintervalsspectral
+! store the pointer for the variable to be used to
+! compute the unsteady source term and the volume.
+! also store in ii the offset needed for vector
+! quantities.
+            ii = 3*(mm-1)
+! loop over the number of variables to be set.
+varloopfine:do l=varstart,varend
+! test for a momentum variable.
+              if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variable. a special treatment is
+! needed because it is a vector and the velocities
+! are stored instead of the momentum. set the
+! coefficient ll, which defines the row of the
+! matrix used later on.
+                ll = 3*sps - 2 + (l-ivx)
+! loop over the owned cell centers to add the
+! contribution from wsp.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+! store the matrix vector product with the
+! velocity in tmp.
+                      tmp = dvector(jj, ll, ii+1)*flowdoms(nn, &
+&                       currentlevel, mm)%w(i, j, k, ivx) + dvector(jj, &
+&                       ll, ii+2)*flowdoms(nn, currentlevel, mm)%w(i, j&
+&                       , k, ivy) + dvector(jj, ll, ii+3)*flowdoms(nn, &
+&                       currentlevel, mm)%w(i, j, k, ivz)
+! update the residual. note the
+! multiplication with the density to obtain
+! the correct time derivative for the
+! momentum variable.
+                      dw(i, j, k, l) = dw(i, j, k, l) + tmp*flowdoms(nn&
+&                       , currentlevel, mm)%vol(i, j, k)*flowdoms(nn, &
+&                       currentlevel, mm)%w(i, j, k, irho)
+                    end do
+                  end do
+                end do
+              else
+! scalar variable.  loop over the owned cells to
+! add the contribution of wsp to the time
+! derivative.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+                      dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
+&                       , mm)*flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )*flowdoms(nn, currentlevel, mm)%w(i, j, k, l)
+                    end do
+                  end do
+                end do
+              end if
+            end do varloopfine
+          end do timeloopfine
+        else
+! coarse grid level. initialize the owned cells to the
+! residual forcing term plus a correction for the
+! multigrid treatment of the time derivative term.
+! initialization to the residual forcing term.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = wr(i, j, k, l)
+                end do
+              end do
+            end do
+          end do
+! loop over the number of terms which contribute
+! to the time derivative.
+timeloopcoarse:do mm=1,ntimeintervalsspectral
+! store the pointer for the variable to be used to
+! compute the unsteady source term and the pointers
+! for wsp1, the solution when entering this mg level
+! and for the volume.
+! furthermore store in ii the offset needed for
+! vector quantities.
+            ii = 3*(mm-1)
+! loop over the number of variables to be set.
+varloopcoarse:do l=varstart,varend
+! test for a momentum variable.
+              if ((l .eq. ivx .or. l .eq. ivy) .or. l .eq. ivz) then
+! momentum variable. a special treatment is
+! needed because it is a vector and the velocities
+! are stored instead of the momentum. set the
+! coefficient ll, which defines the row of the
+! matrix used later on.
+                ll = 3*sps - 2 + (l-ivx)
+! add the contribution of wps to the correction
+! of the time derivative. the difference between
+! the current time derivative and the one when
+! entering this grid level must be added, because
+! the residual forcing term only takes the spatial
+! part of the coarse grid residual into account.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+! store the matrix vector product with the
+! momentum in tmp.
+                      tmp = dvector(jj, ll, ii+1)*(flowdoms(nn, &
+&                       currentlevel, mm)%w(i, j, k, irho)*flowdoms(nn, &
+&                       currentlevel, mm)%w(i, j, k, ivx)-flowdoms(nn, &
+&                       currentlevel, mm)%w1(i, j, k, irho)*flowdoms(nn&
+&                       , currentlevel, mm)%w1(i, j, k, ivx)) + dvector(&
+&                       jj, ll, ii+2)*(flowdoms(nn, currentlevel, mm)%w(&
+&                       i, j, k, irho)*flowdoms(nn, currentlevel, mm)%w(&
+&                       i, j, k, ivy)-flowdoms(nn, currentlevel, mm)%w1(&
+&                       i, j, k, irho)*flowdoms(nn, currentlevel, mm)%w1&
+&                       (i, j, k, ivy)) + dvector(jj, ll, ii+3)*(&
+&                       flowdoms(nn, currentlevel, mm)%w(i, j, k, irho)*&
+&                       flowdoms(nn, currentlevel, mm)%w(i, j, k, ivz)-&
+&                       flowdoms(nn, currentlevel, mm)%w1(i, j, k, irho)&
+&                       *flowdoms(nn, currentlevel, mm)%w1(i, j, k, ivz)&
+&                       )
+! add tmp to the residual. multiply it by
+! the volume to obtain the finite volume
+! formulation of the  derivative of the
+! momentum.
+                      dw(i, j, k, l) = dw(i, j, k, l) + tmp*flowdoms(nn&
+&                       , currentlevel, mm)%vol(i, j, k)
+                    end do
+                  end do
+                end do
+              else
+! scalar variable. loop over the owned cells
+! to add the contribution of wsp to the correction
+! of the time derivative.
+                do k=2,kl
+                  do j=2,jl
+                    do i=2,il
+                      dw(i, j, k, l) = dw(i, j, k, l) + dscalar(jj, sps&
+&                       , mm)*flowdoms(nn, currentlevel, mm)%vol(i, j, k&
+&                       )*(flowdoms(nn, currentlevel, mm)%w(i, j, k, l)-&
+&                       flowdoms(nn, currentlevel, mm)%w1(i, j, k, l))
+                    end do
+                  end do
+                end do
+              end if
+            end do varloopcoarse
+          end do timeloopcoarse
         end if
       end select
 ! set the residual in the halo cells to zero. this is just
