@@ -355,7 +355,7 @@ contains
         implicit none
         ! Local variables.
         integer(kind=intType) :: i, j, k, nn, ii
-        real(kind=realType) :: cv13, kar2Inv, cw36, cb3Inv
+        real(kind=realType) :: cb3Inv
         real(kind=realType) :: nu
         real(kind=realType) :: fv1, fv2, ft2
         real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
@@ -364,10 +364,7 @@ contains
         real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
 
 
-        ! Set model constants
-        cv13 = rsaCv1**3
-        kar2Inv = one / (rsaK**2)
-        cw36 = rsaCw3**6
+        ! Set model constant
         cb3Inv = one / rsaCb3
 
         !
