@@ -37,6 +37,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -444,6 +445,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -635,6 +637,7 @@ branch = myIntStack(myIntPtr)
     implicit none
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cb3inv
     real(kind=realtype) :: nu
     real(kind=realtype) :: nud
     real(kind=realtype) :: fv1, fv2, ft2
@@ -652,7 +655,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd0
     integer :: branch
-! set model constants
+! set model constant
     cb3inv = one/rsacb3
 !$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
@@ -1020,6 +1023,7 @@ branch = myIntStack(myIntPtr)
     implicit none
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cb3inv
     real(kind=realtype) :: nu
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
@@ -1028,10 +1032,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     intrinsic mod
     intrinsic max
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
+! set model constant
     cb3inv = one/rsacb3
 !$ad ii-loop
 !

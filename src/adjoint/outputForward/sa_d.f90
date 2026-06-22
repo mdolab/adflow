@@ -40,6 +40,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -491,6 +492,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cv13, kar2inv, cw36, cb3inv
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -684,6 +686,7 @@ contains
     implicit none
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cb3inv
     real(kind=realtype) :: nu
     real(kind=realtype) :: nud
     real(kind=realtype) :: fv1, fv2, ft2
@@ -700,10 +703,7 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: temp0
     real(kind=realtype) :: temp1
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
+! set model constant
     cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.
@@ -1092,6 +1092,7 @@ contains
     implicit none
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: cb3inv
     real(kind=realtype) :: nu
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
@@ -1099,10 +1100,7 @@ contains
     real(kind=realtype) :: nutm, nutp, num, nup, cdm, cdp
     real(kind=realtype) :: c1m, c1p, c10, b1, c1, d1, qs
     intrinsic max
-! set model constants
-    cv13 = rsacv1**3
-    kar2inv = one/rsak**2
-    cw36 = rsacw3**6
+! set model constant
     cb3inv = one/rsacb3
 !
 !       viscous terms in k-direction.
