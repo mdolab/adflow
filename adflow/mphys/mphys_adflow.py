@@ -261,13 +261,17 @@ class ADflowMesh(ExplicitComponent):
     def mphys_get_surface_mesh(self):
         return self.x_a0
 
-    def mphys_get_triangulated_surface(self, groupName=None):
+    def mphys_get_triangulated_surface(self, groupName=None, includeZipper=True):
         # this is a list of lists of 3 points
         # p0, v1, v2
+        # includeZipper=False returns the raw wall surface (all faces, no overset
+        # blanking and no zipper mesh), which is independent of the processor count.
+        # This is the appropriate choice when the surface is used as a geometry
+        # reference, e.g. for DVConstraints projections.
 
-        return self._getTriangulatedMeshSurface(groupName=groupName)
+        return self._getTriangulatedMeshSurface(groupName=groupName, includeZipper=includeZipper)
 
-    def _getTriangulatedMeshSurface(self, groupName=None, **kwargs):
+    def _getTriangulatedMeshSurface(self, groupName=None, includeZipper=True, **kwargs):
         """
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
@@ -285,8 +289,10 @@ class ADflowMesh(ExplicitComponent):
 
         # Obtain the points and connectivity for the specified
         # groupName
-        pts = self.aero_solver.comm.allgather(self.aero_solver.getSurfaceCoordinates(groupName, **kwargs))
-        conn, faceSizes = self.aero_solver.getSurfaceConnectivity(groupName)
+        pts = self.aero_solver.comm.allgather(
+            self.aero_solver.getSurfaceCoordinates(groupName, includeZipper=includeZipper, **kwargs)
+        )
+        conn, faceSizes = self.aero_solver.getSurfaceConnectivity(groupName, includeZipper=includeZipper)
         conn = np.array(conn).flatten()
         conn = self.aero_solver.comm.allgather(conn)
         faceSizes = self.aero_solver.comm.allgather(faceSizes)
@@ -1324,9 +1330,9 @@ class ADflowMeshGroup(Group):
         # just pass through the call
         return self.surface_mesh.mphys_add_coordinate_input()
 
-    def mphys_get_triangulated_surface(self):
+    def mphys_get_triangulated_surface(self, includeZipper=True):
         # just pass through the call
-        return self.surface_mesh.mphys_get_triangulated_surface()
+        return self.surface_mesh.mphys_get_triangulated_surface(includeZipper=includeZipper)
 
 
 class ADflowBuilder(Builder):
