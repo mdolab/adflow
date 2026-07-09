@@ -171,6 +171,7 @@ contains
         if (surfWriteSepSensorKsArea) nSolVar = nSolVar + 1
         if (surfWriteCavitation) nSolVar = nSolVar + 1
         if (surfWriteGC) nSolVar = nSolVar + 1
+        if (surfWriteSoundSpeed) nSolVar = nSolVar + 1
 
     end subroutine numberOfSurfSolVariables
 
@@ -225,6 +226,7 @@ contains
         if (volWriteGC) nVolSolvar = nVolSolvar + 1
         if (volWriteStatus) nVolSolvar = nVolSolvar + 1
         if (volWriteIntermittency) nVolDiscrVar = nVolDiscrVar + 1
+        if (volWriteSoundSpeed) nVolDiscrVar = nVolDiscrVar + 1
 
         ! Check the discrete variables.
 
@@ -571,6 +573,11 @@ contains
             solNames(nn) = cgnsIntermittency
         end if
 
+        if (volWriteSoundSpeed) then
+            nn = nn + 1
+            solNames(nn) = cgnsSoundSpeed
+        end if
+
     end subroutine volSolNames
 
     subroutine surfSolNames(solNames)
@@ -736,6 +743,11 @@ contains
         if (surfWriteGC) then
             nn = nn + 1
             solNames(nn) = cgnsGC
+        end if
+
+        if (surfWriteSoundSpeed) then
+            nn = nn + 1
+            solNames(nn) = cgnsSoundSpeed
         end if
 
     end subroutine surfSolNames
@@ -1370,6 +1382,15 @@ contains
                 end do
             end do
 
+        case (cgnsSoundSpeed)
+            do k = kBeg, kEnd
+                do j = jBeg, jEnd
+                    do i = iBeg, iEnd
+                        wIO(i, j, k, 1) = sqrt(real(aa(i, j, k)))
+                    end do
+                end do
+            end do
+
         case default
             call terminate("storeSolInBuffer", &
                            "This should not happen")
@@ -1458,6 +1479,7 @@ contains
         real(kind=realType), dimension(:, :), pointer :: pp1, pp2
 
         real(kind=realType), dimension(:, :), pointer :: gamma1, gamma2
+        real(kind=realType), dimension(:, :), pointer :: aa1, aa2
         real(kind=realType), dimension(:, :), pointer :: rlv1, rlv2
         real(kind=realType), dimension(:, :), pointer :: dd2Wall
 
@@ -1571,6 +1593,7 @@ contains
 
             pp1 => p(1, 1:, 1:); pp2 => p(2, 1:, 1:)
             gamma1 => gamma(1, 1:, 1:); gamma2 => gamma(2, 1:, 1:)
+            aa1 => aa(1, 1:, 1:); aa2 => aa(2, 1:, 1:)
 
             if (blockIsMoving) then
                 ss1 => s(1, 1:, 1:, :); ss2 => s(2, 1:, 1:, :)
@@ -1604,6 +1627,7 @@ contains
 
             pp1 => p(ie, 1:, 1:); pp2 => p(il, 1:, 1:)
             gamma1 => gamma(ie, 1:, 1:); gamma2 => gamma(il, 1:, 1:)
+            aa1 => aa(ie, 1:, 1:); aa2 => aa(il, 1:, 1:)
 
             if (blockIsMoving) then
                 ss1 => s(ie - 1, 1:, 1:, :); ss2 => s(ie, 1:, 1:, :)
@@ -1638,6 +1662,7 @@ contains
 
             pp1 => p(1:, 1, 1:); pp2 => p(1:, 2, 1:)
             gamma1 => gamma(1:, 1, 1:); gamma2 => gamma(1:, 2, 1:)
+            aa1 => aa(1:, 1, 1:); aa2 => aa(1:, 2, 1:)
 
             if (blockIsMoving) then
                 ss1 => s(1:, 1, 1:, :); ss2 => s(1:, 2, 1:, :)
@@ -1672,6 +1697,7 @@ contains
 
             pp1 => p(1:, je, 1:); pp2 => p(1:, jl, 1:)
             gamma1 => gamma(1:, je, 1:); gamma2 => gamma(1:, jl, 1:)
+            aa1 => aa(1:, je, 1:); aa2 => aa(1:, jl, 1:)
 
             if (blockIsMoving) then
                 ss1 => s(1:, je - 1, 1:, :); ss2 => s(1:, je, 1:, :)
@@ -1706,6 +1732,7 @@ contains
 
             pp1 => p(1:, 1:, 1); pp2 => p(1:, 1:, 2)
             gamma1 => gamma(1:, 1:, 1); gamma2 => gamma(1:, 1:, 2)
+            aa1 => aa(1:, 1:, 1); aa2 => aa(1:, 1:, 2)
 
             if (blockIsMoving) then
                 ss1 => s(1:, 1:, 1, :); ss2 => s(1:, 1:, 2, :)
@@ -1740,6 +1767,7 @@ contains
 
             pp1 => p(1:, 1:, ke); pp2 => p(1:, 1:, kl)
             gamma1 => gamma(1:, 1:, ke); gamma2 => gamma(1:, 1:, kl)
+            aa1 => aa(1:, 1:, ke); aa2 => aa(1:, 1:, kl)
 
             if (blockIsMoving) then
                 ss1 => s(1:, 1:, ke - 1, :); ss2 => s(1:, 1:, ke, :)
@@ -2371,6 +2399,17 @@ contains
                 !print*, sensor
             end do
         end do
+
+        case (cgnsSoundSpeed)
+        do j = rangeFace(2, 1), rangeFace(2, 2)
+            do i = rangeFace(1, 1), rangeFace(1, 2)
+                nn=nn+1
+                ! Compute face sound speed
+                buffer(nn) = sqrt(half * (aa1(i, j) + aa2(i, j)))
+
+            end do
+        end do
+
         end select varName
 
     contains
