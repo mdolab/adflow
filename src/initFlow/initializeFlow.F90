@@ -46,6 +46,7 @@ contains
         real(kind=realType) :: nuInf, ktmp, uInf2
         real(kind=realType) :: vinf, zinf, tmp1(1), tmp2(1)
 
+
         ! Compute the dimensional viscosity from Sutherland's law
         muInfDim = muSuthDim &
                    * ((TSuthDim + SSuthDim) / (TInfDim + SSuthDim)) &
@@ -315,7 +316,7 @@ contains
     end subroutine infChangeCorrection
 
     ! Section out the BCdata setup so that it can by called from python when needed
-    subroutine updateBCDataAllLevels()
+    subroutine updateBCDataAllLevels
         ! sets the prescribed boundary data from the CGNS arrays
 
         use constants

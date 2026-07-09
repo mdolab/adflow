@@ -79,16 +79,22 @@ class TestCenterOfForce(unittest.TestCase):
         mz = funcs[f"{self.ap.name}_mz"]
 
         # center of x-force
+        cofxx = funcs[f"{self.ap.name}_cofxx"]
         cofxy = funcs[f"{self.ap.name}_cofxy"]
         cofxz = funcs[f"{self.ap.name}_cofxz"]
+        cof_fx = np.array([cofxx, cofxy, cofxz])
 
         # center of y-force
         cofyx = funcs[f"{self.ap.name}_cofyx"]
+        cofyy = funcs[f"{self.ap.name}_cofyy"]
         cofyz = funcs[f"{self.ap.name}_cofyz"]
+        cof_fy = np.array([cofyx, cofyy, cofyz])
 
         # center of z-force
         cofzx = funcs[f"{self.ap.name}_cofzx"]
         cofzy = funcs[f"{self.ap.name}_cofzy"]
+        cofzz = funcs[f"{self.ap.name}_cofzz"]
+        cof_fz = np.array([cofzx, cofzy, cofzz])
 
         # reference point for the AP
         xref = self.ap.xRef
@@ -102,6 +108,27 @@ class TestCenterOfForce(unittest.TestCase):
         np.testing.assert_allclose(mx, mymx, rtol=1e-9)
         np.testing.assert_allclose(my, mymy, rtol=1e-9)
         np.testing.assert_allclose(mz, mymz, rtol=1e-9)
+
+        # compute the center of lift based on centers of force and check
+        alpha = self.ap.alpha * np.pi / 180.0
+        lift_dir = np.array([-np.sin(alpha), np.cos(alpha), 0.0])
+
+        fx_vec = np.array([fx, 0.0, 0.0])
+        fy_vec = np.array([0.0, fy, 0.0])
+        fz_vec = np.array([0.0, 0.0, fz])
+
+        fxlift = fx_vec.dot(lift_dir)
+        fylift = fy_vec.dot(lift_dir)
+        fzlift = fz_vec.dot(lift_dir)
+        col_computed = (cof_fx * fxlift + cof_fy * fylift + cof_fz * fzlift) / (fxlift + fylift + fzlift)
+        col_adflow = np.array(
+            [
+                funcs[f"{self.ap.name}_colx"],
+                funcs[f"{self.ap.name}_coly"],
+                funcs[f"{self.ap.name}_colz"],
+            ]
+        )
+        np.testing.assert_allclose(col_computed, col_adflow, rtol=1e-9)
 
 
 if __name__ == "__main__":

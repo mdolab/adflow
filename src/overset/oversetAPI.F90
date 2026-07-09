@@ -2105,7 +2105,7 @@ contains
         use ADTData
         use blockPointers, only: x, il, jl, kl, nDom, iBlank, vol, nbkGlobal, kBegOr
         use adjointVars, only: nCellsLocal
-        use utils, only: setPointers, EChk
+        use utils, only: setPointers, EChk, mynorm2
         use sorting, only: famInList
         implicit none
 
@@ -2122,7 +2122,7 @@ contains
         integer(kind=intType) :: iblock, cell_counter, k_cgns
         real(kind=realType) :: dStar, frac, volLocal
         real(kind=realType), dimension(3) :: minX, maxX, v1, v2, v3, axisVec
-        real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4
+        real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4, vertexPt
         real(kind=realType) :: dd1, dd2, dd3, dd4, diag_max
         type(adtType) :: ADT
         real(kind=realType), dimension(:, :), allocatable :: norm
@@ -2237,51 +2237,66 @@ contains
                                 ! we can work with squared distances for the sake of efficiency. the projection routine
                                 ! will also return the squared distance for the same reason.
 
-                                ! actually test each node
-                                do l = 1, 8
-                                    select case (l)
-                                    case (1)
-                                        coor(1:3) = x(i - 1, j - 1, k - 1, :)
-                                    case (2)
-                                        coor(1:3) = x(i, j - 1, k - 1, :)
-                                    case (3)
-                                        coor(1:3) = x(i, j, k - 1, :)
-                                    case (4)
-                                        coor(1:3) = x(i - 1, j, k - 1, :)
-                                    case (5)
-                                        coor(1:3) = x(i - 1, j - 1, k, :)
-                                    case (6)
-                                        coor(1:3) = x(i, j - 1, k, :)
-                                    case (7)
-                                        coor(1:3) = x(i, j, k, :)
-                                    case (8)
-                                        coor(1:3) = x(i - 1, j, k, :)
-                                    end select
+                                ! First test the cell center
+                                coor(1:3) = eighth * ( &
+                                            x(i - 1, j - 1, k - 1, :) + &
+                                            x(i, j - 1, k - 1, :) + &
+                                            x(i - 1, j, k - 1, :) + &
+                                            x(i, j, k - 1, :) + &
+                                            x(i - 1, j - 1, k, :) + &
+                                            x(i, j - 1, k, :) + &
+                                            x(i - 1, j, k, :) + &
+                                            x(i, j, k, :))
 
-                                    ! reset the "closest point already found" variable.
-                                    coor(4) = dStar
-                                    intInfo(3) = 0
-                                    call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
-                                                                          uvw, dummy, 0, BB, &
-                                                                          frontLeaves, frontLeavesNew)
-                                    cellID = intInfo(3)
-                                    if (cellID > 0) then
-                                        ! Now check if this was successful or not:
-                                        if (checkInside()) then
-                                            ! Whoohoo! We are inside the region. Flag this cell
-                                            flag(cell_counter) = 1
-                                            exit
-                                        else
-                                            ! we are outside. now check if the projection distance is larger than
-                                            ! the max diagonal. if so, we can quit early here.
-                                            if (uvw(4) .gt. diag_max) then
-                                                ! projection is larger than our biggest diagonal.
-                                                ! other nodes wont be in the surface, so we can exit the cell early here
+                                ! reset the "closest point already found" variable.
+                                coor(4) = dStar
+                                intInfo(3) = 0
+                                call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
+                                                                      uvw, dummy, 0, BB, &
+                                                                      frontLeaves, frontLeavesNew)
+                                cellID = intInfo(3)
+
+                                if (cellID > 0) then
+
+                                    ! Now check if this was successful or not:
+                                    if (checkInside()) then
+                                        ! We are inside the region. Flag this cell
+                                        flag(cell_counter) = 1
+                                    else if (uvw(4) .lt. diag_max) then
+                                        ! We are outside, but the projection is smaller than the biggest diagonal.
+                                        ! This means we are outside, but not sufficiently far.
+                                        ! Check vectors between the center and each vertex
+
+                                        do l = 1, 8
+                                            select case (l)
+                                            case (1)
+                                                vertexPt = x(i - 1, j - 1, k - 1, :)
+                                            case (2)
+                                                vertexPt = x(i, j - 1, k - 1, :)
+                                            case (3)
+                                                vertexPt = x(i, j, k - 1, :)
+                                            case (4)
+                                                vertexPt = x(i - 1, j, k - 1, :)
+                                            case (5)
+                                                vertexPt = x(i - 1, j - 1, k, :)
+                                            case (6)
+                                                vertexPt = x(i, j - 1, k, :)
+                                            case (7)
+                                                vertexPt = x(i, j, k, :)
+                                            case (8)
+                                                vertexPt = x(i - 1, j, k, :)
+                                            end select
+
+                                            ! Now check if this was successful or not:
+                                            if (checkNearby()) then
+                                                ! We are inside the region. Flag this cell.
+                                                flag(cell_counter) = 1
                                                 exit
                                             end if
-                                        end if
+                                        end do
+
                                     end if
-                                end do
+                                end if
                             end if
 
                             cell_counter = cell_counter + 1
@@ -2332,6 +2347,48 @@ contains
             end if
         end function checkInside
 
+        function checkNearby()
+
+            implicit none
+            logical :: checkNearby
+            integer(kind=intType) :: jj
+            real(kind=realType) :: shp(4), xp(3), normal(3), v1(3), projLen
+            real(kind=realType) :: vertexVec(3), projVec(3), projDist
+
+            ! bi-linear shape functions (CCW ordering)
+            shp(1) = (one - uvw(1)) * (one - uvw(2))
+            shp(2) = (uvw(1)) * (one - uvw(2))
+            shp(3) = (uvw(1)) * (uvw(2))
+            shp(4) = (one - uvw(1)) * (uvw(2))
+
+            xp = zero
+            do jj = 1, 4
+                xp = xp + shp(jj) * pts(:, conn(jj, cellID))
+            end do
+
+            ! this is the vector that points from the cell center to the vertex
+            vertexVec = vertexPt - coor(1:3)
+
+            ! this is the vector from the cell center to the projection
+            projVec = xp - coor(1:3)
+
+            ! get the projection distance
+            projDist = mynorm2(projVec)
+            ! normalize it
+            projVec = projVec / projDist
+
+            ! compute the projected length of the vertexVec in the direction of projVec
+            projLen = vertexVec(1) * projVec(1) + vertexVec(2) * projVec(2) + vertexVec(3) * projVec(3)
+
+            ! we flag this cell if this dot product is greater than the projection length
+            if (projLen .gt. projDist) then
+                checkNearby = .True.
+            else
+                checkNearby = .False.
+            end if
+
+        end function
+
     end subroutine flagCellsInSurface
 
     subroutine updateOverset(flag, n, closedFamList, nFam)
@@ -2352,7 +2409,7 @@ contains
         ! oversetComm routine.
 
         use constants
-        use inputOverset, only: oversetUpdateMode
+        use inputOverset, only: oversetUpdateMode, recomputeOverlapMatrix
         use block, only: flowDOms
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use oversetCommUtilities, onlY: updateOversetConnectivity
@@ -2408,7 +2465,7 @@ contains
             do level = 1, nLevels
                 if (level == 1) then
                     call setExplicitHoleCut(flag)
-                    call oversetComm(level, .False., .false., closedFamList)
+                    call oversetComm(level, recomputeOverlapMatrix, .false., closedFamList)
                 else
                     call oversetComm(level, .False., .True., closedFamList)
                 end if

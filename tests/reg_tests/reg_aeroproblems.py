@@ -18,6 +18,16 @@ ap_tutorial_wing = AeroProblem(
     evalFuncs=defaultFuncList,
 )
 
+ap_tutorial_wing_sep = AeroProblem(
+    name="mdo_tutorial_separation",
+    alpha=20.0,
+    mach=0.40,
+    areaRef=45.5,
+    chordRef=3.25,
+    altitude=3048,
+    evalFuncs=["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
+)
+
 ap_tutorial_wing_laminar = AeroProblem(
     name="mdo_tutorial",
     alpha=1.8,
@@ -233,4 +243,52 @@ ap_simple_cart_cube = AeroProblem(
     xRef=0.0,
     yRef=0.0,
     zRef=0.0,
+)
+
+ap_multi_bc = AeroProblem(
+    name="multi_bc",
+    alpha=0.0,
+    mach=0.6,
+    altitude=0.0,
+    areaRef=1.0,
+    chordRef=1.0,
+    evalFuncs=[
+        "mdot_outflow",
+        "aavgptot_outflow",
+        "mavgttot_outflow",
+        "aavgps_outflow",
+        "area_outflow",
+        "mavgvx_outflow",
+        "forcezpressure_outflow",
+        "forcezmomentum_outflow",
+        "mavgvi_outflow",
+        "mdot_inflow1",
+        "aavgptot_inflow1",
+        "mavgttot_inflow1",
+        "aavgps_inflow1",
+        "area_inflow1",
+        "mavgvx_inflow1",
+        "forcezpressure_inflow1",
+        "forcezmomentum_inflow1",
+        "mavgvi_inflow1",
+        "mdot_inflow2",
+        "aavgptot_inflow2",
+        "mavgttot_inflow2",
+        "aavgps_inflow2",
+        "area_inflow2",
+        "mavgvx_inflow2",
+        "forcezpressure_inflow2",
+        "forcezmomentum_inflow2",
+        "mavgvi_inflow2",
+    ],
+)
+
+ap_naca0012_separation = AeroProblem(
+    name="0012separation",
+    alpha=20.0,
+    mach=0.35,
+    altitude=3048,
+    areaRef=1.0,
+    chordRef=1.0,
+    evalFuncs=["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
 )

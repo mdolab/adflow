@@ -298,6 +298,9 @@ contains
             case (cgnsAxisMoment)
                 sortNumber(i) = 116
 
+            case (cgnsSepSensorKsArea)
+                sortNumber(i) = 117
+
             case (cgnsHdiffMax)
                 sortNumber(i) = 201
 
@@ -394,6 +397,8 @@ contains
             surfWriteCfx = .false.
             surfWriteCfy = .false.
             surfWriteCfz = .false.
+            surfWriteForceInDragDir = .false.
+            surfWriteForceInLiftDir = .false.
 
             volWriteMachTurb = .false.
             volWriteEddyVis = .false.
@@ -1594,6 +1599,10 @@ contains
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsSepSensor
 
+            case ("SepSensorKsArea")
+                nMon = nMon + 1; nMonSum = nMonSum + 1
+                tmpNames(nMon) = cgnsSepSensorKsArea
+
             case ("cavitation")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsCavitation
@@ -2078,6 +2087,8 @@ contains
         ! kPresent and eddyModel to .False., which indicates an inviscid
         ! computation. For ns and rans this will be corrected.
 
+        rsaCw1 = rsaCb1/(rsaK**2) + (1._realType + rsaCb2)/rsaCb3
+
         nwf = 5
         nt1 = 6
 
@@ -2349,9 +2360,13 @@ contains
         surfWriteCfx = .false.
         surfWriteCfy = .false.
         surfWriteCfz = .false.
+        surfWriteForceInDragDir = .false.
+        surfWriteForceInLiftDir = .false.
 
         surfWriteBlank = .false.
         surfWriteSepSensor = .false.
+        surfWriteSepSensorKs = .false.
+        surfWriteSepSensorKsArea = .false.
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
@@ -2462,12 +2477,28 @@ contains
                 surfWriteCfz = .true.
                 nVarSpecified = nVarSpecified + 1
 
+            case ("forceindragdir")
+                surfWriteForceInDragDir = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("forceinliftdir")
+                surfWriteForceInLiftDir = .true.
+                nVarSpecified = nVarSpecified + 1
+
             case ("blank")
                 surfWriteBlank = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("sepsensor")
                 surfWriteSepSensor = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("sepsensorks")
+                surfWriteSepSensorKs = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("sepsensorksarea")
+                surfWriteSepSensorKsArea = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("cavitation")
@@ -3697,6 +3728,17 @@ contains
             cpmin_family = zero
         end if
 
+        ! Allocate the memory for sepsenmaxfamily. We had to wait until
+        ! nTimeIntervalsSpectral was set.
+        if (.not. allocated(sepSenMaxFamily)) then
+            allocate (sepSenMaxFamily(nTimeIntervalsSpectral), stat=ierr)
+            if (ierr /= 0) &
+                 call terminate("checkInputParam", &
+                 "Memory allocation failure for &
+                 &sepSenMaxFamily")
+            sepSenMaxFamily = zero
+        end if
+
     end subroutine checkInputParam
     subroutine setDefaultValues
         !
@@ -3728,6 +3770,9 @@ contains
         use ADjointPETSc, only: adjointPETScVarsAllocated, adjointPETScPreProcVarsAllocated
         use inputCostFunctions
         implicit none
+
+        ! Initialize boundary condition warning print outs
+        printBCWarnings = .true.
 
         ! Initialize monitoring the turbulent residuals as well as the
         ! monitoring of mass flow of the sliding interfaces to .false.
@@ -4039,12 +4084,12 @@ contains
         lumpedDiss = .False.
         approxSA = .False.
         useApproxWallDistance = .False.
+        updateWallAssociations = .False.
+        recomputeOverlapMatrix = .True.
         cflLimit = 3.0
         adjointPETScVarsAllocated = .False.
         adjointPETScPreProcVarsAllocated = .False.
         usematrixfreedrdw = .False.
-        sepSensorOffset = zero
-        sepSensorSharpness = 10_realType
     end subroutine setDefaultValues
 
     subroutine initializeIsoSurfaceVariables(values, nValues)

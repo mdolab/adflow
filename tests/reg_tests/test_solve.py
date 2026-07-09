@@ -122,33 +122,5 @@ class TestSolve(reg_test_classes.RegTest):
         utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
-class TestFailedMesh(unittest.TestCase):
-    N_PROCS = 1
-
-    def test_failed_mesh(self):
-        options = copy.copy(adflowDefOpts)
-        options.update(
-            {
-                "outputdirectory": os.path.join(baseDir, options["outputdirectory"]),
-                "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
-                "mgcycle": "sg",
-            }
-        )
-
-        # Create the solver
-        CFDSolver = ADFLOW(options=options)
-        ap = copy.copy(ap_tutorial_wing)
-        # pretend mesh warping failed
-        CFDSolver.adflow.killsignals.fatalfail = True
-        # Solve
-        CFDSolver(ap)
-        self.failed_mesh = os.path.join(options["outputDirectory"], f"failed_mesh_{ap.name}_000.cgns")
-        self.assertTrue(os.path.isfile(self.failed_mesh))
-
-    def tearDown(self):
-        if os.path.isfile(self.failed_mesh):
-            os.remove(self.failed_mesh)
-
-
 if __name__ == "__main__":
     unittest.main()

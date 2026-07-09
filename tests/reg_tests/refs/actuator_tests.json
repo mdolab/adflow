@@ -1,37 +1,37 @@
 {
     "Norm of state vector": 69.6313707214824,
     "all functionals": {
-        "actuator_pipe_aavgps_in": 74660.4646433302,
-        "actuator_pipe_aavgps_out": 84991.66069460503,
-        "actuator_pipe_aavgptot_in": 106413.467034531,
-        "actuator_pipe_aavgptot_out": 113722.57597002173,
+        "actuator_pipe_aavgps_in": 74660.46464333023,
+        "actuator_pipe_aavgps_out": 84991.66069460506,
+        "actuator_pipe_aavgptot_in": 106413.46703453093,
+        "actuator_pipe_aavgptot_out": 113722.57597002172,
         "actuator_pipe_area_in": 0.09588693418045077,
-        "actuator_pipe_area_out": 0.09588693418045324,
-        "actuator_pipe_flowpower_az": 150255.9757416806,
-        "actuator_pipe_forcexmomentum_in": -5339.77725913861,
-        "actuator_pipe_forcexmomentum_out": 4949.515375511287,
-        "actuator_pipe_forcexpressure_in": 2556.7805466972986,
-        "actuator_pipe_forcexpressure_out": -1566.1538309233758,
-        "actuator_pipe_mavgttot_in": 319.0082576966147,
+        "actuator_pipe_area_out": 0.09588693418045321,
+        "actuator_pipe_flowpower_az": 150255.9757416805,
+        "actuator_pipe_forcexmomentum_in": -5339.777259138598,
+        "actuator_pipe_forcexmomentum_out": 4949.515375511279,
+        "actuator_pipe_forcexpressure_in": 2556.7805466972964,
+        "actuator_pipe_forcexpressure_out": -1566.1538309233747,
+        "actuator_pipe_mavgttot_in": 319.00825769661463,
         "actuator_pipe_mavgttot_out": 330.5962974191985,
-        "actuator_pipe_mavgvi_in": 94.4003681803692,
-        "actuator_pipe_mavgvi_out": 146.80222540810587,
-        "actuator_pipe_mavgvx_in": 248.44680519403795,
-        "actuator_pipe_mavgvx_out": 230.29142294880444,
-        "actuator_pipe_mdot_in": 21.49263805170778,
-        "actuator_pipe_mdot_out": -21.492399986654
+        "actuator_pipe_mavgvi_in": 94.40036818036867,
+        "actuator_pipe_mavgvi_out": 146.80222540810573,
+        "actuator_pipe_mavgvx_in": 248.4468051940377,
+        "actuator_pipe_mavgvx_out": 230.2914229488043,
+        "actuator_pipe_mdot_in": 21.492638051707754,
+        "actuator_pipe_mdot_out": -21.49239998665398
     },
     "cfd_force sens": {
-        "heat": 4.0612106199306156e-07,
-        "thrust": 1.0004338450024304
+        "heat": 4.0612106199320883e-07,
+        "thrust": 1.00043384500243
     },
     "flowpower sens": {
-        "heat": -0.03649664081222269,
-        "thrust": 317.0581191508676
+        "heat": -0.03649664081222258,
+        "thrust": 317.05811915086724
     },
     "mavgvi sens": {
-        "heat": -2.8719171982698594e-05,
-        "thrust": 0.11493817706073026
+        "heat": -2.871917198269872e-05,
+        "thrust": 0.11493817706073091
     },
     "metadata": {
         "ADPC": false,
@@ -45,18 +45,22 @@
         "ANKCFLFactor": 10.0,
         "ANKCFLLimit": 100000.0,
         "ANKCFLMin": 1.0,
+        "ANKCFLReset": true,
+        "ANKCharTimeStepType": "None",
         "ANKConstCFLStep": 0.4,
         "ANKCoupledSwitchTol": 1e-16,
         "ANKInnerPreconIts": 1,
         "ANKJacobianLag": 10,
         "ANKLinResMax": 0.1,
+        "ANKLinearSolveBuffer": 0.01,
         "ANKLinearSolveTol": 0.05,
         "ANKMaxIter": 40,
         "ANKNSubiterTurb": 1,
         "ANKOuterPreconIts": 1,
         "ANKPCILUFill": 2,
-        "ANKPCUpdateCutoff": 1e-06,
+        "ANKPCUpdateCutoff": 1e-16,
         "ANKPCUpdateTol": 0.5,
+        "ANKPCUpdateTolAfterCutoff": 0.0001,
         "ANKPhysicalLSTol": 0.2,
         "ANKPhysicalLSTolTurb": 0.99,
         "ANKSecondOrdSwitchTol": 0.01,
@@ -97,6 +101,7 @@
         "NKViscPC": false,
         "RKReset": false,
         "TSStability": false,
+        "acousticScaleFactor": 1.0,
         "adjointDivTol": 100000.0,
         "adjointL2Convergence": 1e-13,
         "adjointL2ConvergenceAbs": 1e-16,
@@ -129,6 +134,9 @@
         "deltaT": 0.01,
         "designSurfaceFamily": null,
         "discretization": "central plus scalar dissipation",
+        "dissContMagnitude": 1.0,
+        "dissContMidpoint": 3.0,
+        "dissContSharpness": 3.0,
         "dissipationLumpingParameter": 6.0,
         "dissipationScalingExponent": 0.67,
         "eddyVisInfRatio": 0.009,
@@ -145,6 +153,8 @@
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
         "infChangeCorrection": true,
+        "infChangeCorrectionTol": 1e-12,
+        "infChangeCorrectionType": "offset",
         "innerPreconIts": 1,
         "isoVariables": [],
         "isosurface": {},
@@ -194,13 +204,14 @@
         "printAllOptions": true,
         "printIntro": true,
         "printIterations": true,
+        "printNegativeVolumes": false,
         "printTiming": true,
         "printWarnings": true,
         "qMode": false,
         "rMode": false,
         "resAveraging": "alternate",
         "restartAdjoint": true,
-        "restartFile": "tests/actuator_test_pipe.cgns",
+        "restartFile": "input_files/actuator_test_pipe.cgns",
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
         "sepSensorOffset": 0.0,
@@ -236,6 +247,7 @@
         "useApproxWallDistance": true,
         "useBlockettes": true,
         "useDiagTSPC": true,
+        "useDissContinuation": false,
         "useExternalDynamicMesh": false,
         "useGridMotion": false,
         "useLinResMonitor": false,
@@ -271,15 +283,75 @@
         "zipperSurfaceFamily": null
     },
     "my_force sens": {
-        "heat": 4.061210619771217e-07,
-        "thrust": 1.0004338450024814
+        "heat": 4.0612106197637914e-07,
+        "thrust": 1.000433845002482
     },
     "my_power sens": {
-        "heat": 0.9995665250507967,
-        "thrust": 197.05944421723936
+        "heat": 0.9995665250507949,
+        "thrust": 197.05944421724013
     },
-    "||dR/dHeat^T||": -6.070827919260394e-05,
+    "||dR/dHeat^T||": -6.070827919260395e-05,
     "||dR/dHeat||": 1.8898428014574268e-05,
-    "||dR/dThrust^T||": -0.0363288495005763,
-    "||dR/dThrust||": 0.007206108180321374
+    "||dR/dThrust^T||": -0.03632884950057627,
+    "||dR/dThrust||": 0.007206108180321371,
+    "||dR/dxdir^T||": {
+        "__ndarray__": [
+            [
+                23.771861132486347,
+                0.49834854244385207,
+                0.4815225443706028,
+                -24.540939455789662,
+                25.95236423446914,
+                0.1780587624918294,
+                0.4886930558867011,
+                -26.829908816358255
+            ]
+        ],
+        "dtype": "float64",
+        "shape": [
+            1,
+            8
+        ]
+    },
+    "||dR/dxdir||": 8.955279636024065e-15,
+    "||dR/dydir^T||": {
+        "__ndarray__": [
+            [
+                -536.3210831374904,
+                536.2770703880335,
+                -580.7514327055883,
+                553.3318932824446,
+                501.97574761343566,
+                -501.8336551339546,
+                546.011710473656,
+                -518.6902507805343
+            ]
+        ],
+        "dtype": "float64",
+        "shape": [
+            1,
+            8
+        ]
+    },
+    "||dR/dydir||": 6.872104354592297e-13,
+    "||dR/dzdir^T||": {
+        "__ndarray__": [
+            [
+                -498.57598604023815,
+                -521.6163600905886,
+                603.7529618522387,
+                599.6380632310252,
+                464.16865088568676,
+                486.8997965371746,
+                -569.3516574736482,
+                -564.9154689016484
+            ]
+        ],
+        "dtype": "float64",
+        "shape": [
+            1,
+            8
+        ]
+    },
+    "||dR/dzdir||": 7.560864880047144e-13
 }

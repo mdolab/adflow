@@ -9,6 +9,8 @@ from mpi4py import MPI
 
 # MACH classes
 from adflow import ADFLOW
+from idwarp import USMesh
+from pygeo import DVGeometry
 from adflow import ADFLOW_C
 
 # import the testing utilities
@@ -112,7 +114,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
 
     def test_actuator_thrust(self):
-        "Tests if the correct amount of momentum is added to the flow by the actuator"
+        """Tests if the correct amount of momentum is added to the flow by the actuator"""
 
         # set the az force
         az_force = 600.0
@@ -180,7 +182,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         np.testing.assert_allclose(my_power, az_power, rtol=1.5e-3)
 
     def test_actuator_heat(self):
-        "Tests if the correct amount of heat is added to the flow by the actuator"
+        """Tests if the correct amount of heat is added to the flow by the actuator"""
 
         # set the az heat
         az_heat = 1e5
@@ -245,7 +247,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         np.testing.assert_allclose(cfd_heat, az_heat, rtol=1.5e-3)
 
     def test_actuator_thrust_and_heat(self):
-        "Tests if the correct amount of momentum and heat is added to the flow by the actuator"
+        """Tests if the correct amount of momentum and heat is added to the flow by the actuator"""
 
         # set the az force
         az_force = 600.0
@@ -324,7 +326,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("all functionals", funcs, rtol=1e-12, atol=1e-12)
 
     def test_actuator_adjoint(self):
-        "Tests if the adjoint sensitivities are correct for the AZ DVs"
+        """Tests if the adjoint sensitivities are correct for the AZ DVs"""
 
         # define user functions
         my_force_functions = [
@@ -451,7 +453,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("mavgvi sens", funcsSens["actuator_pipe_mavgvi_out"], rtol=1e-12, atol=1e-12)
 
     def test_actuator_flowpower_adjoint(self):
-        "we test this adjoint separately because we need to have a finite thrust for this to actually test"
+        """We test this adjoint separately because we need to have a finite thrust for this to actually test"""
 
         # set the az force
         az_force = 600.0
@@ -531,6 +533,76 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
             # compare the final products
             np.testing.assert_array_almost_equal(first, second, decimal=14)
+
+    def test_actuator_partials_warp(self):
+        az_force = 600.0
+        az_heat = 1e5
+
+        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
+
+        ffd_file = os.path.join(baseDir, "../../input_files/actuator_test_ffd.xyz")
+        DVGeo = DVGeometry(ffd_file)
+        DVGeo.addLocalDV("xdir", lower=-0.5, upper=0.5, axis="x", scale=1.0)
+        DVGeo.addLocalDV("ydir", lower=-0.5, upper=0.5, axis="y", scale=1.0)
+        DVGeo.addLocalDV("zdir", lower=-0.5, upper=0.5, axis="z", scale=1.0)
+        self.CFDSolver.setDVGeo(DVGeo)
+
+        dv_keys = ["xdir", "ydir", "zdir"]
+
+        grid_file = os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns")
+        mesh = USMesh({"gridFile": grid_file})
+        self.CFDSolver.setMesh(mesh)
+
+        self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
+
+        #############
+        # TEST FWD AD
+        #############
+
+        # save these for the dot product tests
+        resDot = {}
+
+        for key in dv_keys:
+            xDvDot = {key: 1}
+
+            resDot[key] = self.CFDSolver.computeJacobianVectorProductFwd(
+                xDvDot=xDvDot,
+                # actuator changes only affect residuals
+                residualDeriv=True,
+            )
+
+            self.handler.root_print("||dR/d%s||" % key)
+            self.handler.par_add_norm("||dR/d%s||" % key, resDot[key], rtol=1e-12, atol=1e-12)
+
+        #############
+        # TEST BWD AD
+        #############
+
+        # we are only interested in checking the xDvBar result here
+        dwBar = self.CFDSolver.getStatePerturbation(123)
+        xDvBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=dwBar, xDvDeriv=True)
+
+        for key in dv_keys:
+            self.handler.root_print("||dR/d%s^T||" % key)
+            self.handler.root_add_val("||dR/d%s^T||" % key, xDvBar[key.lower()], rtol=1e-12, atol=1e-12)
+
+        ###############
+        # TEST DOT PROD
+        ###############
+
+        for key in dv_keys:
+            # this product is already the same on all procs because adflow handles comm for xDvBar
+            xDvBar_tmp = xDvBar[key.lower()]
+            first = np.dot(xDvBar_tmp, np.ones(xDvBar_tmp.shape[1]))
+            # we need to reduce the resDot dot dwBar ourselves
+            secondLocal = np.dot(resDot[key], dwBar)
+            second = self.CFDSolver.comm.allreduce(secondLocal, op=MPI.SUM)
+
+            # compare the final products
+            np.testing.assert_allclose(first, second, atol=1e-10)
 
 
 class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
@@ -629,7 +701,7 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
 
     def cmplx_test_actuator_adjoint(self):
-        "Tests if the adjoint sensitivities are correct for the AZ DVs"
+        """Tests if the adjoint sensitivities are correct for the AZ DVs"""
 
         # define user functions
         my_force_functions = [
@@ -792,7 +864,7 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         np.testing.assert_allclose(funcsSensCS["heat"]["mavgvi_out"], ref_val, atol=1e-10, rtol=1e-10)
 
     def cmplx_test_actuator_flowpower_adjoint(self):
-        "we test this adjoint separately because we need to have a finite thrust for this to actually test"
+        """We test this adjoint separately because we need to have a finite thrust for this to actually test"""
 
         # set the az force
         az_force = 600.0

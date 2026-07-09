@@ -16,7 +16,7 @@ EXT = "_d.f90"
 DIR_ORI = sys.argv[1]
 DIR_MOD = sys.argv[2]
 
-# Specifiy the list of LINE ID's to find, what to replace and with what
+# Specify the list of LINE ID's to find, what to replace and with what
 patt_modules = re.compile(r"(\s*use\s*\w*)(_d)\s*")
 patt_module = re.compile(r"\s*module\s\w*")
 patt_module_start = re.compile("(\s*module\s)(\w*)(_d)\s*")
@@ -58,7 +58,7 @@ for f in os.listdir(DIR_ORI):
         all_src = file_object_ori.read()
         file_object_ori.seek(0)
 
-        # First we want to dertmine if it is a 'useful' module or a
+        # First we want to determine if it is a 'useful' module or a
         # 'useless' module. A useful module is one that has
         # subroutines in it.
         isModule = False
@@ -84,7 +84,7 @@ for f in os.listdir(DIR_ORI):
 
         # Go back to the beginning
         file_object_ori.seek(0)
-        subActive = False
+        inSubroutine = False
 
         for line in file_object_ori:
             # Just deal with lower case string
@@ -116,6 +116,17 @@ for f in os.listdir(DIR_ORI):
             # m = patt_module_end.match(line)
             # if m:
             #     line = 'end module %s_d2\n'%m.group(2)
+
+            # Tapenade misses one function in inviscidupwindflux_d and we need to add it manually
+            if patt_subroutine.match(line) and "inviscidupwindflux_d" in line:
+                inSubroutine = True
+
+            # If within the subroutine we just search for a very specific string append
+            if inSubroutine and "use flowutils_d, only : etot" in line:
+                line = line.strip("\n") + ", etot_d\n"
+
+            if patt_subend.match(line):
+                inSubroutine = False
 
             file_object_mod.write(line)
 

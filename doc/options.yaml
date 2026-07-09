@@ -110,7 +110,7 @@ isosurface:
   desc: >
     Dictionary specifying the type and values to be used for isosurfaces.
     Any of the ``volumeVariables`` may be used.
-    An example dictionary is : ``{"Vx":-0.001, "shock":1.0}``.
+    An example dictionary is : ``{"vx":-0.001, "shock":1.0}``.
     This will place an isosurface at (essentially) 0 x-velocity and an isosurface at the shock sensor value of 1 (used to visualize the shock region).
 
 isoVariables:
@@ -255,6 +255,12 @@ useApproxWallDistance:
     After the geometry deforms (such as during an optimization) the spatial search algorithm is not run, but the distance between the (new) parametric location and the (new) grid cell center is computed and taken as the wall distance.
     This is substantially faster and permits efficient wall-distance updates for use in aerostructural analysis.
 
+updateWallAssociations:
+  desc: >
+    Flag to update wall associations, even if the approximate wall distance routines are used.
+    By default, we don't update the associations because the update itself cannot be differentiated.
+    However, for large mesh changes, users might still want to update the associations for more accurate wall distance values.
+
 eulerWallTreatment:
   desc: >
     Specifies how wall boundary conditions are implemented for inviscid simulations.
@@ -286,7 +292,7 @@ acousticScaleFactor:
     Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
     Setting this to the freestream Mach number tends to work well for most low Mach number cases.
     Values greater than 1.0 should not be used because this will compromise the accuracy of the solution.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
 
 vis4:
   desc: >
@@ -365,6 +371,42 @@ cpMinRho:
     The rho parameter used for the KS aggregation used for computing minimum Cp.
     KS aggregation is used to compute the differentiable min Cp within the given family group.
     A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
+
+SAKappa:
+  desc: Von Karman constant used in the Spalart-Allmaras turbulence model.
+
+SAcb1:
+  desc: SA model constant cb1, coefficient on the production term.
+
+SAcb2:
+  desc: SA model constant cb2, coefficient on the cross-diffusion production term.
+
+SAsigma:
+  desc: SA model constant sigma (cb3 in some formulations), the diffusion coefficient.
+
+SAcv1:
+  desc: SA model constant cv1, used in the viscous damping function fv1.
+
+SAcw2:
+  desc: SA model constant cw2, used in the destruction term function fw.
+
+SAcw3:
+  desc: SA model constant cw3, used in the destruction term function fw.
+
+SAct1:
+  desc: SA model constant ct1, used in the trip term ft1.
+
+SAct2:
+  desc: SA model constant ct2, used in the trip term ft2.
+
+SAct3:
+  desc: SA model constant ct3, used in the laminar suppression function ft2.
+
+SAct4:
+  desc: SA model constant ct4, used in the laminar suppression function ft2.
+
+SAcrot:
+  desc: SA model constant crot, scaling factor for the rotation correction term.
 
 nCycles:
   desc: >
@@ -470,7 +512,7 @@ useDissContinuation:
     This will have no effect on purely subsonic flows.
     The solution needs to be well converged to ensure that the additional dissipation is reduced to a value that does not affect the converged result.
     For the default values of :py:data:`dissContMagnitude` and :py:data:`dissContMidpoint`, an L2 convergence of 1e-6 is sufficient.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
 
 dissContMagnitude:
   desc: >
@@ -712,6 +754,14 @@ oversetPriority:
     A lower factor will encourage the usage of that block mesh.
     This option may be required to get the flooding algorithm working properly.
 
+recomputeOverlapMatrix:
+  desc: >
+    Flag to determine if the domain overlap matrix is re-computed when a full overset update is done.
+    This overlap matrix determines the connections between domains for the donor search algorithm; for the code to search a domain for potential donors, that domain must overlap with the current domain.
+    This matrix is re-computed when a full overset update is done because the domain overlaps can change.
+    If the overlap matrix is outdated, the code will fail to find donors in cases where there are many potential donors available from overlapping domains that are not represented in the matrix.
+    If the user knows that the overlap matrix will not change, and they want to improve the efficiency of the full overset update, they can set this option to False.
+
 oversetDebugPrint:
   desc: >
     Flag to enable or disable the debug printout from the overset algorithm when a hole cutting process fails.
@@ -878,17 +928,30 @@ NKViscPC:
     This will have a memory and cost penalty, but the resulting preconditioner will be more accurate.
     Users should experiment with other linear solver options as a smaller stencil preconditioner is usually good enough.
 
+NKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the NK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 NKASMOverlap:
   desc: >
     The number of overlap levels in the additive Schwarz preconditioner for the NK solver.
     More overlap levels result in a stronger preconditioner, at the expense of more expensive iterations and more memory.
     Typical values range from 1 for easy cases and up to 2 or 3 for more difficult cases.
 
+NKASMOverlapCoarse:
+  desc: >
+    Same as :py:data:`NKASMOverlap` but for the coarse levels when using ``multigrid`` for :py:data:`NKGlobalPreconditioner`.
+
 NKPCILUFill:
   desc: >
     The number of levels of fill to use on the local Incomplete LU (ILU) factorization in the NK solver.
     Typical values are 1 for easy cases and up to 3 for more difficult cases.
     More levels of fill result in a stronger preconditioner which will result in fewer (linear) iterations, but individual iterations will be more costly and consume more memory.
+
+NKPCILUFillCoarse:
+  desc: >
+    Same as :py:data:`NKPCILUFill` but for the coarse levels when using ``multigrid`` for :py:data:`NKGlobalPreconditioner`.
 
 NKJacobianLag:
   desc: >
@@ -909,11 +972,23 @@ NKInnerPreconIts:
     More iterations may help converge the linear system faster.
     This should be left at 1 unless a very difficult problem is encountered.
 
+NKInnerPreconItsCoarse:
+  desc: >
+    Same as :py:data:`NKInnerPreconIts` but for the coarse levels when using ``multigrid`` for :py:data:`NKGlobalPreconditioner`.
+
 NKOuterPreconIts:
   desc: >
-    Number of global preconditioning iterations for the NK solver adjoint solution.
+    Number of global preconditioning iterations for the NK solver.
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
+
+NKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the NK solver.
+
+NKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the NK solver.
 
 NKLS:
   desc: >
@@ -934,16 +1009,6 @@ RKReset:
 nRKReset:
   desc: >
     The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
-
-AGMGLevels:
-  desc: >
-    Agglomerated multigrid preconditioner levels.
-    Experimental; should not be modified.
-
-AGMGNSmooth:
-  desc: >
-    Agglomerated multigrid preconditioner parameter.
-    Experimental; should not be modified.
 
 useANKSolver:
   desc: >
@@ -999,13 +1064,26 @@ ANKLinResMax:
     However, we want to manage the CFL number so that the linear residual after we run out of linear iterations is still below this target value.
     This can be seen as the maximum allowed linear residual at each iteration.
 
+ANKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the ANK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 ANKASMOverlap:
   desc: >
     Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
 
+ANKASMOverlapCoarse:
+  desc: >
+    Same as :py:data:`ANKASMOverlap` but for the coarse levels when using ``multigrid`` for :py:data:`ANKGlobalPreconditioner`.
+
 ANKPCILUFill:
   desc: >
     Similar to the :py:data:`NKPCILUFill` option but for the ANK solver.
+
+ANKPCILUFillCoarse:
+  desc: >
+    Same as :py:data:`ANKPCILUFill` but for the coarse levels when using ``multigrid`` for :py:data:`ANKGlobalPreconditioner`.
 
 ANKJacobianLag:
   desc: >
@@ -1018,9 +1096,21 @@ ANKInnerPreconIts:
   desc: >
     Similar to the :py:data:`NKInnerPreconIts` option but for the ANK solver.
 
+ANKInnerPreconItsCoarse:
+  desc: >
+    Same as :py:data:`ANKInnerPreconIts` but for the coarse levels when using ``multigrid`` for :py:data:`ANKGlobalPreconditioner`.
+
 ANKOuterPreconIts:
   desc: >
     Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
+
+ANKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the ANK solver.
+
+ANKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the ANK solver.
 
 ANKCFL0:
   desc: >
@@ -1151,7 +1241,7 @@ ANKTurbKSPDebug:
 ANKUseMatrixFree:
   desc: >
     Use the matrix-free Jacobian for the ANK solver.
-    If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
+    If False, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
 
 ANKCharTimeStepType:
   desc: >
@@ -1160,7 +1250,7 @@ ANKCharTimeStepType:
     The amount of speedup will depend on how low the local Mach number is across the entire flowfield.
     This option is mainly useful for cases with freestream Mach numbers of 0.4 or lower.
     In most cases, this should be used in combination with :py:data:`acousticScaleFactor`.
-    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+    See "Dissipation and time step scaling strategies for low and high Mach number flows" (Seraj2023b) for details.
   None: No characteristic time stepping
   Turkel: >
     Turkel preconditioner.
@@ -1204,6 +1294,11 @@ numberSolutions:
   desc: >
     Flag to set whether to attach the numbering of the AeroProblem to the grid solution file.
 
+writeSolutionDigits:
+  desc: >
+    Number of digits in the solution output filenames.
+    A value of 4 will give, for example, 0023, while a value of 3 will give 023.
+
 printIterations:
   desc: >
     Flag to set whether to print out the monitoring values at each iteration.
@@ -1231,6 +1326,10 @@ printWarnings:
 printNegativeVolumes:
   desc: >
     Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
+
+printBadlySkewedCells:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and skewness for each cell whose skewness is above the value defined in ``meshMaxSkewness``. Only used when ``useSkewnessCheck`` is active.
 
 monitorVariables:
   desc: >
@@ -1272,14 +1371,18 @@ surfaceVariables:
       * ``cp`` (pressure coefficient)
       * ``ptloss`` (relative total pressure loss)
       * ``mach`` (mach number)
+      * ``blank`` (cell iblank values used for visualization or other post-processing)
+
+    In addition, the following variables are available for viscous flows:
+
       * ``cf`` (magnitude of the skin friction)
       * ``cfx`` (x-component of the skin friction)
       * ``cfy`` (y-component of the skin friction)
       * ``cfz`` (z-component of the skin friction)
       * ``ch`` (Stanton number)
       * ``yplus`` (y+ value of the cell center of the first cell)
-      * ``lift`` (lift force)
-      * ``blank`` (cell iblank values used for visualization or other post-processing)
+      * ``forceInDragDir`` (force coefficient per unit area projected in the drag direction)
+      * ``forceInLiftDir`` (force coefficient per unit area projected in the lift direction)
 
 volumeVariables:
   desc: >
@@ -1408,7 +1511,10 @@ matrixOrdering:
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
   additive Schwarz: Restricted additive Schwarz method (ASM)
-  multigrid: Agglomerated multigrid (AGMG)
+  multigrid: >
+    Algebraic multigrid (AMG).
+    This method can be much faster than ASM for large meshes.
+    The smoothing iterations and coarse level solutions are done with the standard ASM and ILU combination.
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
@@ -1422,11 +1528,19 @@ ILUFill:
     Typical values are 1 for easy cases and up to 3 for more difficult cases.
     More levels of fill result in a stronger preconditioner which will result in fewer (linear) iterations, but individual iterations will be more costly and consume more memory.
 
+ILUFillCoarse:
+  desc: >
+    Same as :py:data:`ILUFill` but for the coarse levels when using ``multigrid`` for :py:data:`globalPreconditioner`.
+
 ASMOverlap:
   desc: >
     The number of overlap levels in the additive Schwarz preconditioner for the adjoint solution.
     More overlap levels result in a stronger preconditioner, at the expense of more expensive iterations and more memory.
     Typical values range from 1 for easy cases and up to 2 or 3 for more difficult cases.
+
+ASMOverlapCoarse:
+  desc: >
+    Same as :py:data:`ASMOverlap` but for the coarse levels when using ``multigrid`` for :py:data:`globalPreconditioner`.
 
 innerPreconIts:
   desc: >
@@ -1434,12 +1548,24 @@ innerPreconIts:
     Increasing this number may help with difficult problems.
     However, each iteration will take more time.
 
+innerPreconItsCoarse:
+  desc: >
+    Same as :py:data:`innerPreconIts` but for the coarse levels when using ``multigrid`` for :py:data:`globalPreconditioner`.
+
 outerPreconIts:
   desc: >
     Number of global preconditioning iterations for the adjoint solution.
     Increasing this number may help with difficult problems.
     However, each iteration will take more time.
     The default should be sufficient for most problems.
+
+adjointAMGLevels:
+  desc: >
+    The number of levels to use for the adjoint solver's algebraic multigrid preconditioner.
+
+adjointAMGNSmooth:
+  desc: >
+    The number of smoothing iterations at each level for the adjoint solver's algebraic multigrid preconditioner.
 
 applyAdjointPCSubspaceSize:
   desc: >
@@ -1491,15 +1617,48 @@ verifyExtra:
     This option is for debugging the adjoint only.
     It is used to verify dIda.
 
+sepSensorKsRho:
+  desc: >
+    The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
+    KS aggregation is used to compute the differentiable max separation sensor within the given family group.
+    A higher rho value will approach the actual max separation sensor value more accurately. However, this will increase the nonlinearity in the cost function.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
 sepSensorOffset:
   desc: >
-    The offset value used for the separation sensor.
+    The offset value used for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
 sepSensorSharpness:
   desc: >
-    The sharpness parameter for the separation sensor.
+    The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorKsOffset:
+  desc: >
+    The offset value used for the separation sensor in ``sepSensorKsArea`` cost functions.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+sepSensorKsSharpness:
+  desc: >
+    The sharpness parameter for the separation sensor in ``sepSensorKsArea`` cost function.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+sepSensorKsPhi:
+  desc: >
+    This option is for KS based separation sensors, ``sepSensorKs`` and ``sepSensorKsArea`` cost function.
+    This angle is used to compute the allowable flow deviation region with respect to the freestream projected direction on the desired surface.
+    For example, on a wing, the streamlines on the upper surface flows inboard direction .
+    And in some regions, it goes in the outboard directions.
+    Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor.
+    For instance, when the angle is ``90`` degrees, this approximately closes to the verge of separation.
+    See Figure 2.16 in "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+computeSepSensorKs:
+  desc: >
+    Whether or not to compute KS based separation related cost functions, which are ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
+    If this option is not set to ``True``, the code will return zero for this cost function.
+    When we set this to ``True`` to compute these cost functions, there is a small compute overhead because we first find the conventional maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
 
 computeCavitation:
   desc: >
@@ -1519,3 +1678,11 @@ cavSensorSharpness:
 cavExponent:
   desc: >
     The exponent for the numerator term (- Cp - cavitationnumber) of the cavitation sensor.
+
+meshMaxSkewness:
+  desc: >
+    Adflow throws an error and fails if the `skewness` of the mesh is above this value. `Skewness` is defined as described `here <https://www.simscale.com/docs/simulation-setup/meshing/mesh-quality/#skewness>`__. Only used when ``useSkewnessCheck`` is active.
+
+useSkewnessCheck:
+  desc: >
+    When set to true, ADflow computes the `skewness` of each cell and throws an error if it is above ``meshMaxSkewness``. See also ``printBadlySkewedCells``.

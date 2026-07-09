@@ -83,21 +83,6 @@ solver_combo_params = [
             "dissContMagnitude": 0.1,
         },
     },
-    # RANS test with AGMG preconditioner
-    {
-        "name": "rans_smoother_ank_sank_csank_nk_turbksp_agmg",
-        "options": {
-            # We need to use a larger mesh to test the AGMG coarse levels
-            "gridFile": os.path.join(baseDir, "../../input_files/naca0012_rans-L2.cgns"),
-            "equationtype": "RANS",
-            "ankuseturbdadi": False,
-            "nCycles": 1000,
-            "globalPreconditioner": "multigrid",
-            "AGMGLevels": 2,
-            "ANKOuterPreconIts": 2,  # AGMG will crash with the default value of 1
-            "NKOuterPreconIts": 2,  # AGMG will crash with the default value of 1
-        },
-    },
     # RANS test with Turkel time stepping
     {
         "name": "rans_smoother_ank_sank_csank_nk_turbdadi_Turkel",

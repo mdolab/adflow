@@ -775,6 +775,8 @@ module checkVolBlock
 
         logical :: blockHasNegVol
         logical, dimension(:, :, :), pointer :: volumeIsNeg
+        logical :: blockHasSkewedVol
+        logical, dimension(:, :, :), pointer :: volumeIsSkewed
 
     end type checkVolBlockType
 
@@ -1305,4 +1307,3 @@ module coarseningInfo
     type(coarseningInfoType), dimension(:), allocatable :: coarseInfo
 
 end module coarseningInfo
-
