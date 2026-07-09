@@ -630,10 +630,23 @@ module cudaParamTurb
     use precision, only: realType, intType
     implicit none
     save
+
+    !
+    !       V2-f constants.
+    !
     real(kind=realType), constant :: rvfLimitK, rvfLimitE, rvfCl
     real(kind=realType), constant :: rvfCmu
 
     !
+    !       SA constants.
+    !
+
+    !       NOTE: rsaCw1 is derived: cb1/kappa^2 + (1+cb2)/sigma, computed at init.
+    real(kind=realType), constant :: rsaK, rsaCb1, rsaCb2, rsaCb3, rsaCv1, &
+                                    rsaCw2, rsaCw3, rsaCt1, rsaCt2, rsaCt3, &
+                                    rsaCt4, rsaCrot, rsaCw1
+
+!
 !       Variables to store the parameters for the wall functions fits.
 !       As these variables depend on the turbulence model they are set
 !       during runtime. Allocatables are used, because the number of
@@ -675,14 +688,42 @@ module cudaParamTurb
         use paramTurb, only: h_rvfLimitK=>rvflimitK, h_rvfLimitE=>rvfLimitE, h_rvfCl=>rvfCl, &
                             h_rvfCmu=>rvfCmu, h_nFit=>nFit, h_ypT=>ypT, h_reT=>reT, &
                             h_up0=>up0, h_up1=>up1, h_up2=>up2, h_tup0=>tup0, &
-                            h_tup1=>tup1, h_tup2=>tup2, h_tup3=>tup3, h_tuLogFit=>tuLogFit
+                            h_tup1=>tup1, h_tup2=>tup2, h_tup3=>tup3, h_tuLogFit=>tuLogFit, &
+                            h_rsaK=>rsaK, h_rsaCb1=>rsaCb1, h_rsaCb2=>rsaCb2, &
+                            h_rsaCb3=>rsaCb3, h_rsaCv1=>rsaCv1, h_rsaCw2=>rsaCw2, h_rsaCw3=>rsaCw3, &
+                            h_rsaCt1=>rsaCt1, h_rsaCt2=>rsaCt2, h_rsaCt3=>rsaCt3, &
+                            h_rsaCt4=>rsaCt4, h_rsaCrot=>rsaCrot, h_rsaCw1=>rsaCw1
+
         
         use flowVarRefState, only: nt1, nt2
         implicit none
+
+        !
+        !       SA constants.
+        !    
+        rsaK = h_rsaK
+        rsaCb1 = rsaCb1
+        rsaCb2 = rsaCb2
+        rsaCb3 = rsaCb3
+        rsaCv1 = rsaCv1
+        rsaCw2 = h_rsaCw2
+        rsaCw3 = h_rsaCw3
+        rsaCt1 = h_rsaCt1
+        rsaCt2 = h_rsaCt2
+        rsaCt3 = h_rsaCt3
+        rsaCt4 = h_rsaCt4
+        rsaCrot = h_rsaCrot
+        rsaCw1 = h_rsaCw1
+
+        !
+        !       V2-f constants.
+        !    
         rvfLimitK = h_rvfLimitK
         rvfLimitE = h_rvfLimitE
         rvfCl = h_rvfCl
         rvfCmu = h_rvfCmu
+
+        !  Wall function fits
         nFit = h_nFit
 
         ! TOOD allocate these and fix copy for proper dimensions
