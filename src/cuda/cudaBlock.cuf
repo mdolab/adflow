@@ -329,7 +329,7 @@ module cudaBlock
             nBocos, bBCType => BCType
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use iteration, only: nALESteps
-        use utils, only: setBCPointers
+        use utils, only: setBCPointers, terminate
         use constants, only: farField, symm
 
         implicit none
