@@ -70,13 +70,13 @@ module block
         real(kind=realType), dimension(:, :, :), pointer :: T, Tv, Tp
         real(kind=realType), dimension(:, :), pointer :: area
         real(kind=realType), dimension(:, :), pointer :: CpTarget
-        integer(kind=realType), dimension(:, :), pointer :: surfIndex
+        integer(kind=intType), dimension(:, :), pointer :: surfIndex
 
         ! Generic pointers for performing a globalized reduction.
         real(kind=realType), dimension(:, :), pointer :: nodeVal
         real(kind=realType), dimension(:, :), pointer :: cellVal
 
-        ! symNorm is the normal for (symmertry) boundary conditions.
+        ! symNorm is the normal for (symmetry) boundary conditions.
         ! symNormSet is set to false until symNorm is computed at the
         ! beginning of a simulation. symNorm then remains constant for
         ! the remainder of the simulation. This is ok, since if the

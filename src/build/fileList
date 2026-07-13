@@ -191,5 +191,6 @@ cFiles = 	metis-4.0/metis.c\
 cudaFiles = cuda/cudaConstants.cuf\
 		cuda/cudaResidual.cuf\
 		cuda/cudaBlock.cuf\
-		  
-		
+        cuda/cudaBCDataMod.cuf\
+        cuda/cudaBCPointers.cuf\
+        cuda/cudaBCRoutines.cuf\

@@ -3,9 +3,58 @@
 !              For variable names, follow the same convention as 'block.F90'
 
 module cudaBlock
-    use constants, only: realType, intType,porType
+    use constants, only: realType, intType, porType, maxCGNSNameLen
     implicit none
     save
+    ! =========================================================
+    !           Types
+    ! =========================================================
+    type cudaBCDataType
+        ! integer(kind=intType), pointer, device :: inBeg, inEnd, jnBeg, jnEnd
+        ! integer(kind=intType), pointer, device :: icBeg, icEnd, jcBeg, jcEnd
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: norm
+        real(kind=realType), dimension(:, :), pointer, device :: rface
+        real(kind=realType), dimension(:, :, :), pointer, device :: F, Fv, Fp
+        real(kind=realType), dimension(:, :, :), pointer, device :: T, Tv, Tp
+        real(kind=realType), dimension(:, :), pointer, device :: area
+        real(kind=realType), dimension(:, :), pointer, device :: CpTarget
+        integer(kind=intType), dimension(:, :), pointer, device :: surfIndex
+
+        real(kind=realType), dimension(:, :), pointer, device :: nodeVal
+        real(kind=realType), dimension(:, :), pointer, device :: cellVal
+        real(kind=realType), dimension(:), pointer, device :: symNorm
+
+        logical :: symNormSet
+
+        integer(kind=intType), pointer, device :: subsonicInletTreatment
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: uSlip
+        real(kind=realType), dimension(:, :), pointer, device :: TNS_Wall
+
+        character(maxCGNSNameLen), pointer, device :: family
+        integer(kind=intType), pointer, device :: famID
+
+        real(kind=realType), dimension(:, :, :, :), pointer, device :: normALE
+        real(kind=realType), dimension(:, :, :), pointer, device :: rFaceALE
+        real(kind=realType), dimension(:, :, :, :), pointer, device :: uSlipALE
+        real(kind=realType), dimension(:, :), pointer, device :: nodeHeatFlux
+        real(kind=realType), dimension(:, :), pointer, device :: cellHeatFlux
+
+        real(kind=realType), dimension(:, :), pointer, device :: ptInlet, ttInlet, htInlet
+        real(kind=realType), dimension(:, :), pointer, device :: flowXDirInlet, flowYDirInlet, flowZDirInlet
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: turbInlet
+
+        real(kind=realType), dimension(:, :), pointer, device :: rho
+        real(kind=realType), dimension(:, :), pointer, device :: velX, velY, velZ
+        real(kind=realType), dimension(:, :), pointer, device :: ps
+
+        integer(kind=intType), dimension(:, :), pointer, device :: iblank
+
+        real(Kind=realType), dimension(:, :), pointer, device :: delta
+        real(Kind=realType), dimension(:, :), pointer, device :: deltaNode
+    end type cudaBCDataType
 
     type cudablockType
         integer(kind=intType) :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
@@ -53,11 +102,39 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:),pointer,device :: vx, vy, vz
         real(kind=realType), dimension(:,:,:),pointer,device :: wx, wy, wz
         real(kind=realType), dimension(:,:,:),pointer,device :: qx, qy, qz
+
+        ! --- BCData ---
+        integer(kind=intType), pointer, device :: nSubface, n1to1, nBocos, nViscBocos
+
+        integer(kind=intType), dimension(:), pointer, device :: BCType
+        integer(kind=intType), dimension(:), pointer, device :: BCFaceID
+
+        integer(kind=intType), dimension(:), pointer, device :: cgnsSubface
+
+        integer(kind=intType), dimension(:), pointer, device :: inBeg, inEnd
+        integer(kind=intType), dimension(:), pointer, device :: jnBeg, jnEnd
+        integer(kind=intType), dimension(:), pointer, device :: knBeg, knEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: dinBeg, dinEnd
+        integer(kind=intType), dimension(:), pointer, device :: djnBeg, djnEnd
+        integer(kind=intType), dimension(:), pointer, device :: dknBeg, dknEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: icBeg, icEnd
+        integer(kind=intType), dimension(:), pointer, device :: jcBeg, jcEnd
+        integer(kind=intType), dimension(:), pointer, device :: kcBeg, kcEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: neighBlock
+        integer(kind=intType), dimension(:), pointer, device :: neighProc
+        integer(kind=intType), dimension(:), pointer, device :: l1, l2, l3
+        integer(kind=intType), dimension(:), pointer, device :: groupNum
+
     end type cudaBlockType
 
     ! Device (GPU) and host (CPU) domains
     type(cudaBlockType), device, allocatable,dimension(:,:) :: d_cudaDoms(:,:)
     type(cudaBlockType), allocatable,dimension(:,:) :: h_cudaDoms(:,:)
+    type(cudaBCDataType), device, allocatable, dimension(:) :: d_BCData(:)
+    type(cudaBCDataType), allocatable, dimension(:) :: h_BCData(:)
 
     contains 
     
@@ -65,7 +142,7 @@ module cudaBlock
         ! subroutine to allocate cuda domains and copy data from host to device
         ! probably use this stack exchange post to help allocate
         ! https://stackoverflow.com/questions/44680150/how-to-allocate-arrays-of-arrays-in-structure-with-cuda-fortran
-        use constants, only: zero, RANSEquations, EulerEquations
+        use constants, only: zero, RANSEquations, EulerEquations, Symm, SymmPolar, NSWallAdiabatic, FarField
         use blockPointers, only: nDom, &
             bnx=>nx, bny => ny, bnz => nz, &
             bil => il, bjl => jl, bkl => kl, &
@@ -91,18 +168,22 @@ module cudaBlock
         
         implicit none
         
-        integer(kind=intType) :: nn, sps    ! domain and time spectral interval indices
+        integer(kind=intType) :: nn, sps, mm    ! domain and time spectral interval indices
+        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iNodeBeg, iNodeEnd, jNodeBeg, jNodeEnd
+
 
         ! Allocate device 
         allocate(d_cudaDoms(nDom, nTimeIntervalsSpectral))
         ! Allocate host
         allocate(h_cudaDoms(nDom, nTimeIntervalsSpectral))
+
         
-        do nn = 1, nDom ! loop over domains
-            do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
+        domainsLoop: do nn = 1, nDom ! loop over domains
+            spectralLoop:do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
                 
-                call setPointers(nn,1, sps)
-                
+
+                call setPointers(nn, 1, sps)
+
                 ! Indices
                 h_cudaDoms(nn, sps)%nx = bnx
                 h_cudaDoms(nn, sps)%ny = bny
@@ -223,9 +304,10 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
                 h_cudaDoms(nn, sps)%qx = zero; h_cudaDoms(nn, sps)%qy = zero; h_cudaDoms(nn, sps)%qz = zero
 
+        
 
-            end do
-        end do
+            end do spectralLoop
+        end do domainsLoop
 
         ! --- Copy data from host back to device---
         do nn = 1, nDom
@@ -235,4 +317,72 @@ module cudaBlock
         end do
 
     end subroutine copyCudaBlock
+
+
+    subroutine copyCudaBCData
+        ! DESCRIPTION:
+        ! This copies all the necessary data from CPU to GPU
+        ! Eventually, this routine should get optimized
+
+        use blockPointers, only: nDom, &
+            bBCData => BCData,&
+            nBocos, bBCType => BCType
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use iteration, only: nALESteps
+        use utils, only: setBCPointers
+        use constants, only: farField, symm
+
+        implicit none
+
+        integer(kind=intType) :: nn, ierr, &
+                mm, iBeg, iEnd, jBeg, jEnd, &
+                inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
+
+        ! --- Allocate device and host BCData ---
+        allocate(d_BCData(nBocos))
+        allocate(h_BCData(nBocos))
+
+        domainsLoop: do nn = 1, nDom
+
+            ! The following is similar to the allocMemBCData() subroutine in BCData.F90
+            ! In addition to allocating, we're also setting the BC Data
+            call setBCPointers(nn, .false.)
+
+            bocoLoop: do mm = 1, nBocos
+            
+                iBeg = bBCData(mm)%icbeg; iEnd = bBCData(mm)%icend
+                jBeg = bBCData(mm)%jcbeg; jEnd = bBCData(mm)%jcend
+
+                inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
+                jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
+
+                select case (bBCType(mm))
+
+                case (farField)
+
+                    allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd), &
+                    h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd), &
+                    h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("copyCudaBCData", "Memory allocation failure for &
+                        &a farfield")
+
+                    h_BCData(mm)%rface = bBCData(mm)%rface
+                    h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
+                    h_BCData(mm)%norm = bBCData(mm)%norm
+
+
+                ! TODO [ ] : other BC types
+
+                end select
+
+            end do bocoLoop
+        end do domainsLoop
+
+        ! --- Copy data from host back to device---
+        do mm = 1, nBocos
+            d_BCData(mm) = h_BCData(mm)
+        end do
+
+    end subroutine copyCudaBCData
 end module cudaBlock
