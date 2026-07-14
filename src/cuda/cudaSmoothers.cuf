@@ -1,0 +1,21 @@
+module cudaSmoothers
+
+contains
+    subroutine RungeKuttaSmoother
+        !
+        !       RungeKuttaSmoother performs one multi-stage runge kutta
+        !       explicit time step for the current multigrid level. On
+        !       entrance it is assumed that the residual and time step are
+        !       already computed. On exit the solution in the halo's contain
+        !       the latest values. However, the residual corresponding to
+        !       these values is not computed.
+        !
+    end subroutine RungeKuttaSmoother
+
+    subroutine executeRkStage
+        !
+        !       executeRkStage executes one runge kutta stage. The stage
+        !       number, rkStage, is defined in the local module iteration.
+        !
+    end subroutine executeRkStage
+end module cudaSmoothers
