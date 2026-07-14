@@ -371,8 +371,31 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndimw
         end subroutine cudaresapi
 
+        subroutine calculatecudaresidual(updateintermed,varstart,varend)
+           logical intent(in) :: updateintermed
+           integer(kind=inttype) intent(in) :: varstart
+           integer(kind=inttype) intent(in) :: varend
+        end subroutine calculatecudaresidual
+
+        subroutine getcudaresidual(res,ndimw)
+           real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
+           integer(kind=inttype) intent(in) :: ndimw
+        end subroutine getcudaresidual
+
        end module cudresidual
-       
+
+       module cudablock
+        subroutine allocatecudablock
+        end subroutine allocatecudablock
+
+        subroutine copycudaconstantstodevice
+        end subroutine copycudaconstantstodevice
+
+        subroutine copycudablocktodevice
+        end subroutine copycudablocktodevice
+
+       end module cudablock
+
        module nksolver
          use constants
 
