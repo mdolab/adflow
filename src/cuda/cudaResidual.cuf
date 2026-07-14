@@ -6283,19 +6283,11 @@ module cudaResidual
       use constants, only: zero, spalartAllmaras
       use cudafor,   only: dim3
       use precision, only: intType
-      use cudaFlowVarRefState, only: cudaCopyFlowVarRefState
-      use cudaInputDiscretization, only: cudaCopyInputDiscretization
-      use cudaInputIteration,      only: cudaCopyInputIteration
-      use cudaInputPhysics,        only: cudaCopyInputPhysics
-      use cudaParamTurb,           only: cudaCopyParamTurb
-      use cudaIteration,           only: cudaCopyIteration
-      use cudaTurbMod,             only: cudaCopyTurbMod
       use inputPhysics, only: equationMode, equations, turbModel
       use inputDiscretization, only: spaceDiscr
       use flowvarRefState, only: viscous
       use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie, bil=>il,bjl=>jl, bkl=>kl
       use inputTimeSpectral, only: nTimeIntervalsSpectral
-      use cudaBlock, only: copyCudaBlock
       use utils, only: setPointers
 
 
@@ -6310,18 +6302,9 @@ module cudaResidual
       integer(kind = intType) :: dom, sps
       integer(kind = intType) :: ibmax, jbmax, kbmax
 
-      ! copy constants
-      call cudaCopyFlowVarRefState
-      call cudaCopyInputDiscretization
-      call cudaCopyInputIteration
-      call cudaCopyInputPhysics
-      call cudaCopyParamTurb
-      call cudaCopyIteration
-      call cudaCopyTurbMod
-
-      !copy data from cpu to gpu
-      call copyCudaBlock
-    !   call copyData
+      ! NB: constant and block-field host->device copies are done by the caller
+      !     (copyCudaConstantsToDevice / copyCudaBlockToDevice) before this routine.
+      !     calculateCudaResidual is pure compute: zero accumulators + launch kernels.
 
         ibmax = 0
         jbmax = 0
@@ -6472,7 +6455,79 @@ module cudaResidual
     end subroutine calculateCudaResidual
 
     subroutine cudaResAPI(res,ndimw)
+        ! Thin orchestrator: apply CPU boundary conditions, stage inputs host->device (into the
+        ! once-allocated device mirrors), run the GPU residual, and read the volume-scaled
+        ! residual back into res. The building-block routines are public, so a CFD solver can
+        ! drive them directly (allocate once at setup, then loop copy -> compute -> read back);
+        ! this routine is the convenience all-in-one entry used by the Python / test path.
+        use flowvarrefstate, only: nw
+        use utils, only: setPointers
+        use BCRoutines, only: applyallBC_block
+        use cudaBlock, only: allocateCudaBlock, copyCudaConstantsToDevice, copyCudaBlockToDevice
 
+        implicit none
+        integer(kind=intType), intent(in) :: ndimw
+        real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
+
+        integer(kind=intType) :: ierr
+
+        call setPointers(1, 1, 1)
+        call applyAllBC_block(.True.)                                    ! CPU BCs -> valid halos
+        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
+
+        call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
+        call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
+        call copyCudaBlockToDevice         ! block field values host->device
+        call calculateCudaResidual(.True., 1, nw)   ! pure GPU compute (zero accumulators + kernels)
+        call getCudaResidual(res, ndimw)   ! device dw -> CPU block dw -> flat, volume-scaled res
+
+    end subroutine cudaResAPI
+
+
+    subroutine getCudaResidual(res, ndimw)
+        ! Copy the GPU residual (dw) device->host and assemble the flat, volume-scaled residual
+        ! vector `res` over owned cells -- identical ordering and scaling to NKSolver::getRes.
+        use constants, only: one
+        use blockPointers, only: nDom, bvolRef=>volRef, bdw=>dw, bil=>il, bjl=>jl, bkl=>kl
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowvarrefstate, only: nw
+        use cudaBlock, only: copyCudaResidualToHost
+        use utils, only: setPointers
+
+        implicit none
+        integer(kind=intType), intent(in) :: ndimw
+        real(kind=realType), dimension(ndimw), intent(out) :: res
+        integer(kind=intType) :: nn, sps, i, j, k, l, counter
+        real(kind=realType) :: ovv
+
+        call copyCudaResidualToHost            ! device dw -> CPU block dw
+
+        counter = 0
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(nn, 1, sps)
+                do k = 2, bkl
+                    do j = 2, bjl
+                        do i = 2, bil
+                            ovv = one / bvolRef(i, j, k)
+                            do l = 1, nw
+                                counter = counter + 1
+                                res(counter) = bdw(i, j, k, l) * ovv
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        end do
+
+    end subroutine getCudaResidual
+
+
+    subroutine debugCompareCudaResidual
+        ! Debugging / validation scaffolding, extracted verbatim from the old cudaResAPI. Pulls
+        ! the GPU block mirror back to the host (copyCudaBlockToHost), then compares GPU
+        ! intermediates against the CPU block values. All comparisons are left COMMENTED OUT,
+        ! exactly as in the original -- uncomment the ones you need when validating a kernel.
         use constants
         use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke, &
                                     bil=>il, bjl=>jl, bkl=>kl, &
@@ -6491,11 +6546,9 @@ module cudaResidual
         use flowvarrefstate, only: nw,nwf,nt1,nt2,pInfCorr
         use utils, only: setPointers
         use flowutils, only: ballNodalGradients=>allNodalGradients, bcomputeSpeedOfSoundSquared=>computeSpeedOfSoundSquared
-        use BCRoutines, only: applyallBC_block
+        use cudaBlock, only: copyCudaBlockToHost
 
         implicit none
-        integer(kind=intType), intent(in) :: ndimw
-        real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
 
         ! Local Variables
         integer(kind=intType) :: nn, i, j, k, l, counter, sps, dom
@@ -6522,12 +6575,9 @@ module cudaResidual
 
         dom = 1
         sps = 1
-        call setPointers(1, 1, 1)
-        call applyAllBC_block(.True.)
-        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
-        call calculateCudaResidual(.True.,1,nw)
 
-
+        ! Bring the GPU block mirror back to the host for inspection.
+        call copyCudaBlockToHost
 
         allocate(ux_v1(1:bil,1:bjl,1:bkl))
         allocate(uy_v1(1:bil,1:bjl,1:bkl))
@@ -6582,8 +6632,8 @@ module cudaResidual
         allocate(h_dss(1:bie, 1:bje, 1:bke, 1:3))
         allocate(bdss(1:bie, 1:bje, 1:bke, 1:3))
 
-        !copy from gpu to cpu
-        h_cudaDoms(1,1) = cudaDoms(1,1)
+        !copy from gpu to cpu (mirror descriptors already synced by copyCudaBlockToHost above)
+        ! h_cudaDoms(1,1) = cudaDoms(1,1)
         h_dw(1:bie,1:bje,1:bke,1:nw) = h_cudaDoms(dom,sps)%dw(1:bie,1:bje,1:bke,1:nw)
         ! h_dw2 = dw
 
@@ -6723,22 +6773,7 @@ module cudaResidual
         ! end do
         ! print*, "ss size:",size(h_dss),size(bdss)
         ! print  '("Max DIFF dss = ",E22.16," seconds.")', maxval(abs(h_dss-bdss))
-        counter = 0
-        !copy cudaDoms(dom,sps)%dw to res
-        do k = 2,bkl
-            do j = 2, bjl
-                do i = 2,bil
-                    ovv = one / bvolRef(i, j, k)
-                    do l = 1, nw
-                        counter = counter + 1
-                        res(counter) = h_dw(i, j, k, l) * ovv
-                    end do
-                end do
-            end do
-        end do
-
-        deallocate(h_dw)
-    end subroutine cudaResAPI
+    end subroutine debugCompareCudaResidual
 
 end module cudaResidual
 
