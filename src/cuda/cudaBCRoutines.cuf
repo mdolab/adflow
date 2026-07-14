@@ -78,7 +78,8 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         ! subroutines for copying data to device
         use cudafor, only: dim3
-        use cudaBlock, only: copyCudaBCData, copyCudaBlock
+        use cudaBlock, only: allocateCudaBlock, copyCudaBlockToDevice, &
+                             allocateCudaBCData, copyCudaBCDataToDevice
         use cudaBCPointers, only: copyCudaBC
         use cudaBCDataMod, only: copyCudaBCDataMod
         implicit none
@@ -96,9 +97,11 @@ contains
         integer(kind=intType) :: istat, dom, sps
         
         ! --- GPU SETUP ---
-        ! Copy block data to device for this block
-        call copyCudaBlock
-        call copyCudaBCData
+        ! Allocate the device mirrors once (guarded), then copy block + BC data to device.
+        call allocateCudaBlock
+        call copyCudaBlockToDevice
+        call allocateCudaBCData
+        call copyCudaBCDataToDevice
 
         ibmax = 0
         jbmax = 0

@@ -138,29 +138,22 @@ module cudaBlock
 
     contains
 
-    subroutine copyCudaBlock
-        ! subroutine to allocate cuda domains and copy data from host to device
-        ! probably use this stack exchange post to help allocate
-        ! https://stackoverflow.com/questions/44680150/how-to-allocate-arrays-of-arrays-in-structure-with-cuda-fortran
-        use constants, only: zero, RANSEquations, EulerEquations, Symm, SymmPolar, NSWallAdiabatic, FarField
+    subroutine allocateCudaBlock
+        ! Allocate the persistent device/host CUDA domain mirrors (d_cudaDoms / h_cudaDoms)
+        ! and all of their member arrays, and set the per-block index metadata.
+        !
+        ! Runs ONCE per run: the module-level mirrors are `save`d, so this is guarded by
+        ! allocated() and is a cheap no-op on every call after the first. That guard is the
+        ! crash fix -- re-allocating these `save` arrays on every residual evaluation was the
+        ! illegal-memory-access (copyout 700) bug. Field VALUES are copied separately, every
+        ! evaluation, by copyCudaBlockToDevice. See deallocateCudaBlock for teardown.
+        use constants, only: zero, RANSEquations
         use blockPointers, only: nDom, &
             bnx=>nx, bny => ny, bnz => nz, &
             bil => il, bjl => jl, bkl => kl, &
             bie => ie, bje => je, bke => ke, &
             bib => ib, bjb => jb, bkb => kb, &
-            bw => w, bp => p, bgamma => gamma, &
-            bradi => radi, bradj => radj, bradk => radk, &
-            bux => ux, buy => uy, buz => uz, &
-            bvx => vx, bvy => vy, bvz => vz, &
-            bwx => wx, bwy => wy, bwz => wz, &
-            bqx => qx, bqy => qy, bqz => qz, &
-            bx => x, brlv => rlv, brev => rev, bvol => vol, bVolRef => volRef, bd2wall => d2wall, &
-            biblank => iblank, bPorI => porI, bPorJ => porJ, bPorK => porK, bdw => dw, bfw => fw, &
-            bShockSensor => shockSensor, &
-            bsi => si, bsj => sj, bsk => sk, &
-            bsFaceI => sFaceI, bsFaceJ => sFaceJ, bsFaceK => sFaceK, &
-            bdtl => dtl, baa => aa, &
-            addGridVelocities, brightHanded => rightHanded
+            brightHanded => rightHanded
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nw,nwf,nwt
         use inputPhysics, only: equations
@@ -168,19 +161,17 @@ module cudaBlock
 
         implicit none
 
-        integer(kind=intType) :: nn, sps, mm    ! domain and time spectral interval indices
-        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iNodeBeg, iNodeEnd, jNodeBeg, jNodeEnd
+        integer(kind=intType) :: nn, sps
 
+        ! Already allocated -- the mirrors persist across residual evaluations.
+        if (allocated(d_cudaDoms)) return
 
-        ! Allocate device
+        ! Allocate device and host domain arrays
         allocate(d_cudaDoms(nDom, nTimeIntervalsSpectral))
-        ! Allocate host
         allocate(h_cudaDoms(nDom, nTimeIntervalsSpectral))
 
-
         domainsLoop: do nn = 1, nDom ! loop over domains
-            spectralLoop:do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
-
+            spectralLoop: do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
 
                 call setPointers(nn, 1, sps)
 
@@ -200,18 +191,13 @@ module cudaBlock
 
                 h_cudaDoms(nn, sps)%rightHanded = brightHanded
 
-                ! allocate double halos
+                ! double halos
                 allocate(h_cudaDoms(nn,sps)%w(0:bib, 0:bjb, 0:bkb, 1:nw)) ! flowfield states
                 allocate(h_cudaDoms(nn,sps)%p(0:bib, 0:bjb, 0:bkb)) ! static pressures
                 allocate(h_cudaDoms(nn,sps)%gamma(0:bib, 0:bjb, 0:bkb)) ! spec heat ratio
                 allocate(h_cudaDoms(nn,sps)%ss(0:bib, 0:bjb, 0:bkb)) ! shock sensors
-                ! and then set them
-                h_cudaDoms(nn, sps)%w = bw
-                h_cudaDoms(nn, sps)%p = bp
-                h_cudaDoms(nn, sps)%gamma = bgamma
-                h_cudaDoms(nn, sps)%ss = bShockSensor
 
-                ! allocate single halos
+                ! single halos
                 allocate(h_cudaDoms(nn, sps)%x(0:bie, 0:bje, 0:bke, 1:3))
                 allocate(h_cudaDoms(nn, sps)%rlv(1:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke))
@@ -222,57 +208,133 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%radK(1:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%dtl(1:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%dss(1:bie, 1:bje, 1:bke, 1:3))
-                ! and set them
-                ! NOTE: these need to be computed
-                h_cudaDoms(nn, sps)%x = bx
-                h_cudaDoms(nn, sps)%rlv = brlv
-                h_cudaDoms(nn, sps)%rev = brev
-                h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke)
-                ! initialize to zero
-                h_cudaDoms(nn, sps)%aa = zero
-                h_cudaDoms(nn, sps)%radI = zero
-                h_cudaDoms(nn, sps)%radJ = zero
-                h_cudaDoms(nn, sps)%radK = zero
-                h_cudaDoms(nn, sps)%dtl = zero
-
-                h_cudaDoms(nn, sps)%dss = zero
 
                 ! no halos
                 if (equations == RANSEquations) then
                     allocate(h_cudaDoms(nn, sps)%d2wall(2:bil,2:bjl,2:bkl))
-                    h_cudaDoms(nn, sps)%d2wall = bd2wall
                 end if
                 allocate(h_cudaDoms(nn, sps)%volRef(2:bil,2:bjl,2:bkl))
                 allocate(h_cudaDoms(nn, sps)%iblank(2:bil,2:bjl,2:bkl))
-                h_cudaDoms(nn, sps)%volRef = bvolRef
-                h_cudaDoms(nn, sps)%iblank  = biblank
 
                 ! face porosities
                 allocate(h_cudaDoms(nn, sps)%porI(1:bil,2:bjl,2:bkl))
                 allocate(h_cudaDoms(nn, sps)%porJ(2:bil,1:bjl,2:bkl))
                 allocate(h_cudaDoms(nn, sps)%porK(2:bil,2:bjl,1:bkl))
-                h_cudaDoms(nn,sps)%porI = bPorI
-                h_cudaDoms(nn,sps)%porJ = bPorJ
-                h_cudaDoms(nn,sps)%porK = bPorK
 
                 ! single halos (only owned cells significant)
                 allocate(h_cudaDoms(nn, sps)%fw(1:bie, 1:bje, 1:bke, 1:nwf))
                 allocate(h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw))
-                h_cudaDoms(nn, sps)%fw = zero
-                h_cudaDoms(nn, sps)%dw = zero
 
                 ! face projected areas
                 allocate(h_cudaDoms(nn,sps)%sI(0:bie, 1:bje, 1:bke,3))
                 allocate(h_cudaDoms(nn,sps)%sJ(1:bie, 0:bje, 1:bke,3))
                 allocate(h_cudaDoms(nn,sps)%sK(1:bie, 1:bje, 0:bke,3))
+
+                ! face velocities
+                allocate(h_cudaDoms(nn, sps)%sFaceI(0:bie, 1:bje, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%sFaceJ(1:bie, 0:bje, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%sFaceK(1:bie, 1:bje, 0:bke))
+
+                ! nodal gradients
+                allocate(h_cudaDoms(nn, sps)%ux(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%uy(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%uz(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%vx(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%vy(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%vz(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%wx(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%wy(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%wz(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%qx(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%qy(1:bil, 1:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
+
+            end do spectralLoop
+        end do domainsLoop
+
+        ! Push descriptors + indices to the device mirror. The members are device POINTERS,
+        ! so this makes d_cudaDoms(..)%arr alias the same device memory as h_cudaDoms(..)%arr.
+        ! Because of that aliasing the later host->device value copies (copyCudaBlockToDevice)
+        ! are visible to the kernels -- which read d_cudaDoms -- with no further struct copy,
+        ! so this push only needs to happen once, here.
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                d_cudaDoms(nn, sps) = h_cudaDoms(nn, sps)
+            end do
+        end do
+
+    end subroutine allocateCudaBlock
+
+
+    subroutine copyCudaBlockToDevice
+        ! Copy block field VALUES host->device into the (already-allocated) mirror.
+        ! Called every residual evaluation; allocation is done once by allocateCudaBlock.
+        !
+        ! The residual accumulators that calculateCudaResidual re-zeros itself every call
+        ! (dw, fw, and the nodal gradients ux..qz) are intentionally NOT touched here. The
+        ! few intermediates the residual kernels fill but do not themselves re-zero
+        ! (aa, radI/radJ/radK, dtl, dss) are initialized to zero here.
+        use constants, only: zero, RANSEquations
+        use blockPointers, only: nDom, &
+            bie => ie, bje => je, bke => ke, &
+            bw => w, bp => p, bgamma => gamma, &
+            bx => x, brlv => rlv, brev => rev, bvol => vol, bVolRef => volRef, bd2wall => d2wall, &
+            biblank => iblank, bPorI => porI, bPorJ => porJ, bPorK => porK, &
+            bShockSensor => shockSensor, &
+            bsi => si, bsj => sj, bsk => sk, &
+            bsFaceI => sFaceI, bsFaceJ => sFaceJ, bsFaceK => sFaceK, &
+            addGridVelocities
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputPhysics, only: equations
+        use utils, only: setPointers
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        domainsLoop: do nn = 1, nDom
+            spectralLoop: do sps = 1, nTimeIntervalsSpectral
+
+                call setPointers(nn, 1, sps)
+
+                ! double halos
+                h_cudaDoms(nn, sps)%w = bw
+                h_cudaDoms(nn, sps)%p = bp
+                h_cudaDoms(nn, sps)%gamma = bgamma
+                h_cudaDoms(nn, sps)%ss = bShockSensor
+
+                ! single halos
+                h_cudaDoms(nn, sps)%x = bx
+                h_cudaDoms(nn, sps)%rlv = brlv
+                h_cudaDoms(nn, sps)%rev = brev
+                h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke)
+
+                ! intermediates filled by the residual kernels but not re-zeroed by them
+                h_cudaDoms(nn, sps)%aa = zero
+                h_cudaDoms(nn, sps)%radI = zero
+                h_cudaDoms(nn, sps)%radJ = zero
+                h_cudaDoms(nn, sps)%radK = zero
+                h_cudaDoms(nn, sps)%dtl = zero
+                h_cudaDoms(nn, sps)%dss = zero
+
+                ! no halos
+                if (equations == RANSEquations) then
+                    h_cudaDoms(nn, sps)%d2wall = bd2wall
+                end if
+                h_cudaDoms(nn, sps)%volRef = bvolRef
+                h_cudaDoms(nn, sps)%iblank  = biblank
+
+                ! face porosities
+                h_cudaDoms(nn,sps)%porI = bPorI
+                h_cudaDoms(nn,sps)%porJ = bPorJ
+                h_cudaDoms(nn,sps)%porK = bPorK
+
+                ! face projected areas
                 h_cudaDoms(nn, sps)%sI = bsi
                 h_cudaDoms(nn, sps)%sJ = bsj
                 h_cudaDoms(nn, sps)%sK = bsk
 
-                ! Face velocities
-                allocate(h_cudaDoms(nn, sps)%sFaceI(0:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%sFaceJ(1:bie, 0:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%sFaceK(1:bie, 1:bje, 0:bke))
+                ! face velocities
                 if (addGridVelocities) then
                     h_cudaDoms(nn, sps)%sFaceI = bsFaceI
                     h_cudaDoms(nn, sps)%sFaceJ = bsFaceJ
@@ -283,53 +345,85 @@ module cudaBlock
                     h_cudaDoms(nn, sps)%sFaceK = zero
                 end if
 
-                ! Nodal gradients
-                allocate(h_cudaDoms(nn, sps)%ux(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%uy(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%uz(1:bil, 1:bjl, 1:bkl))
-                h_cudaDoms(nn, sps)%ux = zero;
-                h_cudaDoms(nn, sps)%uy = zero;
-                h_cudaDoms(nn, sps)%uz = zero
-
-                allocate(h_cudaDoms(nn, sps)%vx(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%vy(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%vz(1:bil, 1:bjl, 1:bkl))
-                h_cudaDoms(nn, sps)%vx = zero;
-                h_cudaDoms(nn, sps)%vy = zero;
-                h_cudaDoms(nn, sps)%vz = zero
-
-                allocate(h_cudaDoms(nn, sps)%wx(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%wy(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%wz(1:bil, 1:bjl, 1:bkl))
-                h_cudaDoms(nn, sps)%wx = zero;
-                h_cudaDoms(nn, sps)%wy = zero;
-                h_cudaDoms(nn, sps)%wz = zero
-
-                allocate(h_cudaDoms(nn, sps)%qx(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%qy(1:bil, 1:bjl, 1:bkl))
-                allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
-                h_cudaDoms(nn, sps)%qx = zero;
-                h_cudaDoms(nn, sps)%qy = zero;
-                h_cudaDoms(nn, sps)%qz = zero
-
             end do spectralLoop
         end do domainsLoop
 
-        ! --- Copy data from host back to device---
+    end subroutine copyCudaBlockToDevice
+
+
+    subroutine deallocateCudaBlock
+        ! Free the device/host block mirrors and all their member arrays. Guarded, so it is
+        ! safe to call when nothing is allocated. NOT called by the residual path (the mirrors
+        ! persist for the whole run); provided for solver lifecycle (re-meshing / shutdown).
+        !
+        ! Each device buffer is freed exactly once, via the host mirror. d_cudaDoms(..)%arr
+        ! aliases the same device memory (see allocateCudaBlock), so it must NOT be freed
+        ! again -- only the container arrays are deallocated afterwards.
+        use blockPointers, only: nDom
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        if (.not. allocated(h_cudaDoms)) return
+
         do nn = 1, nDom
             do sps = 1, nTimeIntervalsSpectral
-                d_cudaDoms(nn, sps) = h_cudaDoms(nn, sps)
+                if (associated(h_cudaDoms(nn,sps)%w))      deallocate(h_cudaDoms(nn,sps)%w)
+                if (associated(h_cudaDoms(nn,sps)%p))      deallocate(h_cudaDoms(nn,sps)%p)
+                if (associated(h_cudaDoms(nn,sps)%gamma))  deallocate(h_cudaDoms(nn,sps)%gamma)
+                if (associated(h_cudaDoms(nn,sps)%ss))     deallocate(h_cudaDoms(nn,sps)%ss)
+                if (associated(h_cudaDoms(nn,sps)%x))      deallocate(h_cudaDoms(nn,sps)%x)
+                if (associated(h_cudaDoms(nn,sps)%rlv))    deallocate(h_cudaDoms(nn,sps)%rlv)
+                if (associated(h_cudaDoms(nn,sps)%rev))    deallocate(h_cudaDoms(nn,sps)%rev)
+                if (associated(h_cudaDoms(nn,sps)%vol))    deallocate(h_cudaDoms(nn,sps)%vol)
+                if (associated(h_cudaDoms(nn,sps)%aa))     deallocate(h_cudaDoms(nn,sps)%aa)
+                if (associated(h_cudaDoms(nn,sps)%radI))   deallocate(h_cudaDoms(nn,sps)%radI)
+                if (associated(h_cudaDoms(nn,sps)%radJ))   deallocate(h_cudaDoms(nn,sps)%radJ)
+                if (associated(h_cudaDoms(nn,sps)%radK))   deallocate(h_cudaDoms(nn,sps)%radK)
+                if (associated(h_cudaDoms(nn,sps)%dtl))    deallocate(h_cudaDoms(nn,sps)%dtl)
+                if (associated(h_cudaDoms(nn,sps)%dss))    deallocate(h_cudaDoms(nn,sps)%dss)
+                if (associated(h_cudaDoms(nn,sps)%d2wall)) deallocate(h_cudaDoms(nn,sps)%d2wall)
+                if (associated(h_cudaDoms(nn,sps)%volRef)) deallocate(h_cudaDoms(nn,sps)%volRef)
+                if (associated(h_cudaDoms(nn,sps)%iblank)) deallocate(h_cudaDoms(nn,sps)%iblank)
+                if (associated(h_cudaDoms(nn,sps)%porI))   deallocate(h_cudaDoms(nn,sps)%porI)
+                if (associated(h_cudaDoms(nn,sps)%porJ))   deallocate(h_cudaDoms(nn,sps)%porJ)
+                if (associated(h_cudaDoms(nn,sps)%porK))   deallocate(h_cudaDoms(nn,sps)%porK)
+                if (associated(h_cudaDoms(nn,sps)%fw))     deallocate(h_cudaDoms(nn,sps)%fw)
+                if (associated(h_cudaDoms(nn,sps)%dw))     deallocate(h_cudaDoms(nn,sps)%dw)
+                if (associated(h_cudaDoms(nn,sps)%sI))     deallocate(h_cudaDoms(nn,sps)%sI)
+                if (associated(h_cudaDoms(nn,sps)%sJ))     deallocate(h_cudaDoms(nn,sps)%sJ)
+                if (associated(h_cudaDoms(nn,sps)%sK))     deallocate(h_cudaDoms(nn,sps)%sK)
+                if (associated(h_cudaDoms(nn,sps)%sFaceI)) deallocate(h_cudaDoms(nn,sps)%sFaceI)
+                if (associated(h_cudaDoms(nn,sps)%sFaceJ)) deallocate(h_cudaDoms(nn,sps)%sFaceJ)
+                if (associated(h_cudaDoms(nn,sps)%sFaceK)) deallocate(h_cudaDoms(nn,sps)%sFaceK)
+                if (associated(h_cudaDoms(nn,sps)%ux))     deallocate(h_cudaDoms(nn,sps)%ux)
+                if (associated(h_cudaDoms(nn,sps)%uy))     deallocate(h_cudaDoms(nn,sps)%uy)
+                if (associated(h_cudaDoms(nn,sps)%uz))     deallocate(h_cudaDoms(nn,sps)%uz)
+                if (associated(h_cudaDoms(nn,sps)%vx))     deallocate(h_cudaDoms(nn,sps)%vx)
+                if (associated(h_cudaDoms(nn,sps)%vy))     deallocate(h_cudaDoms(nn,sps)%vy)
+                if (associated(h_cudaDoms(nn,sps)%vz))     deallocate(h_cudaDoms(nn,sps)%vz)
+                if (associated(h_cudaDoms(nn,sps)%wx))     deallocate(h_cudaDoms(nn,sps)%wx)
+                if (associated(h_cudaDoms(nn,sps)%wy))     deallocate(h_cudaDoms(nn,sps)%wy)
+                if (associated(h_cudaDoms(nn,sps)%wz))     deallocate(h_cudaDoms(nn,sps)%wz)
+                if (associated(h_cudaDoms(nn,sps)%qx))     deallocate(h_cudaDoms(nn,sps)%qx)
+                if (associated(h_cudaDoms(nn,sps)%qy))     deallocate(h_cudaDoms(nn,sps)%qy)
+                if (associated(h_cudaDoms(nn,sps)%qz))     deallocate(h_cudaDoms(nn,sps)%qz)
             end do
         end do
 
-    end subroutine copyCudaBlock
+        deallocate(h_cudaDoms)
+        deallocate(d_cudaDoms)
+
+    end subroutine deallocateCudaBlock
 
 
-    subroutine copyCudaBCData
-        ! DESCRIPTION:
-        ! This copies all the necessary data from CPU to GPU
-        ! Eventually, this routine should get optimized
-
+    subroutine allocateCudaBCData
+        ! Allocate the persistent device/host BC-data mirrors (d_BCData / h_BCData) and their
+        ! member arrays. Runs ONCE per run (guarded) -- same lifecycle rationale as
+        ! allocateCudaBlock. BC-data VALUES are copied every evaluation by
+        ! copyCudaBCDataToDevice.
         use blockPointers, only: nDom, &
             bBCData => BCData,&
             nBocos, bBCType => BCType
@@ -344,14 +438,15 @@ module cudaBlock
                 mm, iBeg, iEnd, jBeg, jEnd, &
                 inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
 
-        ! --- Allocate device and host BCData ---
+        ! Already allocated -- the mirrors persist across residual evaluations.
+        if (allocated(d_BCData)) return
+
         allocate(d_BCData(nBocos))
         allocate(h_BCData(nBocos))
 
         domainsLoop: do nn = 1, nDom
 
             ! The following is similar to the allocMemBCData() subroutine in BCData.F90
-            ! In addition to allocating, we're also setting the BC Data
             call setBCPointers(nn, .false.)
 
             bocoLoop: do mm = 1, nBocos
@@ -370,13 +465,8 @@ module cudaBlock
                     h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd), &
                     h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
                     if (ierr /= 0) &
-                        call terminate("copyCudaBCData", "Memory allocation failure for &
+                        call terminate("allocateCudaBCData", "Memory allocation failure for &
                         &a farfield")
-
-                    h_BCData(mm)%rface = bBCData(mm)%rface
-                    h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
-                    h_BCData(mm)%norm = bBCData(mm)%norm
-
 
                 ! TODO [ ] : other BC types
 
@@ -385,10 +475,146 @@ module cudaBlock
             end do bocoLoop
         end do domainsLoop
 
-        ! --- Copy data from host back to device---
+        ! Push descriptors to the device mirror (members are device pointers -> aliasing,
+        ! so subsequent host->device value copies are visible without a further struct copy).
         do mm = 1, nBocos
             d_BCData(mm) = h_BCData(mm)
         end do
 
-    end subroutine copyCudaBCData
+    end subroutine allocateCudaBCData
+
+
+    subroutine copyCudaBCDataToDevice
+        ! Copy BC-data field VALUES host->device into the (already-allocated) mirror.
+        ! Called every residual evaluation; allocation is done once by allocateCudaBCData.
+        use blockPointers, only: nDom, &
+            bBCData => BCData,&
+            nBocos, bBCType => BCType
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use utils, only: setBCPointers
+        use constants, only: farField, symm
+
+        implicit none
+
+        integer(kind=intType) :: nn, mm
+
+        domainsLoop: do nn = 1, nDom
+
+            call setBCPointers(nn, .false.)
+
+            bocoLoop: do mm = 1, nBocos
+
+                select case (bBCType(mm))
+
+                case (farField)
+
+                    h_BCData(mm)%rface = bBCData(mm)%rface
+                    h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
+                    h_BCData(mm)%norm = bBCData(mm)%norm
+
+                ! TODO [ ] : other BC types
+
+                end select
+
+            end do bocoLoop
+        end do domainsLoop
+
+    end subroutine copyCudaBCDataToDevice
+
+
+    subroutine deallocateCudaBCData
+        ! Free the device/host BC-data mirrors. Guarded, so it is safe to call when nothing is
+        ! allocated. NOT called by the residual path; provided for solver lifecycle. As with
+        ! deallocateCudaBlock, each device buffer is freed once via the host mirror.
+        use blockPointers, only: nBocos, bBCType => BCType
+        use constants, only: farField
+
+        implicit none
+
+        integer(kind=intType) :: mm
+
+        if (.not. allocated(h_BCData)) return
+
+        do mm = 1, nBocos
+            if (associated(h_BCData(mm)%rface))    deallocate(h_BCData(mm)%rface)
+            if (associated(h_BCData(mm)%rfaceALE)) deallocate(h_BCData(mm)%rfaceALE)
+            if (associated(h_BCData(mm)%norm))     deallocate(h_BCData(mm)%norm)
+        end do
+
+        deallocate(h_BCData)
+        deallocate(d_BCData)
+
+    end subroutine deallocateCudaBCData
+
+
+    subroutine copyCudaConstantsToDevice
+        ! Copy the small scalar / reference-state "constant" data host->device. Wraps the
+        ! seven per-module cudaCopy* routines (which remain individual). Cheap relative to the
+        ! block field copy.
+        ! TODO: several of these are static for a whole run (discretization, physics, turb
+        !       params) and could move to one-time setup; left per-call for now.
+        use cudaFlowVarRefState,     only: cudaCopyFlowVarRefState
+        use cudaInputDiscretization, only: cudaCopyInputDiscretization
+        use cudaInputIteration,      only: cudaCopyInputIteration
+        use cudaInputPhysics,        only: cudaCopyInputPhysics
+        use cudaParamTurb,           only: cudaCopyParamTurb
+        use cudaIteration,           only: cudaCopyIteration
+        use cudaTurbMod,             only: cudaCopyTurbMod
+
+        implicit none
+
+        call cudaCopyFlowVarRefState
+        call cudaCopyInputDiscretization
+        call cudaCopyInputIteration
+        call cudaCopyInputPhysics
+        call cudaCopyParamTurb
+        call cudaCopyIteration
+        call cudaCopyTurbMod
+
+    end subroutine copyCudaConstantsToDevice
+
+
+    subroutine copyCudaResidualToHost
+        ! Copy the GPU residual accumulator dw device->host into the CPU block dw (the normal
+        ! ADflow block storage that NKSolver::getRes reads). Called once after the residual
+        ! kernels. Assembling the flat, volume-scaled residual vector is done separately by
+        ! cudaResidual::getCudaResidual.
+        use blockPointers, only: nDom, bdw => dw, bie => ie, bje => je, bke => ke
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowVarRefState, only: nw
+        use utils, only: setPointers
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(nn, 1, sps)
+                bdw(1:bie, 1:bje, 1:bke, 1:nw) = h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw)
+            end do
+        end do
+
+    end subroutine copyCudaResidualToHost
+
+
+    subroutine copyCudaBlockToHost
+        ! Sync the host block mirror descriptors from the device (h_cudaDoms = d_cudaDoms) so
+        ! that individual members can be read back on the host for debugging/validation (see
+        ! cudaResidual::debugCompareCudaResidual). The transfer of an individual array's DATA
+        ! then happens when a caller assigns a host array from h_cudaDoms(..)%member.
+        use blockPointers, only: nDom
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                h_cudaDoms(nn, sps) = d_cudaDoms(nn, sps)
+            end do
+        end do
+
+    end subroutine copyCudaBlockToHost
 end module cudaBlock
