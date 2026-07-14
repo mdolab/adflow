@@ -103,17 +103,17 @@ module cudaResidual
         implicit none
 
             ! Copy block pointers dimensions
-            h_nx = bnx; 
-            h_ny = bny; 
+            h_nx = bnx;
+            h_ny = bny;
             h_nz = bnz
-            h_il = bil; 
-            h_jl = bjl; 
+            h_il = bil;
+            h_jl = bjl;
             h_kl = bkl
-            h_ie = bie; 
-            h_je = bje; 
+            h_ie = bie;
+            h_je = bje;
             h_ke = bke
-            h_ib = bib; 
-            h_jb = bjb; 
+            h_ib = bib;
+            h_jb = bjb;
             h_kb = bkb
 
             nx = bnx; ny = bny; nz = bnz
@@ -146,7 +146,7 @@ module cudaResidual
             rlv = brlv
             rev = brev
             vol = bvol(1:bie, 1:bje, 1:bke)
-            !these need to be comptued 
+            !these need to be comptued
 
             aa = zero
             radI = zero
@@ -159,10 +159,10 @@ module cudaResidual
 
             !no halos
             allocate(volRef(2:h_il,2:h_jl,2:h_kl))
-            if (equations == RANSEquations) then 
+            if (equations == RANSEquations) then
                 allocate(d2wall(2:h_il,2:h_jl,2:h_kl))
                 d2wall = bd2wall
-            end if 
+            end if
             allocate(iblank(2:h_il,2:h_jl,2:h_kl))
             volRef = bvolRef
             iblank  = biblank
@@ -230,7 +230,7 @@ module cudaResidual
     ! ========================================================================================================
     ! OLD COMMIT SUBROUTINES THAT WORKED
     ! ========================================================================================================
-    !all non flux subroutines 
+    !all non flux subroutines
     attributes(global) subroutine computeSpeedOfSoundSquared_v1
         use constants, only: two, third,irho,itu1
         implicit none
@@ -238,11 +238,11 @@ module cudaResidual
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-        
+
         if (i <= ie .AND. j <= je .AND. k <= ke) then
-            !TODO this will not work if TKE is present check 
+            !TODO this will not work if TKE is present check
             !computeSpeedOfSoundSquared in blockette.F90 need
-            !check to correct for K  
+            !check to correct for K
             aa(i,j,k) = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
         end if
     end subroutine computeSpeedOfSoundSquared_v1
@@ -263,7 +263,7 @@ module cudaResidual
         ! First part. Contribution in the k-direction.
         ! The contribution is scattered to both the left and right node
         ! in k-direction.
-        
+
         !loop k 1 to ke, j 1 to jl and i 1 to il
         if (i <= il .AND. j <= jl .AND. k <= ke) then
             ! Compute 8 times the average normal for this part of
@@ -293,7 +293,7 @@ module cudaResidual
                             + w(i, j + 1, k, ivz) + w(i + 1, j + 1, k, ivz))
 
             a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j + 1, k) + aa(i + 1, j + 1, k))
-            
+
             ! Add the contributions to the surface integral to the node
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
@@ -310,7 +310,7 @@ module cudaResidual
                 tmp = atomicadd(wx(i, j, k - 1), wbar * sx)
                 tmp = atomicadd(wy(i, j, k - 1), wbar * sy)
                 tmp = atomicadd(wz(i, j, k - 1), wbar * sz)
-                
+
                 tmp = atomicsub(qx(i, j, k - 1), a2 * sx)
                 tmp = atomicsub(qy(i, j, k - 1), a2 * sy)
                 tmp = atomicsub(qz(i, j, k - 1), a2 * sz)
@@ -331,7 +331,7 @@ module cudaResidual
                 ! qy(i, j, k - 1) = qy(i, j, k - 1) - a2 * sy
                 ! qz(i, j, k - 1) = qz(i, j, k - 1) - a2 * sz
 
-            end if 
+            end if
 
             if (k < ke) then
 
@@ -346,8 +346,8 @@ module cudaResidual
                 tmp = atomicsub(wx(i, j, k), wbar * sx)
                 tmp = atomicsub(wy(i, j, k), wbar * sy)
                 tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
-                tmp = atomicadd(qx(i, j, k), a2 * sx) 
+
+                tmp = atomicadd(qx(i, j, k), a2 * sx)
                 tmp = atomicadd(qy(i, j, k), a2 * sy)
                 tmp = atomicadd(qz(i, j, k), a2 * sz)
 
@@ -367,7 +367,7 @@ module cudaResidual
                 ! qy(i, j, k) = qy(i, j, k) + a2 * sy
                 ! qz(i, j, k) = qz(i, j, k) + a2 * sz
 
-            end if 
+            end if
         end if
         ! Second part. Contribution in the j-direction.
         ! The contribution is scattered to both the left and right node
@@ -400,12 +400,12 @@ module cudaResidual
                                 + w(i, j, k + 1, ivz) + w(i + 1, j, k + 1, ivz))
 
             a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j, k + 1) + aa(i + 1, j, k + 1))
-            
+
             ! Add the contributions to the surface integral to the node
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
             ! speed of sound must be computed.
-    
+
             if (j > 1) then
 
                 tmp = atomicadd(ux(i, j - 1, k), ubar * sx)
@@ -419,7 +419,7 @@ module cudaResidual
                 tmp = atomicadd(wx(i, j - 1, k), wbar * sx)
                 tmp = atomicadd(wy(i, j - 1, k), wbar * sy)
                 tmp = atomicadd(wz(i, j - 1, k), wbar * sz)
-                
+
                 tmp = atomicsub(qx(i, j - 1, k), a2 * sx)
                 tmp = atomicsub(qy(i, j - 1, k), a2 * sy)
                 tmp = atomicsub(qz(i, j - 1, k), a2 * sz)
@@ -444,7 +444,7 @@ module cudaResidual
 
             if (j < je) then
 
-                tmp = atomicsub(ux(i, j, k), ubar * sx) 
+                tmp = atomicsub(ux(i, j, k), ubar * sx)
                 tmp = atomicsub(uy(i, j, k), ubar * sy)
                 tmp = atomicsub(uz(i, j, k), ubar * sz)
 
@@ -455,7 +455,7 @@ module cudaResidual
                 tmp = atomicsub(wx(i, j, k), wbar * sx)
                 tmp = atomicsub(wy(i, j, k), wbar * sy)
                 tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
+
                 tmp = atomicadd(qx(i, j, k), a2 * sx)
                 tmp = atomicadd(qy(i, j, k), a2 * sy)
                 tmp = atomicadd(qz(i, j, k), a2 * sz)
@@ -476,13 +476,13 @@ module cudaResidual
                 ! qy(i, j, k) = qy(i, j, k) + a2 * sy
                 ! qz(i, j, k) = qz(i, j, k) + a2 * sz
 
-            end if 
+            end if
         end if
-        
+
         ! Third part. Contribution in the i-direction.
         ! The contribution is scattered to both the left and right node
         ! in i-direction.
-        
+
         ! loop k 1 to kl j 1 to jl and i 1 to ie
         if (i <= ie .AND. j <= jl .AND. k <= kl) then
             ! Compute 8 times the average normal for this part of
@@ -517,7 +517,7 @@ module cudaResidual
             ! speed of sound must be computed.
             if (i > 1) then
 
-                tmp = atomicadd(ux(i - 1, j, k), ubar * sx) 
+                tmp = atomicadd(ux(i - 1, j, k), ubar * sx)
                 tmp = atomicadd(uy(i - 1, j, k), ubar * sy)
                 tmp = atomicadd(uz(i - 1, j, k), ubar * sz)
 
@@ -528,7 +528,7 @@ module cudaResidual
                 tmp = atomicadd(wx(i - 1, j, k), wbar * sx)
                 tmp = atomicadd(wy(i - 1, j, k), wbar * sy)
                 tmp = atomicadd(wz(i - 1, j, k), wbar * sz)
-                
+
                 tmp = atomicsub(qx(i - 1, j, k), a2 * sx)
                 tmp = atomicsub(qy(i - 1, j, k), a2 * sy)
                 tmp = atomicsub(qz(i - 1, j, k), a2 * sz)
@@ -564,7 +564,7 @@ module cudaResidual
                 tmp = atomicsub(wx(i, j, k), wbar * sx)
                 tmp = atomicsub(wy(i, j, k), wbar * sy)
                 tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
+
                 tmp = atomicadd(qx(i, j, k), a2 * sx)
                 tmp = atomicadd(qy(i, j, k), a2 * sy)
                 tmp = atomicadd(qz(i, j, k), a2 * sz)
@@ -586,10 +586,10 @@ module cudaResidual
                 ! qz(i, j, k) = qz(i, j, k) + a2 * sz
 
             end if
-        end if 
+        end if
 
         !need to get rid of this to avoid race condition
-        !each cell only scales one node 
+        !each cell only scales one node
         !however need to wait for each nodes accumulation to be done
         !if thread on edge of boundary need to wait for another block to be done
         !therefore split this part into a separate kernel
@@ -618,7 +618,7 @@ module cudaResidual
         !     qx(i, j, k) = qx(i, j, k) * oVol
         !     qy(i, j, k) = qy(i, j, k) * oVol
         !     qz(i, j, k) = qz(i, j, k) * oVol
-        ! end if 
+        ! end if
     end subroutine allNodalGradients_v1
 
     attributes(global) subroutine scaleNodalGradients_v1
@@ -655,10 +655,10 @@ module cudaResidual
             qx(i, j, k) = qx(i, j, k) * oVol
             qy(i, j, k) = qy(i, j, k) * oVol
             qz(i, j, k) = qz(i, j, k) * oVol
-        end if 
+        end if
 
     end subroutine scaleNodalGradients_v1
-    
+
     attributes(global) subroutine viscousFlux_v1
         use precision, only: realType, intType
         use constants, only: half, zero,one,two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz,noFlux
@@ -689,9 +689,9 @@ module cudaResidual
         real(kind=realType), parameter :: twoThird = two * third
         real(kind=realType) :: tmp
         !thread indices start at 1
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z
 
         ! Set QCR parameters
         Ccr1 = 0.3_realType
@@ -782,7 +782,7 @@ module cudaResidual
             ssx = snrm * ssx
             ssy = snrm * ssy
             ssz = snrm * ssz
-    
+
             ! Correct the gradients.
 
             corr = u_x * ssx + u_y * ssy + u_z * ssz &
@@ -808,7 +808,7 @@ module cudaResidual
             q_x = q_x - corr * ssx
             q_y = q_y - corr * ssy
             q_z = q_z - corr * ssz
-            
+
             ! Compute the stress tensor and the heat flux vector.
             ! We remove the viscosity from the stress tensor (tau)
             ! to define tauS since we still need to separate between
@@ -828,7 +828,7 @@ module cudaResidual
             q_x = heatCoef * q_x
             q_y = heatCoef * q_y
             q_z = heatCoef * q_z
-            
+
             ! Add QCR corrections if necessary
             if (useQCR) then
 
@@ -920,7 +920,7 @@ module cudaResidual
             frhoE = frhoE - q_x * sk(i, j, k, 1) - q_y * sk(i, j, k, 2) - q_z * sk(i, j, k, 3)
 
             ! Update the residuals of cell k and k+1.
-            
+
             tmp = atomicsub(fw(i, j, k, imx), fmx)
             tmp = atomicsub(fw(i, j, k, imy), fmy)
             tmp = atomicsub(fw(i, j, k, imz), fmz)
@@ -1185,7 +1185,7 @@ module cudaResidual
             ! fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fmy
             ! fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fmz
             ! fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + frhoE
-        end if  
+        end if
         !
         !         Viscous fluxes in the i-direction.
         !
@@ -1418,7 +1418,7 @@ module cudaResidual
             ! fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
             ! fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
             ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
-            
+
             tmp = atomicadd(fw(i + 1, j, k, imx), fmx)
             tmp = atomicadd(fw(i + 1, j, k, imy), fmy)
             tmp = atomicadd(fw(i + 1, j, k, imz), fmz)
@@ -1463,7 +1463,7 @@ module cudaResidual
     ! ========================================================================================================
     ! NEWER WORK THAT IS CURRENTLY BROKEN
     ! ========================================================================================================
-    !all non flux subroutines 
+    !all non flux subroutines
     attributes(global) subroutine computeSpeedOfSoundSquared_v2
         use constants, only: two, third,irho,itu1
         implicit none
@@ -1472,16 +1472,16 @@ module cudaResidual
         ! Hard-coded for now
         dom = 1
         sps = 1
-        
+
         ! --- GPU thread indices ---
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-        
+
         if (i <= cudaDoms(dom,sps)%ie .AND. j <= cudaDoms(dom,sps)%je .AND. k <= cudaDoms(dom,sps)%ke) then
-            !TODO: this will not work if TKE is present check 
+            !TODO: this will not work if TKE is present check
             !computeSpeedOfSoundSquared in blockette.F90 need
-            !check to correct for K  
+            !check to correct for K
             ! cudaDoms(dom,sps)%aa(i,j,k) = cudaDoms(dom,sps)%gamma(i,j,k)*cudaDoms(dom,sps)%p(i,j,k) &
             !                                             / cudaDoms(dom,sps)%w(i, j, k, irho
             cudaDoms(dom,sps)%aa(i,j,k) = (cudaDoms(dom,sps)%gamma(i,j,k)*cudaDoms(dom,sps)%p(i,j,k)) &
@@ -1512,7 +1512,7 @@ module cudaResidual
         ! First part. Contribution in the k-direction.
         ! The contribution is scattered to both the left and right node
         ! in k-direction.
-        
+
         !loop k 1 to cudaDoms(dom,sps)%ke, j 1 to cudaDoms(dom,sps)%jl and i 1 to cudaDoms(dom,sps)%il
         if (i <= cudaDoms(dom,sps)%il .AND. j <= cudaDoms(dom,sps)%jl .AND. k <= cudaDoms(dom,sps)%ke) then
             ! Compute 8 times the average normal for this part of
@@ -1545,14 +1545,14 @@ module cudaResidual
                          cudaDoms(dom,sps)%aa(i, j + 1, k) + cudaDoms(dom,sps)%aa(i + 1, j + 1, k))
 
             ! print *,"k:", i,j,k, a2
-            
+
             ! Add the contributions to the surface integral to the node ! j-1 and substract it from the node j. For the heat flux it ! is reversed, because the negative of the gradient of the ! speed of sound must be computed.
             if (k > 1) then
 
                 tmp = atomicadd(cudaDoms(dom,sps)%ux(i, j, k - 1), ubar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%uy(i, j, k - 1), ubar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%uz(i, j, k - 1), ubar * sz)
-                
+
                 tmp = atomicadd(cudaDoms(dom,sps)%vx(i, j, k - 1), vbar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%vy(i, j, k - 1), vbar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%vz(i, j, k - 1), vbar * sz)
@@ -1560,7 +1560,7 @@ module cudaResidual
                 tmp = atomicadd(cudaDoms(dom,sps)%wx(i, j, k - 1), wbar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%wy(i, j, k - 1), wbar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%wz(i, j, k - 1), wbar * sz)
-                
+
                 tmp = atomicsub(cudaDoms(dom,sps)%qx(i, j, k - 1), a2 * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%qy(i, j, k - 1), a2 * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%qz(i, j, k - 1), a2 * sz)
@@ -1581,7 +1581,7 @@ module cudaResidual
                 ! cudaDoms(dom,sps)%qy(i, j, k - 1) = cudaDoms(dom,sps)%qy(i, j, k - 1) - a2 * sy
                 ! cudaDoms(dom,sps)%qz(i, j, k - 1) = cudaDoms(dom,sps)%qz(i, j, k - 1) - a2 * sz
 
-            end if 
+            end if
 
             if (k < cudaDoms(dom,sps)%ke) then
 
@@ -1596,8 +1596,8 @@ module cudaResidual
                 tmp = atomicsub(cudaDoms(dom,sps)%wx(i, j, k), wbar * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%wy(i, j, k), wbar * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%wz(i, j, k), wbar * sz)
-                
-                tmp = atomicadd(cudaDoms(dom,sps)%qx(i, j, k), a2 * sx) 
+
+                tmp = atomicadd(cudaDoms(dom,sps)%qx(i, j, k), a2 * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%qy(i, j, k), a2 * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%qz(i, j, k), a2 * sz)
 
@@ -1617,7 +1617,7 @@ module cudaResidual
                 ! cudaDoms(dom,sps)%qy(i, j, k) = cudaDoms(dom,sps)%qy(i, j, k) + a2 * sy
                 ! cudaDoms(dom,sps)%qz(i, j, k) = cudaDoms(dom,sps)%qz(i, j, k) + a2 * sz
 
-            end if 
+            end if
         end if
 
 
@@ -1658,7 +1658,7 @@ module cudaResidual
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
             ! speed of sound must be computed.
-    
+
             if (j > 1) then
 
                 tmp = atomicadd(cudaDoms(dom,sps)%ux(i, j - 1, k), ubar * sx)
@@ -1672,7 +1672,7 @@ module cudaResidual
                 tmp = atomicadd(cudaDoms(dom,sps)%wx(i, j - 1, k), wbar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%wy(i, j - 1, k), wbar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%wz(i, j - 1, k), wbar * sz)
-                
+
                 tmp = atomicsub(cudaDoms(dom,sps)%qx(i, j - 1, k), a2 * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%qy(i, j - 1, k), a2 * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%qz(i, j - 1, k), a2 * sz)
@@ -1697,7 +1697,7 @@ module cudaResidual
 
             if (j < cudaDoms(dom,sps)%je) then
 
-                tmp = atomicsub(cudaDoms(dom,sps)%ux(i, j, k), ubar * sx) 
+                tmp = atomicsub(cudaDoms(dom,sps)%ux(i, j, k), ubar * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%uy(i, j, k), ubar * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%uz(i, j, k), ubar * sz)
 
@@ -1708,7 +1708,7 @@ module cudaResidual
                 tmp = atomicsub(cudaDoms(dom,sps)%wx(i, j, k), wbar * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%wy(i, j, k), wbar * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%wz(i, j, k), wbar * sz)
-                
+
                 tmp = atomicadd(cudaDoms(dom,sps)%qx(i, j, k), a2 * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%qy(i, j, k), a2 * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%qz(i, j, k), a2 * sz)
@@ -1729,13 +1729,13 @@ module cudaResidual
                 ! cudaDoms(dom,sps)%qy(i, j, k) = cudaDoms(dom,sps)%qy(i, j, k) + a2 * sy
                 ! cudaDoms(dom,sps)%qz(i, j, k) = cudaDoms(dom,sps)%qz(i, j, k) + a2 * sz
 
-            end if 
+            end if
         end if
-        
+
         ! Third part. Contribution in the i-direction.
         ! The contribution is scattered to both the left and right node
         ! in i-direction.
-        
+
         ! loop k 1 to cudaDoms(dom,sps)%kl j 1 to cudaDoms(dom,sps)%jl and i 1 to cudaDoms(dom,sps)%ie
         if (i <= cudaDoms(dom,sps)%ie .AND. j <= cudaDoms(dom,sps)%jl .AND. k <= cudaDoms(dom,sps)%kl) then
             ! Compute 8 times the average normal for this part of
@@ -1773,7 +1773,7 @@ module cudaResidual
 
             if (i > 1) then
 
-                tmp = atomicadd(cudaDoms(dom,sps)%ux(i - 1, j, k), ubar * sx) 
+                tmp = atomicadd(cudaDoms(dom,sps)%ux(i - 1, j, k), ubar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%uy(i - 1, j, k), ubar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%uz(i - 1, j, k), ubar * sz)
 
@@ -1784,7 +1784,7 @@ module cudaResidual
                 tmp = atomicadd(cudaDoms(dom,sps)%wx(i - 1, j, k), wbar * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%wy(i - 1, j, k), wbar * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%wz(i - 1, j, k), wbar * sz)
-                
+
                 tmp = atomicsub(cudaDoms(dom,sps)%qx(i - 1, j, k), a2 * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%qy(i - 1, j, k), a2 * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%qz(i - 1, j, k), a2 * sz)
@@ -1820,7 +1820,7 @@ module cudaResidual
                 tmp = atomicsub(cudaDoms(dom,sps)%wx(i, j, k), wbar * sx)
                 tmp = atomicsub(cudaDoms(dom,sps)%wy(i, j, k), wbar * sy)
                 tmp = atomicsub(cudaDoms(dom,sps)%wz(i, j, k), wbar * sz)
-                
+
                 tmp = atomicadd(cudaDoms(dom,sps)%qx(i, j, k), a2 * sx)
                 tmp = atomicadd(cudaDoms(dom,sps)%qy(i, j, k), a2 * sy)
                 tmp = atomicadd(cudaDoms(dom,sps)%qz(i, j, k), a2 * sz)
@@ -1842,11 +1842,11 @@ module cudaResidual
                 ! cudaDoms(dom,sps)%qz(i, j, k) = cudaDoms(dom,sps)%qz(i, j, k) + a2 * sz
 
             end if
-        end if 
+        end if
 
         ! NOTE: DIFFERENT FROM CPU VERSION
         ! need to get rid of this to avoid race condition
-        !each cell only scales one node 
+        !each cell only scales one node
         !however need to wait for each nodes accumulation to be done
         !if thread on edge of boundary need to wait for another block to be done
         !therefore split this part into a separate kernel
@@ -1875,7 +1875,7 @@ module cudaResidual
         !     cudaDoms(dom,sps)%qx(i, j, k) = cudaDoms(dom,sps)%qx(i, j, k) * oVol
         !     cudaDoms(dom,sps)%qy(i, j, k) = cudaDoms(dom,sps)%qy(i, j, k) * oVol
         !     cudaDoms(dom,sps)%qz(i, j, k) = cudaDoms(dom,sps)%qz(i, j, k) * oVol
-        ! end if 
+        ! end if
     end subroutine allNodalGradients_v2
 
     attributes(global) subroutine scaleNodalGradients_v2
@@ -1918,7 +1918,7 @@ module cudaResidual
             cudaDoms(dom,sps)%qx(i, j, k) = cudaDoms(dom,sps)%qx(i, j, k) * oVol
             cudaDoms(dom,sps)%qy(i, j, k) = cudaDoms(dom,sps)%qy(i, j, k) * oVol
             cudaDoms(dom,sps)%qz(i, j, k) = cudaDoms(dom,sps)%qz(i, j, k) * oVol
-        end if 
+        end if
 
     end subroutine scaleNodalGradients_v2
 
@@ -1939,14 +1939,14 @@ module cudaResidual
             fact = -half
         end if
 
-        ! Projected areas of cell faces in the i direction.    
+        ! Projected areas of cell faces in the i direction.
 
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x - 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
 
         n = k - 1
-        m = j - 1   
+        m = j - 1
         ! Divide by 8 times the volume to obtain the correct gradients.
         if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je .and. k <= cudaDoms(dom,sps)%ke) then
 
@@ -1970,14 +1970,14 @@ module cudaResidual
 
         end if
 
-        ! Projected areas of cell faces in the j direction.    
+        ! Projected areas of cell faces in the j direction.
 
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y - 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
 
         n = k - 1
-        l = i - 1   
+        l = i - 1
 
         if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je .and. k <= cudaDoms(dom,sps)%ke) then
 
@@ -2001,14 +2001,14 @@ module cudaResidual
 
         end if
 
-        ! Projected areas of cell faces in the k direction.    
+        ! Projected areas of cell faces in the k direction.
 
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z - 1
 
         m = j - 1
-        l = i - 1   
+        l = i - 1
 
         if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je .and. k <= cudaDoms(dom,sps)%ke) then
 
@@ -2057,7 +2057,7 @@ module cudaResidual
         logical :: doScaling, updateDt
         integer(kind=intType) :: i, j, k, dom, sps
 
-        dom = 1 
+        dom = 1
         sps = 1
         !no nonger optional argument must be passed in
         updateDt = updateDtl
@@ -2259,10 +2259,10 @@ module cudaResidual
 
                 cudaDoms(dom,sps)%dtl(i, j, k) = rfl / cudaDoms(dom,sps)%dtl(i, j, k)
             end if
-      
+
         end if
     end subroutine timeStep
-    
+
     ! Miles
     attributes(global) subroutine sumDwandFw_v2
 
@@ -2307,7 +2307,7 @@ module cudaResidual
         integer(kind=intType) :: i, j, k, ii, nTurb, dom, sps,l
         real(kind=realType) :: ovol
 
-        dom = 1 
+        dom = 1
         sps = 1
         ! Get iteration indices from GPU
         ! These loops start at '2'
@@ -2321,10 +2321,10 @@ module cudaResidual
             oVol = one / cudaDoms(dom,sps)%volRef(i, j, k)
             do l = 1,nwf
                 cudaDoms(dom,sps)%dw(i, j, k, l) = cudaDoms(dom,sps)%dw(i, j, k, l) * ovol
-            end do 
+            end do
             do l = nt1,nt2
                 cudaDoms(dom,sps)%dw(i, j, k, l) = cudaDoms(dom,sps)%dw(i, j, k, l) * ovol * turbResScale(l)
-            end do 
+            end do
         end if
     end subroutine resScale
 
@@ -2345,16 +2345,16 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
-    
+
         dom = 1
         sps = 1
         !cell centered indices
         ! SB: we subtract one from the blockdim because GPU blocks need one layer of overlap
         ! because they need to know the state for their outer face flux computations (i.e one layer of inner halo cells is needed)
-        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
-        j = (blockIdx%y - 1) * (blockDim%y-1) + threadIdx%y 
-        k = (blockIdx%z - 1) * (blockDim%z-1) + threadIdx%z 
-        
+        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x
+        j = (blockIdx%y - 1) * (blockDim%y-1) + threadIdx%y
+        k = (blockIdx%z - 1) * (blockDim%z-1) + threadIdx%z
+
         tidx = threadIdx%x
         tidy = threadIdx%y
         tidz = threadIdx%z
@@ -2365,7 +2365,7 @@ module cudaResidual
         il = cudaDoms(dom,sps)%il
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
-        
+
 
         ! SB: Store all the cell centered states for single halo plus compute cells
         ! for compute face flux evals
@@ -2379,12 +2379,12 @@ module cudaResidual
 
             w_s(tidx,tidy,tidz,irho) = wrho
             w_s(tidx,tidy,tidz,ivx) = wvx
-            w_s(tidx,tidy,tidz,ivy) = wvy 
+            w_s(tidx,tidy,tidz,ivy) = wvy
             w_s(tidx,tidy,tidz,ivz) = wvz
             w_s(tidx,tidy,tidz,irhoE) = wrhoE
             P_s(tidx,tidy,tidz) = P
             dw_s(tidx,tidy,tidz,:) = zero
-        end if 
+        end if
         ! t_dw  = zero
         !sync threads now
         call syncthreads()
@@ -2403,20 +2403,20 @@ module cudaResidual
 
             vnp = w_s(tidx+1,tidy,tidz,ivx) * sx + w_s(tidx+1,tidy,tidz,ivy) * sy + w_s(tidx+1,tidy,tidz,ivz) * sz
             vnm = wvx*sx + wvy *sy + wvz *sz ! SB: are these in local or shared memory could using a shared memory access call here be faster?
-            
+
             porVel = one
             porFlux = half
             ! SB: Note the porosity variable indicies start at 2 in j and k. Thread index 1 literally cannot access it.
-            if (j>=2 .and. k>=2)then 
+            if (j>=2 .and. k>=2)then
                 if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
                 if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
                     porVel = zero
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
-            
-            
+            end if
+
+
             ! Incorporate porFlux in porVel.
             porVel = porVel * porFlux
 
@@ -2429,28 +2429,28 @@ module cudaResidual
 
             pa = porFlux * (P_s(tidx+1,tidy,tidz) + P)
 
-            !mass flux I dir 
+            !mass flux I dir
             fs = rqsp + rqsm
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irho), fs)
             t_dw(irho) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
 
-            !imx flux I dir 
+            !imx flux I dir
             fs = rqsp * w_s(tidx + 1, tidy, tidz, ivx) + rqsm * wvx + pa * sx
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imx), fs)
             t_dw(imx) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-            
-            !imy flux I dir 
+
+            !imy flux I dir
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivy) + rqsm * wvy + pa * sy
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imy), fs)
             t_dw(imy) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
-            !imz flux I dir 
+            !imz flux I dir
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivz) + rqsm * wvz + pa * sz
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imz), fs)
-            t_dw(imz) =  fs 
+            t_dw(imz) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
             !irhoE flux I dir
@@ -2460,7 +2460,7 @@ module cudaResidual
             t_dw(irhoE) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
-            !now each thread compute J face 
+            !now each thread compute J face
             sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
             sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
             sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
@@ -2481,7 +2481,7 @@ module cudaResidual
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
+            end if
             !Incorporate porFlux in porVel.
             porVel = porVel * porFlux
 
@@ -2494,15 +2494,15 @@ module cudaResidual
 
             rqsp = qsp * w_s(tidx, tidy + 1, tidz, irho)
             rqsm = qsm * wrho
-            
+
             pa = porFlux * (P_s(tidx, tidy + 1, tidz) + P)
             !mass flux J dir
             fs = rqsp + rqsm
             tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irho), fs)
             t_dw(irho) = t_dw(irho) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-            
-            !imx flux J dir 
+
+            !imx flux J dir
             fs = rqsp * w_s(tidx, tidy + 1, tidz, ivx) + rqsm * wvx + pa * sx
             tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imx), fs)
             t_dw(imx) = t_dw(imx) + fs
@@ -2548,7 +2548,7 @@ module cudaResidual
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
+            end if
 
             porVel = porVel * porFlux
 
@@ -2590,7 +2590,7 @@ module cudaResidual
             t_dw(irhoE) = t_dw(irhoE) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
-            ! SB: We accumulate all the adds in a the t_dw variables and then do the 
+            ! SB: We accumulate all the adds in a the t_dw variables and then do the
             ! atomic adds at one at the end. We can only do this on the self cell
             tmp = atomicadd(dw_s(tidx,tidy,tidz, irho), t_dw(irho))
             tmp = atomicadd(dw_s(tidx,tidy,tidz, imx), t_dw(imx))
@@ -2598,7 +2598,7 @@ module cudaResidual
             tmp = atomicadd(dw_s(tidx,tidy,tidz, imz), t_dw(imz))
             tmp = atomicadd(dw_s(tidx,tidy,tidz, irhoE), t_dw(irhoE))
 
-        end if 
+        end if
 
         call syncthreads()
         tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho),dw_s(tidx,tidy,tidz, irho))
@@ -2606,12 +2606,12 @@ module cudaResidual
         tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy),dw_s(tidx,tidy,tidz, imy))
         tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz),dw_s(tidx,tidy,tidz, imz))
         tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE),dw_s(tidx,tidy,tidz, irhoE))
-        end if 
-
-        
+        end if
 
 
-        
+
+
+
 
 
     end subroutine inviscidCentralFluxCellCentered
@@ -2633,14 +2633,14 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
-    
+
         dom = 1
         sps = 1
         !cell centered indices
         i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x ! SB: Inner halo overlap
         j = (blockIdx%y - 1) * (blockDim%y) + threadIdx%y  ! SB: No Inner halo overlap
         k = (blockIdx%z - 1) * (blockDim%z) + threadIdx%z  ! SB: No Inner halo overlap
-        
+
         tidx = threadIdx%x
         tidy = threadIdx%y
         tidz = threadIdx%z
@@ -2651,11 +2651,11 @@ module cudaResidual
         il = cudaDoms(dom,sps)%il
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
-        
+
         ! SB: Prevent overindexing of the if block extends past the compute mesh
         jmax = min((blockIdx%y) * (blockDim%y) ,jl)
         kmax = min((blockIdx%z) * (blockDim%z) ,kl)
-        
+
         ! SB: Get the self cell
         if (i <= ie .and. j <= je .and. k <= ke) then
             wrho = cudaDoms(dom,sps)%w(i,j,k,irho)
@@ -2667,14 +2667,14 @@ module cudaResidual
 
             w_s(tidx,tidy,tidz,irho) = wrho
             w_s(tidx,tidy,tidz,ivx) = wvx
-            w_s(tidx,tidy,tidz,ivy) = wvy 
+            w_s(tidx,tidy,tidz,ivy) = wvy
             w_s(tidx,tidy,tidz,ivz) = wvz
             w_s(tidx,tidy,tidz,irhoE) = wrhoE
             P_s(tidx,tidy,tidz) = P
             dw_s(tidx,tidy,tidz,:) = zero
         end if
         ! SB: If we are at the last real face then get the first halo state and store it
-        ! so we don't need an extra thread purely for storing halos 
+        ! so we don't need an extra thread purely for storing halos
         if (j == jmax .and. i <= ie .and. k <= ke) then
             w_s(tidx,tidy+1,tidz,irho) = cudaDoms(dom,sps)%w(i,j+1,k,irho)
             w_s(tidx,tidy+1,tidz,ivx) = cudaDoms(dom,sps)%w(i,j+1,k,imx)
@@ -2685,7 +2685,7 @@ module cudaResidual
             dw_s(tidx,tidy+1,tidz,:) = zero
         end if
         ! SB: If we are at the last real face in k then get the first halo state and store it
-        ! so we don't need an extra thread purely for storing halos 
+        ! so we don't need an extra thread purely for storing halos
         if (k == kmax .and. i <= ie .and. j <= je) then
             w_s(tidx,tidy,tidz+1,irho) = cudaDoms(dom,sps)%w(i,j,k+1,irho)
             w_s(tidx,tidy,tidz+1,ivx) = cudaDoms(dom,sps)%w(i,j,k+1,imx)
@@ -2711,17 +2711,17 @@ module cudaResidual
 
             vnp = w_s(tidx+1,tidy,tidz,ivx) * sx + w_s(tidx+1,tidy,tidz,ivy) * sy + w_s(tidx+1,tidy,tidz,ivz) * sz
             vnm = wvx*sx + wvy *sy + wvz *sz
-            
+
             porVel = one
             porFlux = half
-            if (j>=2 .and. k>=2)then 
+            if (j>=2 .and. k>=2)then
                 if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
                 if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
                     porVel = zero
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
+            end if
             ! Incorporate porFlux in porVel.
             porVel = porVel * porFlux
 
@@ -2734,28 +2734,28 @@ module cudaResidual
 
             pa = porFlux * (P_s(tidx+1,tidy,tidz) + P)
 
-            !mass flux I dir 
+            !mass flux I dir
             fs = rqsp + rqsm
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irho), fs)
             t_dw(irho) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
 
-            !imx flux I dir 
+            !imx flux I dir
             fs = rqsp * w_s(tidx + 1, tidy, tidz, ivx) + rqsm * wvx + pa * sx
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imx), fs)
             t_dw(imx) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-            
-            !imy flux I dir 
+
+            !imy flux I dir
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivy) + rqsm * wvy + pa * sy
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imy), fs)
             t_dw(imy) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
-            !imz flux I dir 
+            !imz flux I dir
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivz) + rqsm * wvz + pa * sz
             tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imz), fs)
-            t_dw(imz) =  fs 
+            t_dw(imz) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
             !irhoE flux I dir
@@ -2765,7 +2765,7 @@ module cudaResidual
             t_dw(irhoE) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
-            !now each thread compute J face 
+            !now each thread compute J face
             sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
             sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
             sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
@@ -2786,7 +2786,7 @@ module cudaResidual
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
+            end if
             !Incorporate porFlux in porVel.
             porVel = porVel * porFlux
 
@@ -2799,15 +2799,15 @@ module cudaResidual
 
             rqsp = qsp * w_s(tidx, tidy + 1, tidz, irho)
             rqsm = qsm * wrho
-            
+
             pa = porFlux * (P_s(tidx, tidy + 1, tidz) + P)
             !mass flux J dir
             fs = rqsp + rqsm
             tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irho), fs)
             t_dw(irho) = t_dw(irho) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-            
-            !imx flux J dir 
+
+            !imx flux J dir
             fs = rqsp * w_s(tidx, tidy + 1, tidz, ivx) + rqsm * wvx + pa * sx
             tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imx), fs)
             t_dw(imx) = t_dw(imx) + fs
@@ -2853,7 +2853,7 @@ module cudaResidual
                     vnp = sFace
                     vnm = sFace
                 end if
-            end if 
+            end if
 
             porVel = porVel * porFlux
 
@@ -2901,7 +2901,7 @@ module cudaResidual
             tmp = atomicadd(dw_s(tidx,tidy,tidz, imz), t_dw(imz))
             tmp = atomicadd(dw_s(tidx,tidy,tidz, irhoE), t_dw(irhoE))
 
-        end if 
+        end if
 
         call syncthreads()
         tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho),dw_s(tidx,tidy,tidz, irho))
@@ -2924,7 +2924,7 @@ module cudaResidual
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, imz),dw_s(tidx,tidy,tidz+1, imz))
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, irhoE),dw_s(tidx,tidy,tidz+1, irhoE))
         end if
-        end if 
+        end if
 
         !SB: Why only do this in j and k?
     end subroutine inviscidCentralFluxCellCentered_v2
@@ -2947,7 +2947,7 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
-    
+
         dom = 1
         sps = 1
         !cell centered indices
@@ -2955,7 +2955,7 @@ module cudaResidual
         j = (blockIdx%y - 1) * (blockDim%y) + threadIdx%y ! SB: Standard. no overlap
         k = (blockIdx%z - 1) * (inviscidCentralBSK) + threadIdx%z ! SB: Fixed jump for every block in grid
         k2 = k + blockDim%Z ! SB: This is what account for the other half the block that we don't have a thread
-        
+
         tidx = threadIdx%x
         tidy = threadIdx%y
         tidz = threadIdx%z
@@ -2968,7 +2968,7 @@ module cudaResidual
         il = cudaDoms(dom,sps)%il
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
-        
+
         ! SB: Prevent indexing mesh beyond
         jmax = min((blockIdx%y) * (blockDim%y) ,jl)
         kmax = min((blockIdx%z) * (inviscidCentralBSK) ,kl)
@@ -2984,7 +2984,7 @@ module cudaResidual
 
             w_s(tidx,tidy,tidz,irho) = wrho
             w_s(tidx,tidy,tidz,ivx) = wvx
-            w_s(tidx,tidy,tidz,ivy) = wvy 
+            w_s(tidx,tidy,tidz,ivy) = wvy
             w_s(tidx,tidy,tidz,ivz) = wvz
             w_s(tidx,tidy,tidz,irhoE) = wrhoE
             P_s(tidx,tidy,tidz) = P
@@ -3037,15 +3037,15 @@ module cudaResidual
         ! SB: Loop over both k levels
         do l = 1, 2
             if (l == 2) then
-                k = k2 
+                k = k2
                 tidz = tidz2
-            end if 
-            wrho = w_s(tidx,tidy,tidz,irho) 
-            wvx = w_s(tidx,tidy,tidz,ivx) 
-            wvy = w_s(tidx,tidy,tidz,ivy) 
-            wvz = w_s(tidx,tidy,tidz,ivz) 
+            end if
+            wrho = w_s(tidx,tidy,tidz,irho)
+            wvx = w_s(tidx,tidy,tidz,ivx)
+            wvy = w_s(tidx,tidy,tidz,ivy)
+            wvz = w_s(tidx,tidy,tidz,ivz)
             wrhoE = w_s(tidx,tidy,tidz,irhoE)
-            P = P_s(tidx,tidy,tidz) 
+            P = P_s(tidx,tidy,tidz)
             if (i <= il .and. j <= jl .and. k  <= kl) then
                 if (tidx < blockdim%x ) then
                     !each thread here computes i face
@@ -3056,17 +3056,17 @@ module cudaResidual
 
                     vnp = w_s(tidx+1,tidy,tidz,ivx) * sx + w_s(tidx+1,tidy,tidz,ivy) * sy + w_s(tidx+1,tidy,tidz,ivz) * sz
                     vnm = wvx*sx + wvy *sy + wvz *sz
-                    
+
                     porVel = one
                     porFlux = half
-                    if (j>=2 .and. k>=2)then 
+                    if (j>=2 .and. k>=2)then
                         if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
                         if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
                             porVel = zero
                             vnp = sFace
                             vnm = sFace
                         end if
-                    end if 
+                    end if
                     ! Incorporate porFlux in porVel.
                     porVel = porVel * porFlux
 
@@ -3079,28 +3079,28 @@ module cudaResidual
 
                     pa = porFlux * (P_s(tidx+1,tidy,tidz) + P)
 
-                    !mass flux I dir 
+                    !mass flux I dir
                     fs = rqsp + rqsm
                     tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irho), fs)
                     t_dw(irho) = fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
 
-                    !imx flux I dir 
+                    !imx flux I dir
                     fs = rqsp * w_s(tidx + 1, tidy, tidz, ivx) + rqsm * wvx + pa * sx
                     tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imx), fs)
                     t_dw(imx) = fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-                    
-                    !imy flux I dir 
+
+                    !imy flux I dir
                     fs = rqsp * w_s(tidx + 1,tidy, tidz, ivy) + rqsm * wvy + pa * sy
                     tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imy), fs)
                     t_dw(imy) =  fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
-                    !imz flux I dir 
+                    !imz flux I dir
                     fs = rqsp * w_s(tidx + 1,tidy, tidz, ivz) + rqsm * wvz + pa * sz
                     tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imz), fs)
-                    t_dw(imz) =  fs 
+                    t_dw(imz) =  fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
                     !irhoE flux I dir
@@ -3110,7 +3110,7 @@ module cudaResidual
                     t_dw(irhoE) =  fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
-                    !now each thread compute J face 
+                    !now each thread compute J face
                     sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
                     sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
                     sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
@@ -3131,7 +3131,7 @@ module cudaResidual
                             vnp = sFace
                             vnm = sFace
                         end if
-                    end if 
+                    end if
                     !Incorporate porFlux in porVel.
                     porVel = porVel * porFlux
 
@@ -3144,15 +3144,15 @@ module cudaResidual
 
                     rqsp = qsp * w_s(tidx, tidy + 1, tidz, irho)
                     rqsm = qsm * wrho
-                    
+
                     pa = porFlux * (P_s(tidx, tidy + 1, tidz) + P)
                     !mass flux J dir
                     fs = rqsp + rqsm
                     tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irho), fs)
                     t_dw(irho) = t_dw(irho) + fs
                     ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-                    
-                    !imx flux J dir 
+
+                    !imx flux J dir
                     fs = rqsp * w_s(tidx, tidy + 1, tidz, ivx) + rqsm * wvx + pa * sx
                     tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imx), fs)
                     t_dw(imx) = t_dw(imx) + fs
@@ -3198,7 +3198,7 @@ module cudaResidual
                             vnp = sFace
                             vnm = sFace
                         end if
-                    end if 
+                    end if
 
                     porVel = porVel * porFlux
 
@@ -3246,10 +3246,10 @@ module cudaResidual
                     tmp = atomicadd(dw_s(tidx,tidy,tidz, imz), t_dw(imz))
                     tmp = atomicadd(dw_s(tidx,tidy,tidz, irhoE), t_dw(irhoE))
                 end if
-            end if 
+            end if
         end do
         ! SB: Reset back after the k loop
-        k = (blockIdx%z - 1) * (inviscidCentralBSK) + threadIdx%z 
+        k = (blockIdx%z - 1) * (inviscidCentralBSK) + threadIdx%z
         tidz = threadIdx%z
 
         k2 = k + blockDim%Z
@@ -3296,7 +3296,7 @@ module cudaResidual
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k2+1, imz),dw_s(tidx,tidy,tidz2+1, imz))
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k2+1, irhoE),dw_s(tidx,tidy,tidz2+1, irhoE))
         end if
-        
+
 
     end subroutine inviscidCentralFluxCellCentered_v3
 
@@ -3322,15 +3322,15 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
-    
-    
+
+
         dom = 1
         sps = 1
         !cell centered indices
         i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x !SB: overlap in i
         j = (blockIdx%y - 1) * (inviscidCentralBSJPlane) + threadIdx%y ! SB: we could just put blockDim%y here it's the same
         k = (blockIdx%z - 1) * (inviscidCentralBSKPlane) + 1 ! SB: This is really just setting the starting k for each block
-        
+
         tidx = threadIdx%x
         tidy = threadIdx%y
 
@@ -3341,12 +3341,12 @@ module cudaResidual
         il = cudaDoms(dom,sps)%il
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
-        
+
         jmax = min((blockIdx%y) * (inviscidCentralBSJPlane) ,jl)
         kmax = min((blockIdx%z) * (inviscidCentralBSKPlane) ,kl)
         if (k > kl) then
-            return 
-        end if 
+            return
+        end if
 
 
         !read self cell
@@ -3360,7 +3360,7 @@ module cudaResidual
 
             w_s(tidx,tidy,irho) = wrho
             w_s(tidx,tidy,ivx) = wvx
-            w_s(tidx,tidy,ivy) = wvy 
+            w_s(tidx,tidy,ivy) = wvy
             w_s(tidx,tidy,ivz) = wvz
             w_s(tidx,tidy,irhoE) = wrhoE
             P_s(tidx,tidy) = P
@@ -3375,7 +3375,7 @@ module cudaResidual
             w_s(tidx,tidy+1,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k,irhoE)
             P_s(tidx,tidy+1) = (gammaConstant-one)*( w_s(tidx,tidy+1,irhoE) - half*(w_s(tidx,tidy+1,ivx)*w_s(tidx,tidy+1,ivx)+w_s(tidx,tidy+1,ivy)*w_s(tidx,tidy+1,ivy)+w_s(tidx,tidy+1,ivz)*w_s(tidx,tidy+1,ivz))*w_s(tidx,tidy+1,irho))
             dw_s(tidx,tidy+1,:) = zero
-        end if  
+        end if
         fs = zero
         t_dw  = zero
         !sync threads now
@@ -3384,7 +3384,7 @@ module cudaResidual
         do l = 1, inviscidCentralBSKPlane
             !start loop by reading next k face
             if (i <= ie .and. j <= jl .and. k <= kl) then
-                !k state 
+                !k state
                 wrho_k = cudaDoms(dom,sps)%w(i,j,k+1,irho)
                 wvx_k = cudaDoms(dom,sps)%w(i,j,k+1,ivx)
                 wvy_k = cudaDoms(dom,sps)%w(i,j,k+1,ivy)
@@ -3392,13 +3392,13 @@ module cudaResidual
                 wrhoE_k = cudaDoms(dom,sps)%w(i,j,k+1,irhoE)
                 ! P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
 
-            end if 
+            end if
 
             !if thread is on compute cell and not last in x direction
             !last in x is currently unused just there to read halos on right side
             if (i <= il .and. j <= jl .and. k  <= kl .and. tidx < blockdim%x) then
 
-            
+
                 !each thread here computes i face
                 sFace = cudaDoms(dom,sps)%sFaceI(i,j,k)
                 sx = cudaDoms(dom,sps)%sI(i,j,k,1)
@@ -3409,14 +3409,14 @@ module cudaResidual
 
                 porVel = one
                 porFlux = half
-                if (j>=2 .and. k>=2)then 
+                if (j>=2 .and. k>=2)then
                     if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
                     if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
                         porVel = zero
                         vnp = sFace
                         vnm = sFace
                     end if
-                end if 
+                end if
 
                 ! Incorporate porFlux in porVel.
                 porVel = porVel * porFlux
@@ -3430,33 +3430,33 @@ module cudaResidual
 
                 pa = porFlux * (P_s(tidx+1,tidy) + P)
 
-                !mass flux I dir 
+                !mass flux I dir
                 fs(irho) =  rqsp + rqsm
                 tmp = atomicsub(dw_s(tidx + 1, tidy,  irho), fs(irho))
                 t_dw(irho) = t_dw(irho) + fs(irho)
 
-                !imx flux I dir 
+                !imx flux I dir
                 fs(imx) = rqsp * w_s(tidx + 1, tidy,  ivx) + rqsm * wvx + pa * sx
                 tmp = atomicsub(dw_s(tidx + 1, tidy, imx), fs(imx))
                 t_dw(imx) = t_dw(imx) + fs(imx)
-                
-                !imy flux I dir 
+
+                !imy flux I dir
                 fs(imy) =  rqsp * w_s(tidx + 1,tidy, ivy) + rqsm * wvy + pa * sy
                 tmp = atomicsub(dw_s(tidx + 1, tidy, imy), fs(imy))
                 t_dw(imy) =  t_dw(imy) + fs(imy)
 
-                !imz flux I dir 
+                !imz flux I dir
                 fs(imz) =  rqsp * w_s(tidx + 1,tidy,  ivz) + rqsm * wvz + pa * sz
                 tmp = atomicsub(dw_s(tidx + 1, tidy,  imz), fs(imz))
-                t_dw(imz) =  t_dw(imz) + fs(imz) 
+                t_dw(imz) =  t_dw(imz) + fs(imz)
 
                 !irhoE flux I dir
                 fs(irhoE) = qsp * w_s(tidx + 1,tidy, irhoE) + qsm * wrhoE &
                     + porFlux * (vnp * P_s(tidx + 1,tidy) + vnm * P)
                 tmp = atomicsub(dw_s(tidx + 1, tidy, irhoE), fs(irhoE))
-                t_dw(irhoE) =  t_dw(irhoE) + fs(irhoE)   
+                t_dw(irhoE) =  t_dw(irhoE) + fs(irhoE)
 
-                !now each thread compute J face 
+                !now each thread compute J face
                 sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
                 sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
                 sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
@@ -3477,7 +3477,7 @@ module cudaResidual
                         vnp = sFace
                         vnm = sFace
                     end if
-                end if 
+                end if
                 !Incorporate porFlux in porVel.
                 porVel = porVel * porFlux
 
@@ -3490,15 +3490,15 @@ module cudaResidual
 
                 rqsp = qsp * w_s(tidx, tidy + 1, irho)
                 rqsm = qsm * wrho
-                
+
                 pa = porFlux * (P_s(tidx, tidy + 1) + P)
                 !mass flux J dir
                 fs(irho) = rqsp + rqsm
                 tmp = atomicsub(dw_s(tidx, tidy + 1, irho), fs(irho))
                 t_dw(irho) = t_dw(irho) + fs(irho)
                 ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-                
-                !imx flux J dir 
+
+                !imx flux J dir
                 fs(imx) = rqsp * w_s(tidx, tidy + 1, ivx) + rqsm * wvx + pa * sx
                 tmp = atomicsub(dw_s(tidx, tidy + 1, imx), fs(imx))
                 t_dw(imx) = t_dw(imx) + fs(imx)
@@ -3528,15 +3528,15 @@ module cudaResidual
                 sx = cudaDoms(dom,sps)%sK(i, j, k, 1)
                 sy = cudaDoms(dom,sps)%sK(i, j, k, 2)
                 sz = cudaDoms(dom,sps)%sK(i, j, k, 3)
-            end if 
+            end if
 
             ! SB: Why move this here? How does that speed things up?
             ! this requires the if statement to be broken up since the last i thread need to compute P_k
             ! computepressure of  self cell in k + 1 direction
             if (i <= ie .and. j <= jl .and. k <= kl) then
-                !k state 
+                !k state
                 P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
-            end if 
+            end if
 
             if (i <= il .and. j <= jl .and. k  <= kl .and. tidx < blockdim%x) then
 
@@ -3551,7 +3551,7 @@ module cudaResidual
                         vnp = sFace
                         vnm = sFace
                     end if
-                end if 
+                end if
                 porVel = porVel * porFlux
 
                 qsp = (vnp - sFace) * porVel
@@ -3584,9 +3584,9 @@ module cudaResidual
                 !set t_dw to -fs since we subtract from k+1 cell
                 !and that is our new self cell
                 ! SB: on next loop
-               
-            end if 
-            
+
+            end if
+
             !sync here to ensure all threads are done before we write to w_s
             call syncthreads()
 
@@ -3596,7 +3596,7 @@ module cudaResidual
                 !write into w_s
                 w_s(tidx,tidy,irho) = wrho_k
                 w_s(tidx,tidy,ivx) = wvx_k
-                w_s(tidx,tidy,ivy) = wvy_k 
+                w_s(tidx,tidy,ivy) = wvy_k
                 w_s(tidx,tidy,ivz) = wvz_k
                 w_s(tidx,tidy,irhoE) = wrhoE_k
                 P_s(tidx,tidy) = P_k
@@ -3608,7 +3608,7 @@ module cudaResidual
                     w_s(tidx,tidy+1,ivz) = cudaDoms(dom,sps)%w(i,j+1,k+1,imz)
                     w_s(tidx,tidy+1,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k+1,irhoE)
                     P_s(tidx,tidy+1) = (gammaConstant-one)*( w_s(tidx,tidy+1,irhoE) - half*(w_s(tidx,tidy+1,ivx)*w_s(tidx,tidy+1,ivx)+w_s(tidx,tidy+1,ivy)*w_s(tidx,tidy+1,ivy)+w_s(tidx,tidy+1,ivz)*w_s(tidx,tidy+1,ivz))*w_s(tidx,tidy+1,irho))
-                end if 
+                end if
                 if (j == jmax .and. i <= il .and. tidx < blockDim%x .and. k  <= kl) then
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,irho), dw_s(tidx,tidy+1,irho))
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imx), dw_s(tidx,tidy+1,imx))
@@ -3618,8 +3618,8 @@ module cudaResidual
                     dw_s(tidx,tidy+1,:) = zero
 
 
-                end if       
-                !accumulate to dw 
+                end if
+                !accumulate to dw
                 !accumulate from shared dw and t_dw into global dw
                 dwLoc = dw_s(tidx,tidy,irho) + t_dw(irho)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irho), dwLoc)
@@ -3640,16 +3640,16 @@ module cudaResidual
                 dwLoc = dw_s(tidx,tidy,irhoE) + t_dw(irhoE)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irhoE), dwLoc)
                 dw_s(tidx,tidy,irhoE) = zero
-                
-                
+
+
                 t_dw(irho) = -fs(irho)
                 t_dw(imx) = -fs(imx)
                 t_dw(imy) = -fs(imy)
                 t_dw(imz) = -fs(imz)
                 t_dw(irhoE) = -fs(irhoE)
 
-            end if 
-            k = k + 1 
+            end if
+            k = k + 1
             if (k > kl) then
                 exit
             end if
@@ -3658,27 +3658,27 @@ module cudaResidual
             wrho = wrho_k
             wvx = wvx_k
             wvy = wvy_k
-            wvz = wvz_k 
+            wvz = wvz_k
             wrhoE = wrhoE_k
             P = P_k
-  
-            call syncthreads()                
+
+            call syncthreads()
             !add 1 to k
-            
+
         end do
 
         if (i  <= ie .and. j <= je .and. tidx < blockDim%x) then
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,kmax+1,irho), t_dw(irho))
 
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,kmax+1,imx), t_dw(imx))
-            
+
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,kmax+1,imy), t_dw(imy))
-            
+
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,kmax+1,imz), t_dw(imz))
-            
+
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,kmax+1,irhoE), t_dw(irhoE))
-            
-        end if         
+
+        end if
 
     end subroutine inviscidCentralFluxCellCentered_v4
 
@@ -3696,16 +3696,16 @@ module cudaResidual
         real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
         real(kind=realType) :: pa, vnp, vnm, fs, sFace
         integer(kind=intType) :: i, j, k, dom, sps
-        real(kind=realtype) :: tmp  
+        real(kind=realtype) :: tmp
         real(kind=realType) :: sx, sy, sz
         ! real(kind=realType) :: wwx, wwy, wwz, rvol
 
         dom = 1
         sps = 1
         !thread indices start at 1
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z
 
         !ifaces flux
         !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i1 to cudaDoms(dom,sps)%il
@@ -3799,7 +3799,7 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE) = cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) + fs
         end if
-        
+
         !loop k 2 to cudaDoms(dom,sps)%kl, j 1 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
         !j faces flux
         if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. i>=2 .and. k>=2) then
@@ -3994,8 +3994,8 @@ module cudaResidual
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE) = cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) + fs
-        end if 
-        
+        end if
+
         !we left out the rotationof the block
 
 
@@ -4011,7 +4011,7 @@ module cudaResidual
         use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
 
         implicit none
-    
+
         ! Variables for inviscid diss flux scalar
         real(kind=realType), parameter :: dssMax = 0.25_realType
         real(kind=realType)            :: sslim, rhoi
@@ -4020,7 +4020,7 @@ module cudaResidual
         real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
         real(kind=realType)            :: tmp
         integer(kind=intType)          :: l
-        integer(kind=intType) :: i, j, k , dom, sps 
+        integer(kind=intType) :: i, j, k , dom, sps
 
         dom = 1
         sps = 1
@@ -4032,49 +4032,49 @@ module cudaResidual
         ! Determine the variables used to compute the switch.
       ! For the inviscid case this is the pressure; for the viscous
       ! case it is the entropy.
-    
+
       if (i <= cudaDoms(dom,sps)%ib .and. j <= cudaDoms(dom,sps)%jb .and. k <= cudaDoms(dom,sps)%kb)then
       if(equations == EulerEquations) then
-    
+
         ! Inviscid case. Pressure switch is based on the pressure.
         ! Also set the value of sslim. To be fully consistent this
         ! must have the dimension of pressure and it is therefore
         ! set to a fraction of the free stream value.
-    
+
         sslim = 0.001_realType * pInfCorr
-    
+
         ! Copy the pressure in ss. Only need the entries used in the
         ! discretization, i.e. not including the corner halo's, but we'll
         ! just copy all anyway.
-        
-        !TODO this was a copy as ss=P 
+
+        !TODO this was a copy as ss=P
         !on gpu each thread needs to copy its own value
         !need to check we copied enough values this was temporary
         cudaDoms(dom,sps)%ss(i,j,k) = cudaDoms(dom,sps)%P(i,j,k)
         !===============================================================
-    
+
       else if (equations == NSEquations .or. equations == RANSEquations) then
-    
+
         ! Viscous case. Pressure switch is based on the entropy.
         ! Also set the value of sslim. To be fully consistent this
         ! must have the dimension of entropy and it is therefore
         ! set to a fraction of the free stream value.
-    
+
         sslim = 0.001_realType * pInfCorr / (rhoInf**gammaInf)
-    
+
         ! Store the entropy in ss. See above.
         !loop k 0 to cudaDoms(dom,sps)%kb, j 0 to cudaDoms(dom,sps)%jb, i 0 to cudaDoms(dom,sps)%ib
         if (((i >=               0) .AND. (i <= cudaDoms(dom,sps)%ib)) .AND. &
             ((j >=               0) .AND. (j <= cudaDoms(dom,sps)%jb)) .AND. &
-            ((k >=               0) .AND. (k <= cudaDoms(dom,sps)%kb))) then 
-    
+            ((k >=               0) .AND. (k <= cudaDoms(dom,sps)%kb))) then
+
           cudaDoms(dom,sps)%ss(i, j, k) = cudaDoms(dom,sps)%P(i, j, k) &
                                             / (cudaDoms(dom,sps)%w(i, j, k, irho)**cudaDoms(dom,sps)%gamma(i, j, k))
-    
-        end if 
+
+        end if
       end if
-    end if 
-        
+    end if
+
     end subroutine computeSS
 
     attributes(global) subroutine computeDSS
@@ -4085,7 +4085,7 @@ module cudaResidual
         use cudaInputPhysics,        only: equations
         use cudaIteration,           only: rFil, totalR0, totalR
         use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
-    
+
         implicit none
 
         ! Variables for inviscid diss flux scalar
@@ -4096,16 +4096,16 @@ module cudaResidual
         real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
         real(kind=realType)            :: tmp
         integer(kind=intType)          :: l
-        integer(kind=intType) :: i, j, k, dom, sps 
+        integer(kind=intType) :: i, j, k, dom, sps
         dom = 1
         sps = 1
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z
         if (((i >=               1) .AND. (i <= cudaDoms(dom,sps)%ie)) .AND. &
           ((j >=               1) .AND. (j <= cudaDoms(dom,sps)%je)) .AND. &
-          ((k >=               1) .AND. (k <= cudaDoms(dom,sps)%ke))) then 
-            
+          ((k >=               1) .AND. (k <= cudaDoms(dom,sps)%ke))) then
+
             if(equations == EulerEquations) then
                 sslim = 0.001_realType * pInfCorr
             else if (equations == NSEquations .or. equations == RANSEquations) then
@@ -4122,11 +4122,11 @@ module cudaResidual
         cudaDoms(dom,sps)%dss(i, j, k, 3) = abs((cudaDoms(dom,sps)%ss(i, j, k + 1) - two * cudaDoms(dom,sps)%ss(i, j, k) &
         + cudaDoms(dom,sps)%ss(i, j, k - 1)) &
             / (cudaDoms(dom,sps)%ss(i, j, k + 1) + two * cudaDoms(dom,sps)%ss(i, j, k) + cudaDoms(dom,sps)%ss(i, j, k - 1) + sslim))
-    
+
       end if
 
     end subroutine computeDSS
-    
+
     attributes(global) subroutine multiplyfwsfil
 
       use constants,               only: zero
@@ -4144,7 +4144,7 @@ module cudaResidual
       real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
       real(kind=realType)            :: tmp
       integer(kind=intType)          :: l
-      integer(kind=intType) :: i, j, k, dom, sps 
+      integer(kind=intType) :: i, j, k, dom, sps
       dom = 1
       sps = 1
       i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
@@ -4153,7 +4153,7 @@ module cudaResidual
       ! Set the dissipation constants for the scheme.
       ! rFil and sFil are fractions used by the Runge-Kutta solver to compute residuals at intermediate steps.
       ! For the blockette code, rFil is always one, so sFil==0, fis2==vis2, and fis4==vis4.
-    
+
       ! The sigmoid function used for dissipation-based continuation is described in Eq. 28 and Eq. 29 from the paper:
       ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c).
       ! The options documentation also has information on the parameters in this formulation.
@@ -4169,14 +4169,14 @@ module cudaResidual
       end if
       fis4 = rFil * vis4
       sfil = one - rFil
-    
+
       ! Initialize the dissipative residual to a certain times,
       ! possibly zero, the previously stored value. Owned cells
       ! only, because the halo values do not matter.
-     
+
      if (((i >= 0) .AND. (i <= cudaDoms(dom,sps)%ib)) .AND. &
           ((j >= 0) .AND. (j <= cudaDoms(dom,sps)%jb)) .AND. &
-          ((k >= 0) .AND. (k <= cudaDoms(dom,sps)%kb))) then 
+          ((k >= 0) .AND. (k <= cudaDoms(dom,sps)%kb))) then
         do l = 1, nwf
             cudaDoms(dom,sps)%fw(i,j,k,l)  = sfil * cudaDoms(dom,sps)%fw(i,j,k,l)
         end do
@@ -4185,7 +4185,7 @@ module cudaResidual
 
 
     attributes(global) subroutine inviscidDissFluxScalar
-    
+
       use constants,           only: zero, two, half,EulerEquations
       use precision,           only: intType, realType
       use cudaInputDiscretization, only: vis2, vis4
@@ -4193,9 +4193,9 @@ module cudaResidual
       use cudaInputPhysics,        only: equations
       use cudaIteration,           only: rFil, totalR0, totalR
       use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
-    
+
       implicit none
-    
+
       ! Variables for inviscid diss flux scalar
       real(kind=realType), parameter :: dssMax = 0.25_realType
       real(kind=realType)            :: sslim, rhoi
@@ -4204,27 +4204,27 @@ module cudaResidual
       real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
       real(kind=realType)            :: tmp
       integer(kind=intType)          :: l
-      integer(kind=intType) :: i, j, k, dom, sps 
+      integer(kind=intType) :: i, j, k, dom, sps
       dom = 1
       sps = 1
       i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
       j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
       k = (blockIdx%z - 1) * blockDim%z + threadIdx%z - 1
-    
-    
-      
+
+
+
         if(equations == EulerEquations) then
             sslim = 0.001_realType * pInfCorr
         else if (equations == NSEquations .or. equations == RANSEquations) then
             sslim = 0.001_realType * pInfCorr / (rhoInf**gammaInf)
         end if
-    
+
       ! Compute the pressure sensor for each cell, in each direction:
       !loop k 1 to cudaDoms(dom,sps)%ke, j 1 to cudaDoms(dom,sps)%je, i 1 to cudaDoms(dom,sps)%ie
     !   if (((i >=               1) .AND. (i <= cudaDoms(dom,sps)%ie)) .AND. &
     !       ((j >=               1) .AND. (j <= cudaDoms(dom,sps)%je)) .AND. &
-    !       ((k >=               1) .AND. (k <= cudaDoms(dom,sps)%ke))) then 
-    
+    !       ((k >=               1) .AND. (k <= cudaDoms(dom,sps)%ke))) then
+
     !     cudaDoms(dom,sps)%dss(i, j, k, 1) = abs((cudaDoms(dom,sps)%ss(i + 1, j, k) - two * cudaDoms(dom,sps)%ss(i, j, k) &
     !                         + cudaDoms(dom,sps)%ss(i - 1, j, k)) &
     !         / (cudaDoms(dom,sps)%ss(i + 1, j, k) + two * cudaDoms(dom,sps)%ss(i, j, k) + cudaDoms(dom,sps)%ss(i - 1, j, k) + sslim))
@@ -4234,14 +4234,14 @@ module cudaResidual
     !     cudaDoms(dom,sps)%dss(i, j, k, 3) = abs((cudaDoms(dom,sps)%ss(i, j, k + 1) - two * cudaDoms(dom,sps)%ss(i, j, k) &
     !     + cudaDoms(dom,sps)%ss(i, j, k - 1)) &
     !         / (cudaDoms(dom,sps)%ss(i, j, k + 1) + two * cudaDoms(dom,sps)%ss(i, j, k) + cudaDoms(dom,sps)%ss(i, j, k - 1) + sslim))
-    
+
     !   end if
-    
-    
+
+
       ! Set the dissipation constants for the scheme.
       ! rFil and sFil are fractions used by the Runge-Kutta solver to compute residuals at intermediate steps.
       ! For the blockette code, rFil is always one, so sFil==0, fis2==vis2, and fis4==vis4.
-    
+
       ! The sigmoid function used for dissipation-based continuation is described in Eq. 28 and Eq. 29 from the paper:
       ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c).
       ! The options documentation also has information on the parameters in this formulation.
@@ -4257,14 +4257,14 @@ module cudaResidual
       end if
       fis4 = rFil * vis4
       sfil = one - rFil
-    
+
       ! Initialize the dissipative residual to a certain times,
       ! possibly zero, the previously stored value. Owned cells
       ! only, because the halo values do not matter.
-     
+
 !     if (((i >= 1) .AND. (i <= cudaDoms(dom,sps)%ie)) .AND. &
 !          ((j >= 1) .AND. (j <= cudaDoms(dom,sps)%je)) .AND. &
-!          ((k >= 1) .AND. (k <= cudaDoms(dom,sps)%ke))) then 
+!          ((k >= 1) .AND. (k <= cudaDoms(dom,sps)%ke))) then
 !        do l = 1, nwf
 !            cudaDoms(dom,sps)%fw(i,j,k,l)  = sfil * cudaDoms(dom,sps)%fw(i,j,k,l)
 !        end do
@@ -4275,21 +4275,21 @@ module cudaResidual
       !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 1 to cudaDoms(dom,sps)%il
       if (((i >= 1) .AND. (i <= cudaDoms(dom,sps)%il)) .AND. &
           ((j >= 2) .AND. (j <= cudaDoms(dom,sps)%jl)) .AND. &
-          ((k >= 2) .AND. (k <= cudaDoms(dom,sps)%kl))) then 
-    
+          ((k >= 2) .AND. (k <= cudaDoms(dom,sps)%kl))) then
+
         ! Compute the dissipation coefficients for this face.
-    
+
         ppor = zero
         if (cudaDoms(dom,sps)%porI(i, j, k) == normalFlux) ppor = half
         rrad = ppor * (cudaDoms(dom,sps)%radi(i, j, k) + cudaDoms(dom,sps)%radi(i + 1, j, k))
-    
+
         dis2 = fis2 * rrad * min(dssMax, max(cudaDoms(dom,sps)%dss(i, j, k, 1), cudaDoms(dom,sps)%dss(i + 1, j, k, 1)))
         dis4 = dim(fis4 * rrad, dis2)
-    
+
         ! Compute and scatter the dissipative flux.
         ! Density. Store it in the mass flow of the
         ! appropriate sliding mesh interface.
-    
+
          ddw1 = cudaDoms(dom,sps)%w(i + 1, j, k, irho) - cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw1 &
               - dis4 * (cudaDoms(dom,sps)%w(i + 2, j, k, irho) - cudaDoms(dom,sps)%w(i - 1, j, k, irho) - three * ddw1)
@@ -4301,86 +4301,86 @@ module cudaResidual
 
          !cudaDoms(dom,sps)%fw(i + 1, j, k, irho) = cudaDoms(dom,sps)%fw(i + 1, j, k, irho) + fs
          !cudaDoms(dom,sps)%fw(i, j, k, irho) = cudaDoms(dom,sps)%fw(i, j, k, irho) - fs
-    
+
         ! X-momentum.
-    
+
          ddw2 = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * cudaDoms(dom,sps)%w(i + 1, j, k, irho) &
          - cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw2 &
               - dis4 * (cudaDoms(dom,sps)%w(i + 2, j, k, ivx) * cudaDoms(dom,sps)%w(i + 2, j, k, irho) - &
                         cudaDoms(dom,sps)%w(i - 1, j, k, ivx) * cudaDoms(dom,sps)%w(i - 1, j, k, irho) - three * ddw2)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imx), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(    i, j, k, imx), fs)
 
         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imx) = cudaDoms(dom,sps)%fw(i + 1, j, k, imx) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fs
-    
+
         ! Y-momentum.
-    
+
          ddw3 = cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * cudaDoms(dom,sps)%w(i + 1, j, k, irho) &
          - cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw3 &
               - dis4 * (cudaDoms(dom,sps)%w(i + 2, j, k, ivy) * cudaDoms(dom,sps)%w(i + 2, j, k, irho) - &
                         cudaDoms(dom,sps)%w(i - 1, j, k, ivy) * cudaDoms(dom,sps)%w(i - 1, j, k, irho) - three * ddw3)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imy), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(    i, j, k, imy), fs)
 
         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imy) = cudaDoms(dom,sps)%fw(i + 1, j, k, imy) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fs
-    
+
         ! Z-momentum.
-    
+
          ddw4 = cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * cudaDoms(dom,sps)%w(i + 1, j, k, irho) &
          - cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw4 &
               - dis4 * (cudaDoms(dom,sps)%w(i + 2, j, k, ivz) * cudaDoms(dom,sps)%w(i + 2, j, k, irho) - &
                         cudaDoms(dom,sps)%w(i - 1, j, k, ivz) * cudaDoms(dom,sps)%w(i - 1, j, k, irho) - three * ddw4)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imz), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(    i, j, k, imz), fs)
-    
+
         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imz) = cudaDoms(dom,sps)%fw(i + 1, j, k, imz) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fs
 
         ! Energy.
-    
+
          ddw5 = (cudaDoms(dom,sps)%w(i + 1, j, k, irhoE) + cudaDoms(dom,sps)%P(i + 1, j, K)) &
                                  - (cudaDoms(dom,sps)%w(i, j, k, irhoE) + cudaDoms(dom,sps)%P(i, j, k))
          fs = dis2 * ddw5 &
               - dis4 * ((cudaDoms(dom,sps)%w(i + 2, j, k, irhoE) + cudaDoms(dom,sps)%P(i + 2, j, k)) - &
                         (cudaDoms(dom,sps)%w(i - 1, j, k, irhoE) + cudaDoms(dom,sps)%P(i - 1, j, k)) - three * ddw5)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(    i, j, k, irhoE), fs)
 
         ! cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) = cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - fs
-    
+
       end if
-    
+
       !
       !       Dissipative fluxes in the j-direction.
       !
       !loop k 2 to cudaDoms(dom,sps)%kl, j 1 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
       if (((i >= 2) .AND. (i <= cudaDoms(dom,sps)%il)) .AND. &
           ((j >= 1) .AND. (j <= cudaDoms(dom,sps)%jl)) .AND. &
-          ((k >= 2) .AND. (k <= cudaDoms(dom,sps)%kl))) then 
-    
+          ((k >= 2) .AND. (k <= cudaDoms(dom,sps)%kl))) then
+
         ! Compute the dissipation coefficients for this face.
-    
+
         ppor = zero
         if (cudaDoms(dom,sps)%porJ(i, j, k) == normalFlux) ppor = half
         rrad = ppor * (cudaDoms(dom,sps)%radj(i, j, k) + cudaDoms(dom,sps)%radj(i, j + 1, k))
-    
+
         dis2 = fis2 * rrad * min(dssMax, max(cudaDoms(dom,sps)%dss(i, j, k, 2), cudaDoms(dom,sps)%dss(i, j + 1, k, 2)))
         dis4 = dim(fis4 * rrad, dis2)
-    
+
         ! Compute and scatter the dissipative flux.
         ! Density. Store it in the mass flow of the
         ! appropriate sliding mesh interface.
-    
+
          ddw1 = cudaDoms(dom,sps)%w(i, j + 1, k, irho) - cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw1 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j + 2, k, irho) - cudaDoms(dom,sps)%w(i, j - 1, k, irho) - three * ddw1)
@@ -4389,37 +4389,37 @@ module cudaResidual
 
         ! cudaDoms(dom,sps)%fw(i, j + 1, k, irho) = cudaDoms(dom,sps)%fw(i, j + 1, k, irho) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, irho) = cudaDoms(dom,sps)%fw(i, j, k, irho) - fs
-    
+
         ! X-momentum.
-    
+
          ddw2 = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * cudaDoms(dom,sps)%w(i, j + 1, k, irho) &
                                              - cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw2 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j + 2, k, ivx) * cudaDoms(dom,sps)%w(i, j + 2, k, irho) - &
                         cudaDoms(dom,sps)%w(i, j - 1, k, ivx) * cudaDoms(dom,sps)%w(i, j - 1, k, irho) - three * ddw2)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imx), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, imx), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j + 1, k, imx) = cudaDoms(dom,sps)%fw(i, j + 1, k, imx) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fs
-    
+
         ! Y-momentum.
-    
+
          ddw3 = cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * cudaDoms(dom,sps)%w(i, j + 1, k, irho) &
                                              - cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw3 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j + 2, k, ivy) * cudaDoms(dom,sps)%w(i, j + 2, k, irho) - &
                         cudaDoms(dom,sps)%w(i, j - 1, k, ivy) * cudaDoms(dom,sps)%w(i, j - 1, k, irho) - three * ddw3)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imy), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, imy), fs)
 
 !         cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fs
  !        cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fs
-    
+
         ! Z-momentum.
-    
+
          ddw4 = cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * cudaDoms(dom,sps)%w(i, j + 1, k, irho) &
                                                      - cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw4 &
@@ -4431,21 +4431,21 @@ module cudaResidual
 
  !        cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fs
          !cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fs
-    
+
         ! Energy.
-    
+
          ddw5 = (cudaDoms(dom,sps)%w(i, j + 1, k, irhoE) + cudaDoms(dom,sps)%P(i, j + 1, k)) &
                                                      - (cudaDoms(dom,sps)%w(i, j, k, irhoE) + cudaDoms(dom,sps)%P(i, j, k))
          fs = dis2 * ddw5 &
               - dis4 * ((cudaDoms(dom,sps)%w(i, j + 2, k, irhoE) + cudaDoms(dom,sps)%P(i, j + 2, k)) - &
                         (cudaDoms(dom,sps)%w(i, j - 1, k, irhoE) + cudaDoms(dom,sps)%P(i, j - 1, k)) - three * ddw5)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, irhoE), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) = cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - fs
-    
+
       end if
       !
       !       Dissipative fluxes in the k-direction.
@@ -4453,89 +4453,89 @@ module cudaResidual
       !loop k 1 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
       if (((i >= 2) .AND. (i <= cudaDoms(dom,sps)%il)) .AND. &
           ((j >= 2) .AND. (j <= cudaDoms(dom,sps)%jl)) .AND. &
-          ((k >= 1) .AND. (k <= cudaDoms(dom,sps)%kl))) then 
-    
+          ((k >= 1) .AND. (k <= cudaDoms(dom,sps)%kl))) then
+
     !     ! Compute the dissipation coefficients for this face.
-    
+
          ppor = zero
          if (cudaDoms(dom,sps)%porK(i, j, k) == normalFlux) ppor = half
          rrad = ppor * (cudaDoms(dom,sps)%radk(i, j, k) + cudaDoms(dom,sps)%radk(i, j, k + 1))
-    
+
          dis2 = fis2 * rrad * min(dssMax, max(cudaDoms(dom,sps)%dss(i, j, k, 3), cudaDoms(dom,sps)%dss(i, j, k + 1, 3)))
          dis4 = dim(fis4 * rrad, dis2)
-    
+
         ! Compute and scatter the dissipative flux.
         ! Density. Store it in the mass flow of the
         ! appropriate sliding mesh interface.
-    
+
          ddw1 = cudaDoms(dom,sps)%w(i, j, k + 1, irho) - cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw1 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j, k + 2, irho) - cudaDoms(dom,sps)%w(i, j, k - 1, irho) - three * ddw1)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, irho), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j,     k, irho), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j, k + 1, irho) = cudaDoms(dom,sps)%fw(i, j, k + 1, irho) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, irho) = cudaDoms(dom,sps)%fw(i, j, k, irho) - fs
-    
+
         ! X-momentum.
-    
+
          ddw2 = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * cudaDoms(dom,sps)%w(i, j, k + 1, irho) &
                                                      - cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw2 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j, k + 2, ivx) * cudaDoms(dom,sps)%w(i, j, k + 2, irho) - &
                         cudaDoms(dom,sps)%w(i, j, k - 1, ivx) * cudaDoms(dom,sps)%w(i, j, k - 1, irho) - three * ddw2)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imx), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j,     k, imx), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imx) = cudaDoms(dom,sps)%fw(i, j, k + 1, imx) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fs
-    
+
         ! Y-momentum.
-    
+
          ddw3 = cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * cudaDoms(dom,sps)%w(i, j, k + 1, irho) &
                                                      - cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw3 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j, k + 2, ivy) * cudaDoms(dom,sps)%w(i, j, k + 2, irho) - &
                         cudaDoms(dom,sps)%w(i, j, k - 1, ivy) * cudaDoms(dom,sps)%w(i, j, k - 1, irho) - three * ddw3)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imy), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j,     k, imy), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imy) = cudaDoms(dom,sps)%fw(i, j, k + 1, imy) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fs
-    
+
         ! Z-momentum.
-    
+
          ddw4 = cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * cudaDoms(dom,sps)%w(i, j, k + 1, irho) &
                                                      - cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw4 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j, k + 2, ivz) * cudaDoms(dom,sps)%w(i, j, k + 2, irho) - &
                         cudaDoms(dom,sps)%w(i, j, k - 1, ivz) * cudaDoms(dom,sps)%w(i, j, k - 1, irho) - three * ddw4)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imz), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j,     k, imz), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imz) = cudaDoms(dom,sps)%fw(i, j, k + 1, imz) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fs
-    
+
         ! Energy.
-    
+
          ddw5 = (cudaDoms(dom,sps)%w(i, j, k + 1, irhoE) + cudaDoms(dom,sps)%P(i, j, k + 1)) &
                                                      - (cudaDoms(dom,sps)%w(i, j, k, irhoE) + cudaDoms(dom,sps)%P(i, j, k))
          fs = dis2 * ddw5 &
               - dis4 * ((cudaDoms(dom,sps)%w(i, j, k + 2, irhoE) + cudaDoms(dom,sps)%P(i, j, k + 2)) - &
                         (cudaDoms(dom,sps)%w(i, j, k - 1, irhoE) + cudaDoms(dom,sps)%P(i, j, k - 1)) - three * ddw5)
-    
+
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j,     k, irhoE), fs)
 
         ! cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) = cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) + fs
         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - fs
-    
+
       end if
-    
+
     end subroutine inviscidDissFluxScalar
 
     ! !alex
@@ -4572,9 +4572,9 @@ module cudaResidual
         dom = 1
         sps = 1
         !thread indices start at 1
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z
 
         ! Set QCR parameters
         Ccr1 = 0.3_realType
@@ -4605,7 +4605,7 @@ module cudaResidual
             mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j, k + 1))
             if (eddyModel) then
               mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j, k + 1))
-            end if 
+            end if
             mut = mul + mue
 
             gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j, k + 1)) - one
@@ -4668,7 +4668,7 @@ module cudaResidual
             ssx = snrm * ssx
             ssy = snrm * ssy
             ssz = snrm * ssz
-    
+
             ! Correct the gradients.
 
             corr = u_x * ssx + u_y * ssy + u_z * ssz &
@@ -4694,7 +4694,7 @@ module cudaResidual
             q_x = q_x - corr * ssx
             q_y = q_y - corr * ssy
             q_z = q_z - corr * ssz
-            
+
             ! Compute the stress tensor and the heat flux vector.
             ! We remove the viscosity from the stress tensor (tau)
             ! to define tauS since we still need to separate between
@@ -4714,7 +4714,7 @@ module cudaResidual
             q_x = heatCoef * q_x
             q_y = heatCoef * q_y
             q_z = heatCoef * q_z
-            
+
             ! Add QCR corrections if necessary
             if (useQCR) then
 
@@ -4806,7 +4806,7 @@ module cudaResidual
             frhoE = frhoE - q_x * cudaDoms(dom,sps)%sK(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sK(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sK(i, j, k, 3)
 
             ! Update the residuals of cell k and k+1.
-            
+
             tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
             tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
             tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
@@ -5073,7 +5073,7 @@ module cudaResidual
             ! cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fmy
             ! cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fmz
             ! cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) = cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) + frhoE
-        end if  
+        end if
         !
         !         Viscous fluxes in the i-direction.
         !
@@ -5308,7 +5308,7 @@ module cudaResidual
             ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
             ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
             ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
-            
+
             tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imx), fmx)
             tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imy), fmy)
             tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imz), fmz)
@@ -5351,7 +5351,7 @@ module cudaResidual
         real(kind=realType) :: cv13, kar2Inv, cw36, cb3Inv
 
 
-        dom = 1 
+        dom = 1
         sps = 1
 
 
@@ -5364,7 +5364,7 @@ module cudaResidual
         ! set the approximate multiplier here
         term1Fact = one
         if (approxSA) term1Fact = zero
-        
+
         ! skipping omega calculations because we are ignoring sections and rotation
 
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
@@ -5536,7 +5536,7 @@ module cudaResidual
 
             cudaDoms(dom,sps)%dw(i, j, k, itu1) = cudaDoms(dom,sps)%dw(i, j, k, itu1) &
             + (term1 + term2 * cudaDoms(dom,sps)%w(i, j, k, itu1)) * cudaDoms(dom,sps)%w(i, j, k, itu1)
-        
+
         end if
 
     end subroutine saSource
@@ -5555,7 +5555,7 @@ module cudaResidual
         integer(kind=intType), parameter :: nAdv = 1
         integer(kind=intType) :: offset, i, j, k, ii, jj, dom, sps
 
-        dom = 1 
+        dom = 1
         sps = 1
 
         ! Determine whether or not a second order discretization for the
@@ -5721,7 +5721,7 @@ module cudaResidual
         !       combination with the minmod limiter.
         !       The possible grid velocity must be taken into account.
         !
-        
+
         !these start at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
@@ -5884,7 +5884,7 @@ module cudaResidual
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
         !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
         if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl .and. k <= cudaDoms(dom,sps)%kl) then
-        
+
             ! Compute the grid velocity if present.
             ! It is taken as the average of i and i-1,
 
@@ -6050,7 +6050,7 @@ module cudaResidual
         real(kind=realType) :: cv13, kar2Inv,cw36, cb3Inv
 
 
-        dom = 1 
+        dom = 1
         sps = 1
 
         ! Set model constants
@@ -6058,7 +6058,7 @@ module cudaResidual
         kar2Inv = one / (rsaK**2)
         cw36 = rsaCw3**6
         cb3Inv = one / rsaCb3
-       
+
         !loops start at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
@@ -6190,7 +6190,7 @@ module cudaResidual
             !
             !       Viscous terms in i-direction.
             !
-            
+
             ! Compute the metrics in xi-direction, i.e. along the
             ! line i = constant.
 
@@ -6266,7 +6266,7 @@ module cudaResidual
         integer(kind=intType) :: i, j, k, dom, sps
         real(kind=realType) :: rblank
 
-        dom = 1 
+        dom = 1
         sps = 1
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
@@ -6275,7 +6275,7 @@ module cudaResidual
         if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl .and. k <= cudaDoms(dom,sps)%kl) then
             rblank = max(real(cudaDoms(dom,sps)%iblank(i, j, k), realType), zero)
             cudaDoms(dom,sps)%dw(i, j, k, itu1) = -cudaDoms(dom,sps)%volRef(i, j, k) * cudaDoms(dom,sps)%dw(i, j, k, itu1) * rblank
-        end if    
+        end if
     end subroutine saResScale
 
 
@@ -6309,7 +6309,7 @@ module cudaResidual
       real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
       integer(kind = intType) :: dom, sps
       integer(kind = intType) :: ibmax, jbmax, kbmax
-    
+
       ! copy constants
       call cudaCopyFlowVarRefState
       call cudaCopyInputDiscretization
@@ -6348,15 +6348,15 @@ module cudaResidual
             h_cudaDoms(dom,sps)%qy                           = zero
             h_cudaDoms(dom,sps)%qz                           = zero
         end do
-      end do 
-     
+      end do
+
       istat = cudaDeviceSynchronize()
 
       ! metrics
     !   print *,ibmax,jbmax,kbmax
       block_size = dim3(8, 8, 8)
       grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), ceiling(real(kbmax+1) / block_size%z))
-      
+
 
       call CPU_TIME(start)
     !   call metrics<<<grid_size, block_size>>>
@@ -6382,30 +6382,30 @@ module cudaResidual
 
 
       end if
-      
+
       ! call time step routine
         call CPU_TIME(startInv)
 
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
-      
+
 
       ! inviscid central flux
-      
+
 !      block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
 !      grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
 
-!      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+!      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>>
 !      istat = cudaDeviceSynchronize()
 
 !    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
 !    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
-!    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
+!    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>>
 !    istat = cudaDeviceSynchronize()
 !
 !    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
 !    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
-!    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
+!    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>>
 !    istat = cudaDeviceSynchronize()
 !
 !    call inviscidCentralFlux<<<grid_size, block_size>>>
@@ -6413,7 +6413,7 @@ module cudaResidual
 
     block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
-    call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>> 
+    call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>>
     istat = cudaDeviceSynchronize()
 
 
@@ -6455,8 +6455,8 @@ module cudaResidual
         call CPU_TIME(finishVisc)
         print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
 
-      end if 
-      
+      end if
+
 
     !   sumDwAndFw
     !   call sumDwandFw_v1<<<grid_size, block_size>>>
@@ -6476,7 +6476,7 @@ module cudaResidual
         use constants
         use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke, &
                                     bil=>il, bjl=>jl, bkl=>kl, &
-                                
+
                                     bux=>ux, buy=>uy, buz=>uz, &
                                     bvx=>vx, bvy=>vy, bvz=>vz, &
                                     bwx=>wx, bwy=>wy, bwz=>wz, &
@@ -6496,7 +6496,7 @@ module cudaResidual
         implicit none
         integer(kind=intType), intent(in) :: ndimw
         real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
-        
+
         ! Local Variables
         integer(kind=intType) :: nn, i, j, k, l, counter, sps, dom
         real(kind=realType) :: ovv
@@ -6520,14 +6520,14 @@ module cudaResidual
         integer(kind=intType) :: h_ie,h_je,h_ke, ierr, config
         real(kind=realType) :: sslim
 
-        dom = 1 
+        dom = 1
         sps = 1
         call setPointers(1, 1, 1)
         call applyAllBC_block(.True.)
         ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
         call calculateCudaResidual(.True.,1,nw)
 
-        
+
 
         allocate(ux_v1(1:bil,1:bjl,1:bkl))
         allocate(uy_v1(1:bil,1:bjl,1:bkl))
@@ -6567,7 +6567,7 @@ module cudaResidual
 
         allocate(h_p(0:bib,0:bjb,0:bkb))
         allocate(h_gamma(0:bib,0:bjb,0:bkb))
-        
+
 
         ! allocate memory for cudaDoms(dom,sps)%dw
         allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
@@ -6601,11 +6601,11 @@ module cudaResidual
         ! ux_v2 = h_cudaDoms(dom,sps)%ux
         ! uy_v2 = h_cudaDoms(dom,sps)%uy
         ! uz_v2 = h_cudaDoms(dom,sps)%uz
-        
+
         ! ux_v1 = ux
         ! uy_v1 = uy
         ! uz_v1 = uz
-        
+
         ! ! print *,ux_v1(:,:,1)
         ! ! print *,"=================="
         ! ! print *, ux_v2(:,:,1)
@@ -6679,8 +6679,8 @@ module cudaResidual
         ! ! print *,"========"
         ! ! print *, size(h_vol), size(bvol)
         ! ! counter = 0
-        
-        ! ! Speed of sound 
+
+        ! ! Speed of sound
         ! h_aa = h_cudaDoms(dom,sps)%aa
         ! h_aa_v1 = aa
         ! print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
@@ -6693,7 +6693,7 @@ module cudaResidual
 
         ! h_gamma = h_cudaDoms(dom,sps)%gamma
         ! print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
-        
+
         ! h_radI = h_cudaDoms(dom,sps)%radI
         ! h_radJ = h_cudaDoms(dom,sps)%radJ
         ! h_radK = h_cudaDoms(dom,sps)%radK
@@ -6739,7 +6739,7 @@ module cudaResidual
 
         deallocate(h_dw)
     end subroutine cudaResAPI
-    
+
 end module cudaResidual
 
 
