@@ -382,6 +382,9 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndimw
         end subroutine getcudaresidual
 
+        subroutine debugcomparecudaresidual
+        end subroutine debugcomparecudaresidual
+
        end module cudresidual
 
        module cudablock
