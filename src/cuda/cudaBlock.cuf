@@ -472,6 +472,13 @@ module cudaBlock
                         call terminate("allocateCudaBCData", "Memory allocation failure for &
                         &a farfield")
 
+                case (symm)
+
+                    allocate(h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("allocateCudaBCData", "Memory allocation failure for &
+                        &a symm boundary")
+
                 ! TODO [ ] : other BC types
 
                 end select
@@ -514,6 +521,10 @@ module cudaBlock
 
                     h_BCData(mm)%rface = bBCData(mm)%rface
                     h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
+                    h_BCData(mm)%norm = bBCData(mm)%norm
+
+                case (symm)
+
                     h_BCData(mm)%norm = bBCData(mm)%norm
 
                 ! TODO [ ] : other BC types

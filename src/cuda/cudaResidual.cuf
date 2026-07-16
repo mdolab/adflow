@@ -6937,6 +6937,7 @@ module cudaResidual
         use flowvarrefstate, only: nw,nwf,nt1,nt2,pInfCorr
         use utils, only: setPointers
         use flowutils, only: ballNodalGradients=>allNodalGradients, bcomputeSpeedOfSoundSquared=>computeSpeedOfSoundSquared
+        use cudaBCRoutines, only: applyallBC_block
         use cudaBlock, only: copyCudaBlockToHost
 
         implicit none

@@ -29,3 +29,7 @@ clean:
 adflow_build:
 	ln -sf config/config.mk config.mk;
 	(cd src/build/ && make)
+
+debug:
+	ln -sf config/config.mk config.mk;
+	(cd src/build/ && make FFXX_OPT_FLAGS="-O0" DEBUG_FLAGS="-g -O0")
