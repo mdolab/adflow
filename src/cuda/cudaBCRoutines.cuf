@@ -707,97 +707,97 @@ contains
 !
 !    end subroutine bcFarfield
 !
-!    attributes(global) subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
+   attributes(global) subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
 
-!        ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
-!        ! condition the pointers already defined.
+       ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
+       ! condition the pointers already defined.
 
-!        use constants
-!        ! use blockPointers, only: BCData
-!        use inputDiscretization, only: viscWallBCTreatment
-!        use cudaBCPointers, only: ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
-!                              rev1, rev2, iStart, jStart, iSize, jSize
-!        use cudaflowVarRefState, only: viscous, eddyModel
-!        use iteration, only: currentLevel, groundLevel
-!        implicit none
+       use constants
+       ! use blockPointers, only: BCData
+       use cudaBCPointers, only: ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
+                             rev1, rev2, iStart, jStart, iSize, jSize
+       use cudaflowVarRefState, only: viscous, eddyModel
+       use cudaInputDiscretization, only: viscWallBCTreatment
+       use cudaIteration, only: currentLevel, groundLevel
+       implicit none
 
-!        logical, intent(in) :: secondHalo, correctForK
-!        integer(kind=intType), intent(in) :: nn
-!        integer(kind=intType) :: sps = 1 ! hard-coding sps = 1 because of how the subroutine signature works
-!        real(kind=realType) :: rhok
-!        integer(kind=intType) :: wallTreatment
-!        integer(kind=intType) :: i, j ! GPU thread indices
+       logical, intent(in) :: secondHalo, correctForK
+       integer(kind=intType), intent(in) :: nn
+       integer(kind=intType) :: sps = 1 ! hard-coding sps = 1 because of how the subroutine signature works
+       real(kind=realType) :: rhok
+       integer(kind=intType) :: wallTreatment
+       integer(kind=intType) :: i, j ! GPU thread indices
 
-!        ! Initialize rhok to zero. This will be overwritten if a
-!        ! correction for k must be applied.
+       ! Initialize rhok to zero. This will be overwritten if a
+       ! correction for k must be applied.
 
-!        rhok = zero
+       rhok = zero
 
-!        ! Loop over the generic subface to set the state in the
-!        ! halo cells.
+       ! Loop over the generic subface to set the state in the
+       ! halo cells.
 
-!        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
-!        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
-!        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+       ! --- Initialize GPU thread indices (assuming 2d launch params) ---
+       i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+       j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-!        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+       if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
 
-!            ! Set the value of rhok if a correcton must be applied.
-!            ! It probably does not matter too much, because k is very
-!            ! small near the wall.
+           ! Set the value of rhok if a correcton must be applied.
+           ! It probably does not matter too much, because k is very
+           ! small near the wall.
 
-!            if (correctForK) rhok = ww2(i, j, irho) * ww2(i, j, itu1)
+           if (correctForK) rhok = ww2(i, j, irho) * ww2(i, j, itu1)
 
-!            ! Determine the variables in the halo. As the spacing
-!            ! is very small a constant pressure boundary condition
-!            ! (except for the k correction) is okay. Take the slip
-!            ! velocity into account.
+           ! Determine the variables in the halo. As the spacing
+           ! is very small a constant pressure boundary condition
+           ! (except for the k correction) is okay. Take the slip
+           ! velocity into account.
 
-!            ww1(i, j, irho) = ww2(i, j, irho)
-!            ww1(i, j, ivx) = -ww2(i, j, ivx) + two * BCData(nn)%uSlip(i, j, 1)
-!            ww1(i, j, ivy) = -ww2(i, j, ivy) + two * BCData(nn)%uSlip(i, j, 2)
-!            ww1(i, j, ivz) = -ww2(i, j, ivz) + two * BCData(nn)%uSlip(i, j, 3)
+           ww1(i, j, irho) = ww2(i, j, irho)
+           ww1(i, j, ivx) = -ww2(i, j, ivx) + two * BCData(nn)%uSlip(i, j, 1)
+           ww1(i, j, ivy) = -ww2(i, j, ivy) + two * BCData(nn)%uSlip(i, j, 2)
+           ww1(i, j, ivz) = -ww2(i, j, ivz) + two * BCData(nn)%uSlip(i, j, 3)
 
-!            ! Set the viscosities. There is no need to test for a
-!            ! viscous problem of course. The eddy viscosity is
-!            ! set to the negative value, as it should be zero on
-!            ! the wall.
+           ! Set the viscosities. There is no need to test for a
+           ! viscous problem of course. The eddy viscosity is
+           ! set to the negative value, as it should be zero on
+           ! the wall.
 
-!            rlv1(i, j) = rlv2(i, j)
-!            if (eddyModel) rev1(i, j) = -rev2(i, j)
+           rlv1(i, j) = rlv2(i, j)
+           if (eddyModel) rev1(i, j) = -rev2(i, j)
 
-!            ! Make sure that on the coarser grids the constant pressure
-!            ! boundary condition is used.
+           ! Make sure that on the coarser grids the constant pressure
+           ! boundary condition is used.
 
-!            wallTreatment = viscWallBcTreatment
-!            if (currentLevel > groundLevel) wallTreatment = constantPressure
+           wallTreatment = viscWallBcTreatment
+           if (currentLevel > groundLevel) wallTreatment = constantPressure
 
-!            BCTreatment:select case(wallTreatment)
+           BCTreatment:select case(wallTreatment)
 
-!            case (constantPressure)
+           case (constantPressure)
 
-!            ! Constant pressure. Set the gradient to zero.
-!            pp1(i, j) = pp2(i, j) - four * third * rhok
+           ! Constant pressure. Set the gradient to zero.
+           pp1(i, j) = pp2(i, j) - four * third * rhok
 
-!            case default
+           case default
 
-!            pp1(i, j) = 2 * pp2(i, j) - pp3(i, j)
-!            ! Adjust value if pressure is negative
-!            if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+           pp1(i, j) = 2 * pp2(i, j) - pp3(i, j)
+           ! Adjust value if pressure is negative
+           if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
 
-!            end select BCTreatment
-!        end if
+           end select BCTreatment
+       end if
 
-!        ! Compute the energy for these halo's.
+       ! Compute the energy for these halo's.
 
-!        call computeEtot(ww1, pp1, correctForK)
+       call computeEtot(1_intType, correctForK)
 
-!        ! Extrapolate the state vectors in case a second halo
-!        ! is needed.
+       ! Extrapolate the state vectors in case a second halo
+       ! is needed.
 
-!        if (secondHalo) call extrapolate2ndHalo(correctForK)
+       if (secondHalo) call extrapolate2ndHalo(correctForK)
 
-!    end subroutine bcNSWallAdiabatic
+   end subroutine bcNSWallAdiabatic
 !
 !    ! subroutine bcNSWallIsoThermal(nn, secondHalo, correctForK)
 !
@@ -1017,107 +1017,126 @@ contains
 !    end subroutine bcSubsonicOutflow
 !
 !    ! ========================================
-!    !  DEVICE SUBROUTINES
-!    ! ========================================
-!    attributes(device) subroutine computeEtot(ww, pp, correctForK)
-!
-!        ! Simplified total energy computation for boundary conditions.
-!        ! Only implements the constant cpModel
-!
-!        
-!        use constants, only: gammaConstant, third, five, half, irho, one
-!        use cudaBCPointers, only: iSize, jSize, iStart, jStart
-!        implicit none
-!
-!        real(kind=realType) :: pp
-!        real(kind=realType) :: ww
-!        logical :: correctForK
-!        integer(kind=intType) :: i, j
-!        real(kind=realType) :: ovgm1, factK
-!
-!        ! Constant cp and thus constant gamma.
-!        ! Abbreviate 1/(gamma -1) a bit easier.
-!
-!        ovgm1 = one / (gammaConstant - one)
-!        factK = ovgm1 * (five * third - gammaConstant)
-!
-!        ! Loop over the given array and compute the energy, possibly
-!        ! correcting for K
-!
-!        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
-!        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
-!        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
-!
-!        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
-!            if (.not. correctForK) then
-!                ww(i, j, iRhoE) = ovgm1 * pp(i, j) &
-!                                    + half * ww(i, j, irho) * (ww(i, j, ivx)**2 &
-!                                                                + ww(i, j, ivy)**2 &
-!                                                                + ww(i, j, ivz)**2)
-!
-!            else
-!                ww(i, j, iRhoE) = ovgm1 * pp(i, j) &
-!                                    + half * ww(i, j, irho) * (ww(i, j, ivx)**2 &
-!                                                                + ww(i, j, ivy)**2 &
-!                                                                + ww(i, j, ivz)**2) &
-!                                    - factK * ww(i, j, irho) * ww(i, j, itu1)
-!            end if
-!        end if
-!
-!        ! Including only constant cp for now
-!        ! Skipping cpTempCurveFits
-!
-!    end subroutine computeEtot
-!        
-!    attributes(device) subroutine extrapolate2ndHalo(corectForK)
-!
-!        ! extrapolate2ndHalo determines the states of the second layer
-!        ! halo cells for the given subface of the block. It is assumed
-!        ! that the appropriate BCPointers are already set
-!
-!        use constants, only: irho, two
-!        use cudaBCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, &
-!                              rlv0, rlv1, rlv2, rev0, rev1, rev2, iSize, jSize, iStart, jStart
-!        use cudaFlowVarRefState, only: viscous, eddyModel
-!        implicit none
-!
-!        ! Input variables
-!        logical :: correctForK
-!
-!        ! Working variables
-!        real(kind=realType), parameter :: factor = 0.5_realType
-!        integer(kind=intType) :: i, j, l, ii
-!
-!        ! Loop over the generic subface to set the state in the halo cells.
-!
-!        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
-!        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
-!        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
-!
-!        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
-!
-!            ! Extrapolate the density, momentum and pressure.
-!            ! Make sure that a certain threshold is kept.
-!
-!            ww0(i, j, irho) = two * ww1(i, j, irho) - ww2(i, j, irho)
-!            ww0(i, j, irho) = max(factor * ww1(i, j, irho), ww0(i, j, irho))
-!
-!            ww0(i, j, ivx) = two * ww1(i, j, ivx) - ww2(i, j, ivx)
-!            ww0(i, j, ivy) = two * ww1(i, j, ivy) - ww2(i, j, ivy)
-!            ww0(i, j, ivz) = two * ww1(i, j, ivz) - ww2(i, j, ivz)
-!
-!            pp0(i, j) = max(factor * pp1(i, j), two * pp1(i, j) - pp2(i, j))
-!
-!            ! The laminar and eddy viscosity, if present. These values
-!            ! are simply taken constant. Their values do not matter.
-!
-!            if (viscous) rlv0(i, j) = rlv1(i, j)
-!            if (eddyModel) rev0(i, j) = rev1(i, j)
-!        end if
-!
-!        ! Compute the energy for this halo range.
-!        call computeEtot(ww0, pp0, correctForK)
-!
-!    end subroutine extrapolate2ndHalo
+    !  DEVICE SUBROUTINES
+    ! ========================================
+    attributes(device) subroutine computeEtot(haloSlot, correctForK)
+
+        ! Simplified total energy computation for boundary conditions.
+        ! Only implements the constant cpModel
+
+        ! haloSlot selects which pointer pair to update: 0 -> ww0/pp0,
+        ! 1 -> ww1/pp1. Device subprograms cannot accept the module's
+        ! deferred-shape pointer arrays (ww0..ww3, pp0..pp3) as arguments
+        ! (NVFORTRAN "array reshaping is not supported"), so the arrays
+        ! are referenced directly here instead of being passed in.
+
+        use constants, only: third, five, half, irho, ivx, ivy, ivz, irhoE, itu1, one
+        use cudaInputPhysics, only: gammaConstant
+        use cudaBCPointers, only: ww0, ww1, pp0, pp1, iSize, jSize, iStart, jStart
+        implicit none
+
+        integer(kind=intType) :: haloSlot
+        logical :: correctForK
+        integer(kind=intType) :: i, j
+        real(kind=realType) :: ovgm1, factK
+
+        ! Constant cp and thus constant gamma.
+        ! Abbreviate 1/(gamma -1) a bit easier.
+
+        ovgm1 = one / (gammaConstant - one)
+        factK = ovgm1 * (five * third - gammaConstant)
+
+        ! Loop over the given array and compute the energy, possibly
+        ! correcting for K
+
+        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+            if (haloSlot == 0) then
+                if (.not. correctForK) then
+                    ww0(i, j, iRhoE) = ovgm1 * pp0(i, j) &
+                                        + half * ww0(i, j, irho) * (ww0(i, j, ivx)**2 &
+                                                                    + ww0(i, j, ivy)**2 &
+                                                                    + ww0(i, j, ivz)**2)
+                else
+                    ww0(i, j, iRhoE) = ovgm1 * pp0(i, j) &
+                                        + half * ww0(i, j, irho) * (ww0(i, j, ivx)**2 &
+                                                                    + ww0(i, j, ivy)**2 &
+                                                                    + ww0(i, j, ivz)**2) &
+                                        - factK * ww0(i, j, irho) * ww0(i, j, itu1)
+                end if
+            else
+                if (.not. correctForK) then
+                    ww1(i, j, iRhoE) = ovgm1 * pp1(i, j) &
+                                        + half * ww1(i, j, irho) * (ww1(i, j, ivx)**2 &
+                                                                    + ww1(i, j, ivy)**2 &
+                                                                    + ww1(i, j, ivz)**2)
+                else
+                    ww1(i, j, iRhoE) = ovgm1 * pp1(i, j) &
+                                        + half * ww1(i, j, irho) * (ww1(i, j, ivx)**2 &
+                                                                    + ww1(i, j, ivy)**2 &
+                                                                    + ww1(i, j, ivz)**2) &
+                                        - factK * ww1(i, j, irho) * ww1(i, j, itu1)
+                end if
+            end if
+        end if
+
+        ! Including only constant cp for now
+        ! Skipping cpTempCurveFits
+
+    end subroutine computeEtot
+        
+    attributes(device) subroutine extrapolate2ndHalo(correctForK)
+
+        ! extrapolate2ndHalo determines the states of the second layer
+        ! halo cells for the given subface of the block. It is assumed
+        ! that the appropriate BCPointers are already set
+
+        use constants, only: irho, ivx, ivy, ivz, two
+        use cudaBCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, &
+                              rlv0, rlv1, rlv2, rev0, rev1, rev2, iSize, jSize, iStart, jStart
+        use cudaFlowVarRefState, only: viscous, eddyModel
+        implicit none
+
+        ! Input variables
+        logical :: correctForK
+
+        ! Working variables
+        real(kind=realType), parameter :: factor = 0.5_realType
+        integer(kind=intType) :: i, j, l, ii
+
+        ! Loop over the generic subface to set the state in the halo cells.
+
+        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+
+            ! Extrapolate the density, momentum and pressure.
+            ! Make sure that a certain threshold is kept.
+
+            ww0(i, j, irho) = two * ww1(i, j, irho) - ww2(i, j, irho)
+            ww0(i, j, irho) = max(factor * ww1(i, j, irho), ww0(i, j, irho))
+
+            ww0(i, j, ivx) = two * ww1(i, j, ivx) - ww2(i, j, ivx)
+            ww0(i, j, ivy) = two * ww1(i, j, ivy) - ww2(i, j, ivy)
+            ww0(i, j, ivz) = two * ww1(i, j, ivz) - ww2(i, j, ivz)
+
+            pp0(i, j) = max(factor * pp1(i, j), two * pp1(i, j) - pp2(i, j))
+
+            ! The laminar and eddy viscosity, if present. These values
+            ! are simply taken constant. Their values do not matter.
+
+            if (viscous) rlv0(i, j) = rlv1(i, j)
+            if (eddyModel) rev0(i, j) = rev1(i, j)
+        end if
+
+        ! Compute the energy for this halo range.
+        call computeEtot(0_intType, correctForK)
+
+    end subroutine extrapolate2ndHalo
 
 end module cudaBCRoutines
