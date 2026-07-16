@@ -5,19 +5,22 @@ include ../../config/config.mk
 # Check compiler and version and add flags if needed
 EXTRA_FF90_FLAGS = $(shell bash ../../config/compilerCheck.sh $(FF90))
 
+# Extra flags for debug builds (set via `make debug`, empty otherwise)
+DEBUG_FLAGS ?=
+
 # Group all the fortran, C and compiler flags together.
 FF90_ALL_FLAGS_NO_OPT   = $(FF90_FLAGS) $(EXTRA_FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
-		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
+		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS) $(DEBUG_FLAGS)
 
 FF90_ALL_FLAGS = $(FF90_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
 
 FF77_ALL_FLAGS_NO_OPT = $(FF77_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
-		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
+		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS) $(DEBUG_FLAGS)
 
 FF77_ALL_FLAGS = $(FF77_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
-		   $(CC_PRECISION_FLAGS)
+		   $(CC_PRECISION_FLAGS) $(DEBUG_FLAGS)
 
 LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
 

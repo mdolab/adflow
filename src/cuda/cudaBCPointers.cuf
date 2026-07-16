@@ -85,8 +85,11 @@ module cudaBCPointers
             do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
                 
                 call setBCPointers(nn, .True.)
-                
+
                 ! Indices
+                allocate(h_cudaBCDoms(nn,sps)%iStart, h_cudaBCDoms(nn,sps)%iEnd, h_cudaBCDoms(nn,sps)%iSize, &
+                         h_cudaBCDoms(nn,sps)%jStart, h_cudaBCDoms(nn,sps)%jEnd, h_cudaBCDoms(nn,sps)%jSize)
+
                 h_cudaBCDoms(nn, sps)%iStart = iStart
                 h_cudaBCDoms(nn, sps)%iEnd = iEnd
                 h_cudaBCDoms(nn, sps)%iSize = iSize
