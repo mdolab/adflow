@@ -705,10 +705,10 @@ module cudaParamTurb
         !       SA constants.
         !    
         rsaK = h_rsaK
-        rsaCb1 = rsaCb1
-        rsaCb2 = rsaCb2
-        rsaCb3 = rsaCb3
-        rsaCv1 = rsaCv1
+        rsaCb1 = h_rsaCb1
+        rsaCb2 = h_rsaCb2
+        rsaCb3 = h_rsaCb3
+        rsaCv1 = h_rsaCv1
         rsaCw2 = h_rsaCw2
         rsaCw3 = h_rsaCw3
         rsaCt1 = h_rsaCt1

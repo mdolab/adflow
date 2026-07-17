@@ -1,9 +1,10 @@
-! @File    :   cudaBlock.f90
+! @File    :   cudaBlock.cuf
 ! @Desc    :   This module contains the block data type and provides subroutines for copying data between the CPU and GPU
 !              For variable names, follow the same convention as 'block.F90'
 
 module cudaBlock
     use constants, only: realType, intType, porType, maxCGNSNameLen
+    use cudafor
     implicit none
     save
     ! =========================================================
@@ -61,7 +62,7 @@ module cudaBlock
 
         logical :: rightHanded
 
-        ! Current indices into the original block
+        ! Current indices into the original block (blockette.f90 related data struct)
         integer(kind=intType) :: ii, jj, kk
 
         ! Double halos
@@ -70,9 +71,15 @@ module cudaBlock
 
         ! Single halos
         real(kind=realType), dimension(:,:,:,:), pointer,device :: x
-        real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
         real(kind=realType), dimension(:,:,:),device,pointer :: radI, radJ, radK, dtl
         real(kind=realType), dimension(:,:,:, :),device,pointer :: dss ! Shock sensor
+
+        ! Single halos GPU/Double halos CPU
+        ! These variables are allocated as double halo on the CPU side but we allocated them as single halo on the GPU side
+        ! to save memory. Care must be taken when copying to and from them.
+        real(kind=realType), dimension(:,:,:, :),pointer,device :: fw
+        real(kind=realType), dimension(:,:,:, :),pointer,device :: dw
+        real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
 
         ! No halos
         real(kind=realType), dimension(:,:,:),pointer,device :: volRef, d2wall
@@ -83,9 +90,6 @@ module cudaBlock
         integer(kind=porType), dimension(:,:,:),pointer,device :: porJ
         integer(kind=porType), dimension(:,:,:),pointer,device :: porK
 
-        ! Single halos (only owned cells significant)
-        real(kind=realType), dimension(:,:,:, :),pointer,device :: fw
-        real(kind=realType), dimension(:,:,:, :),pointer,device :: dw
 
         ! Face projected areas
         real(kind=realType), dimension(:,:,:, :),pointer,device :: sI
@@ -138,6 +142,8 @@ module cudaBlock
 
     contains
 
+
+
     subroutine allocateCudaBlock
         ! Allocate the persistent device/host CUDA domain mirrors (d_cudaDoms / h_cudaDoms)
         ! and all of their member arrays, and set the per-block index metadata.
@@ -175,7 +181,7 @@ module cudaBlock
 
                 call setPointers(nn, 1, sps)
 
-                ! Indices
+                ! block dimensions
                 h_cudaDoms(nn, sps)%nx = bnx
                 h_cudaDoms(nn, sps)%ny = bny
                 h_cudaDoms(nn, sps)%nz = bnz
@@ -191,45 +197,51 @@ module cudaBlock
 
                 h_cudaDoms(nn, sps)%rightHanded = brightHanded
 
+                ! current indices into the original block (blockette.f90 related data struct; zeroed out for now)
+                h_cudaDoms(nn, sps)%ii = 0_intType
+                h_cudaDoms(nn, sps)%jj = 0_intType
+                h_cudaDoms(nn, sps)%kk = 0_intType
+
                 ! double halos
                 allocate(h_cudaDoms(nn,sps)%w(0:bib, 0:bjb, 0:bkb, 1:nw)) ! flowfield states
                 allocate(h_cudaDoms(nn,sps)%p(0:bib, 0:bjb, 0:bkb)) ! static pressures
                 allocate(h_cudaDoms(nn,sps)%gamma(0:bib, 0:bjb, 0:bkb)) ! spec heat ratio
-                allocate(h_cudaDoms(nn,sps)%ss(0:bib, 0:bjb, 0:bkb)) ! shock sensors
+                allocate(h_cudaDoms(nn,sps)%ss(0:bib, 0:bjb, 0:bkb)) ! shock sensors scratch (pressure if inviscid/entropy if viscous)
 
-                ! single halos
-                allocate(h_cudaDoms(nn, sps)%x(0:bie, 0:bje, 0:bke, 1:3))
-                allocate(h_cudaDoms(nn, sps)%rlv(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%vol(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%aa(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%radI(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%radJ(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%radK(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%dtl(1:bie, 1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%dss(1:bie, 1:bje, 1:bke, 1:3))
+                ! single halos (nodes)
+                allocate(h_cudaDoms(nn, sps)%x(0:bie, 0:bje, 0:bke, 1:3)) ! xyz locations of grid points in block
 
-                ! no halos
+                ! single halos (cells)
+                allocate(h_cudaDoms(nn, sps)%radI(1:bie, 1:bje, 1:bke)) ! spectral radius in i-direction
+                allocate(h_cudaDoms(nn, sps)%radJ(1:bie, 1:bje, 1:bke)) ! spectral radius in j-direction
+                allocate(h_cudaDoms(nn, sps)%radK(1:bie, 1:bje, 1:bke)) ! spectral radius in k-direction
+                allocate(h_cudaDoms(nn, sps)%dtl(1:bie, 1:bje, 1:bke)) ! time step
+                allocate(h_cudaDoms(nn, sps)%dss(1:bie, 1:bje, 1:bke, 1:3)) ! shock sensor
+
+                ! single halos GPU/double halos CPU (cells)
+                allocate(h_cudaDoms(nn, sps)%fw(1:bie, 1:bje, 1:bke, 1:nwf)) ! dissipative/viscous residual
+                allocate(h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw)) ! convective/total residual
+                allocate(h_cudaDoms(nn, sps)%rlv(1:bie, 1:bje, 1:bke)) ! laminar viscosity
+                allocate(h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke)) ! eddy viscosity
+                allocate(h_cudaDoms(nn, sps)%vol(1:bie, 1:bje, 1:bke)) ! cell volumes
+                allocate(h_cudaDoms(nn, sps)%aa(1:bie, 1:bje, 1:bke)) ! speed of sound squared
+
+                ! no halos (cells)
                 if (equations == RANSEquations) then
-                    allocate(h_cudaDoms(nn, sps)%d2wall(2:bil,2:bjl,2:bkl))
+                    allocate(h_cudaDoms(nn, sps)%d2wall(2:bil,2:bjl,2:bkl)) ! distance from the center of the cell to the nearest viscous wall
                 end if
-                allocate(h_cudaDoms(nn, sps)%volRef(2:bil,2:bjl,2:bkl))
-                allocate(h_cudaDoms(nn, sps)%iblank(2:bil,2:bjl,2:bkl))
+                allocate(h_cudaDoms(nn, sps)%volRef(2:bil,2:bjl,2:bkl)) ! cell reference volume
+                allocate(h_cudaDoms(nn, sps)%iblank(2:bil,2:bjl,2:bkl)) ! cell blanking
+
+
+                ! no halos (faces)
 
                 ! face porosities
                 allocate(h_cudaDoms(nn, sps)%porI(1:bil,2:bjl,2:bkl))
                 allocate(h_cudaDoms(nn, sps)%porJ(2:bil,1:bjl,2:bkl))
                 allocate(h_cudaDoms(nn, sps)%porK(2:bil,2:bjl,1:bkl))
 
-                ! single halos (only owned cells significant)
-                ! Technically we only care about residuals in the non-halo cells. However, when computing the residuals
-                ! we loop over faces, and each face adds a flux term to the residuals in the two neighbouring cells.
-                ! To avoid having to treat faces at the boundaries differently from interior faces, we add a single halo
-                ! layer so there are cells for boundary faces to add their fluxes to.
-                allocate(h_cudaDoms(nn, sps)%fw(1:bie, 1:bje, 1:bke, 1:nwf))
-                allocate(h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw))
-
-                ! face projected areas
+                ! face projected areas (face normals scaled by area)
                 allocate(h_cudaDoms(nn,sps)%sI(0:bie, 1:bje, 1:bke,3))
                 allocate(h_cudaDoms(nn,sps)%sJ(1:bie, 0:bje, 1:bke,3))
                 allocate(h_cudaDoms(nn,sps)%sK(1:bie, 1:bje, 0:bke,3))
@@ -238,6 +250,8 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%sFaceI(0:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%sFaceJ(1:bie, 0:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%sFaceK(1:bie, 1:bje, 0:bke))
+
+                ! no halos (nodes)
 
                 ! nodal gradients
                 allocate(h_cudaDoms(nn, sps)%ux(1:bil, 1:bjl, 1:bkl))
@@ -302,38 +316,46 @@ module cudaBlock
                 call setPointers(nn, 1, sps)
 
                 ! double halos
-                h_cudaDoms(nn, sps)%w = bw
-                h_cudaDoms(nn, sps)%p = bp
-                h_cudaDoms(nn, sps)%gamma = bgamma
-                h_cudaDoms(nn, sps)%ss = bShockSensor
+                h_cudaDoms(nn, sps)%w = bw ! flowfield states
+                h_cudaDoms(nn, sps)%p = bp ! static pressures
+                h_cudaDoms(nn, sps)%gamma = bgamma ! spec heat ratio
+                h_cudaDoms(nn, sps)%ss = bShockSensor ! shock sensor scratch (pressure if inviscid/entropy if viscous)
 
-                ! single halos
-                h_cudaDoms(nn, sps)%x = bx
-                h_cudaDoms(nn, sps)%rlv = brlv
-                h_cudaDoms(nn, sps)%rev = brev
-                h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke)
+                ! single halos (nodes)
+                h_cudaDoms(nn, sps)%x = bx ! xyz locations of grid points in block
 
-                ! intermediates filled by the residual kernels but not re-zeroed by them
-                h_cudaDoms(nn, sps)%aa = zero
-                h_cudaDoms(nn, sps)%radI = zero
-                h_cudaDoms(nn, sps)%radJ = zero
-                h_cudaDoms(nn, sps)%radK = zero
-                h_cudaDoms(nn, sps)%dtl = zero
-                h_cudaDoms(nn, sps)%dss = zero
+                ! single halos (cells) (intermediates filled by the residual kernels but not re-zeroed by them)
+                h_cudaDoms(nn, sps)%radI = zero ! spectral radius in i-direction
+                h_cudaDoms(nn, sps)%radJ = zero ! spectral radius in j-direction
+                h_cudaDoms(nn, sps)%radK = zero ! spectral radius in k-direction
+                h_cudaDoms(nn, sps)%dtl = zero ! time step
+                h_cudaDoms(nn, sps)%dss = zero ! shock sensor
 
-                ! no halos
+                ! single halos GPU/double halos CPU (cells)
+                h_cudaDoms(nn, sps)%rlv = brlv(1:bie,1:bje,1:bke) ! laminar viscosity
+                h_cudaDoms(nn, sps)%rev = brev(1:bie,1:bje,1:bke) ! eddy viscosity
+                h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke) ! cell volumes
+
+                ! dw and fw zeroed by the residual call
+
+                ! single halos GPU/double halos CPU (cells) (intermediates filled by the residual kernels but not re-zeroed by them)
+                h_cudaDoms(nn, sps)%aa = zero ! speed of sound squared
+
+                ! no halos (cells)
                 if (equations == RANSEquations) then
-                    h_cudaDoms(nn, sps)%d2wall = bd2wall
+                    h_cudaDoms(nn, sps)%d2wall = bd2wall ! distance from the center of the cell to the nearest viscous wall
                 end if
-                h_cudaDoms(nn, sps)%volRef = bvolRef
-                h_cudaDoms(nn, sps)%iblank  = biblank
+                h_cudaDoms(nn, sps)%volRef = bvolRef ! cell reference volume
+                h_cudaDoms(nn, sps)%iblank  = biblank ! cell blanking
+
+                ! no halos (faces)
 
                 ! face porosities
                 h_cudaDoms(nn,sps)%porI = bPorI
                 h_cudaDoms(nn,sps)%porJ = bPorJ
                 h_cudaDoms(nn,sps)%porK = bPorK
 
-                ! face projected areas
+                ! face projected areas (face normals scaled by area)
                 h_cudaDoms(nn, sps)%sI = bsi
                 h_cudaDoms(nn, sps)%sJ = bsj
                 h_cudaDoms(nn, sps)%sK = bsk
@@ -349,10 +371,91 @@ module cudaBlock
                     h_cudaDoms(nn, sps)%sFaceK = zero
                 end if
 
+                ! no halos (nodes)
+
+                ! nodal gradients zeroed by the residual call
+
             end do spectralLoop
         end do domainsLoop
 
     end subroutine copyCudaBlockToDevice
+
+    ! Debug
+
+    subroutine debugCopyResidualsToDevice
+        ! Copies the residuals to device for debugging
+        use blockPointers, only: nDom, &
+            bdw=>dw, bfw=>fw, &
+            bie => ie, bje => je, bke => ke
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use utils, only: setPointers
+        use flowvarrefstate, only: nw, nwf
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        domainsLoop: do nn = 1, nDom
+            spectralLoop: do sps = 1, nTimeIntervalsSpectral
+
+                call setPointers(nn, 1, sps)
+
+                ! residuals
+                h_cudaDoms(nn, sps)%dw = bdw(1:bie,1:bje,1:bke,1:nw)
+                h_cudaDoms(nn, sps)%fw = bfw(1:bie,1:bje,1:bke,1:nwf)
+
+            end do spectralLoop
+        end do domainsLoop
+
+    end subroutine debugCopyResidualsToDevice
+
+
+    subroutine debugCopyNodalGradientsToDevice
+        ! Copies the nodal gradients to device for debugging
+        use constants, only: zero, RANSEquations
+        use blockPointers, only: nDom, &
+            bux=>ux, buy=>uy, buz=>uz, &
+            bvx=>vx, bvy=>vy, bvz=>vz, &
+            bwx=>wx, bwy=>wy, bwz=>wz, &
+            bqx=>qx, bqy=>qy, bqz=>qz, &
+            baa=>aa
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputPhysics, only: equations
+        use utils, only: setPointers
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        domainsLoop: do nn = 1, nDom
+            spectralLoop: do sps = 1, nTimeIntervalsSpectral
+
+                call setPointers(nn, 1, sps)
+
+                ! nodal gradients
+                h_cudaDoms(nn, sps)%ux = bux
+                h_cudaDoms(nn, sps)%uy = buy
+                h_cudaDoms(nn, sps)%uz = buz
+
+                h_cudaDoms(nn, sps)%vx = bvx
+                h_cudaDoms(nn, sps)%vy = bvy
+                h_cudaDoms(nn, sps)%vz = bvz
+
+                h_cudaDoms(nn, sps)%wx = bwx
+                h_cudaDoms(nn, sps)%wy = bwy
+                h_cudaDoms(nn, sps)%wz = bwz
+
+                h_cudaDoms(nn, sps)%qx = bqx
+                h_cudaDoms(nn, sps)%qy = bqy
+                h_cudaDoms(nn, sps)%qz = bqz
+
+                h_cudaDoms(nn, sps)%aa = baa
+
+
+            end do spectralLoop
+        end do domainsLoop
+
+    end subroutine debugCopyNodalGradientsToDevice
 
 
     subroutine deallocateCudaBlock
@@ -632,4 +735,40 @@ module cudaBlock
         end do
 
     end subroutine copyCudaBlockToHost
+
+
+    subroutine setupCudaAPI
+        ! This routine setups the CUDA device memory allocation and copies all data block and BC on this rank to 
+        ! the device.
+        use utils, only: setPointers
+        use BCRoutines, only: applyallBC_block
+
+        implicit none
+
+        integer(kind=intType) :: ierr
+        
+        ! TODO: Reafactor for general purpose
+        call setPointers(1, 1, 1) ! harcoded to a single block for now
+        call applyAllBC_block(.True.) ! ensure halos are valid (well only for a single block)
+
+        ! set the CUDA shared mem config
+        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
+
+
+        call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
+        call allocateCudaBCData            ! allocate bc device mirrors
+        call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
+        call copyCudaBlockToDevice         ! block field values host->device
+        call copyCudaBCDataToDevice         ! bc field values host->device
+    
+    end subroutine setupCudaAPI
+
+    subroutine destroyCudaAPI
+        implicit none
+        ! This routine deallocates the CUDA device data
+
+        call deallocateCudaBlock             ! deallocate the block
+        call deallocateCudaBCData            ! deallocate bcs
+
+    end subroutine destroyCudaAPI
 end module cudaBlock

@@ -366,11 +366,6 @@ python module libadflow
        
 
        module cudaresidual
-        subroutine cudaresapi(res,ndimw)
-           real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
-           integer(kind=inttype) intent(in) :: ndimw
-        end subroutine cudaresapi
-
         subroutine calculatecudaresidual(updateintermed,varstart,varend)
            logical intent(in) :: updateintermed
            integer(kind=inttype) intent(in) :: varstart
@@ -388,14 +383,18 @@ python module libadflow
        end module cudresidual
 
        module cudablock
-        subroutine allocatecudablock
-        end subroutine allocatecudablock
 
-        subroutine copycudaconstantstodevice
-        end subroutine copycudaconstantstodevice
+        subroutine setupcudaapi
+        end subroutine setupcudaapi
 
-        subroutine copycudablocktodevice
-        end subroutine copycudablocktodevice
+        subroutine destroycudaapi
+        end subroutine destroycudaapi
+
+        subroutine debugcopynodalgradientstodevice
+        end subroutine debugcopynodalgradientstodevice
+
+        subroutine debugcopyresidualstodevice
+        end subroutine debugcopyresidualstodevice
 
        end module cudablock
 
