@@ -398,6 +398,12 @@ python module libadflow
 
        end module cudablock
 
+      module cudabcroutines
+        subroutine applyallbc_block(secondhalo)
+          logical, intent(in) :: secondhalo
+        end subroutine applyallbc_block
+      end module cudabcroutines
+
        module nksolver
          use constants
 

@@ -85,9 +85,10 @@ nw = CFDSolver.adflow.flowvarrefstate.nw
 nIters = 10
 
 # One-time GPU setup + host->device copy, paid ONCE outside the timed loop below.
-CFDSolver.adflow.cudablock.allocatecudablock()
-CFDSolver.adflow.cudablock.copycudaconstantstodevice()
-CFDSolver.adflow.cudablock.copycudablocktodevice()
+# CFDSolver.adflow.cudablock.allocatecudablock()
+# CFDSolver.adflow.cudablock.copycudaconstantstodevice()
+# CFDSolver.adflow.cudablock.copycudablocktodevice()
+CFDSolver.adflow.cudablock.setupcudaapi()
 
 # Timed region: the core GPU residual only (calculateCudaResidual). No host<->device
 # copies happen inside this loop, so profiling it measures kernel time, not transfers.
