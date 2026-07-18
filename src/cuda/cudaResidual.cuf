@@ -3686,9 +3686,9 @@ module cudaResidual
         integer(kind = intType) :: i, j, k,l, tidx, tidy, tidz
         integer(kind = intType) :: dom, sps,il,jl,kl,ie,je,ke,jmax ,kmax
 
-        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1)
+        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane,5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane)
 
         real(kind = realType) :: fs(5),dwLoc
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
@@ -3721,7 +3721,7 @@ module cudaResidual
         jmax = min((blockIdx%y) * (inviscidCentralBSJPlane) ,jl)
         kmax = min((blockIdx%z) * (inviscidCentralBSKPlane) ,kl)
         if (k > kl) then
-            return
+            return 
         end if
 
 
@@ -6717,7 +6717,7 @@ module cudaResidual
       use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie, bil=>il,bjl=>jl, bkl=>kl
       use inputTimeSpectral, only: nTimeIntervalsSpectral
       use utils, only: setPointers
-
+    !   use flowvarrefstate, only: nw,nwf
 
 
       implicit none
@@ -6729,6 +6729,8 @@ module cudaResidual
       real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
       integer(kind = intType) :: dom, sps
       integer(kind = intType) :: ibmax, jbmax, kbmax
+
+    !   real(kind=realType), dimension(:,:,:,:), allocatable :: h_dw
 
       ! NB: constant and block-field host->device copies are done by the caller
       !     (copyCudaConstantsToDevice / copyCudaBlockToDevice) before this routine.
@@ -6745,7 +6747,8 @@ module cudaResidual
             jbmax = max(jbmax,bjb)
             kbmax = max(kbmax,bkb)
             h_cudaDoms(dom,sps)%fw                           = zero
-            h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
+            ! h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
+            h_cudaDoms(dom,sps)%dw                           = zero
             h_cudaDoms(dom,sps)%ux                           = zero
             h_cudaDoms(dom,sps)%uy                           = zero
             h_cudaDoms(dom,sps)%uz                           = zero
@@ -6762,6 +6765,18 @@ module cudaResidual
       end do
 
       istat = cudaDeviceSynchronize()
+
+
+      ! TESt
+
+    ! allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
+
+    ! h_dw = h_cudaDoms(1,1)%dw 
+
+    !     ! Inviscid Residual
+    ! print *,size(h_dw(2:bil,2:bjl,2:bkl,1:nwf))
+    ! print  '("Max val dw = ",E22.16," seconds.")', maxval(abs(h_dw(1:bie,1:bje,1:bke,1:nw)))
+    ! stop
 
       ! metrics
     !   print *,ibmax,jbmax,kbmax
@@ -6811,14 +6826,14 @@ module cudaResidual
     !  block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
     !  grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
 
-!      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>>
-!      istat = cudaDeviceSynchronize()
+    !  call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>>
+    !  istat = cudaDeviceSynchronize()
 
 !    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
 !    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
 !    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>>
 !    istat = cudaDeviceSynchronize()
-!
+
 !    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
 !    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
 !    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>>

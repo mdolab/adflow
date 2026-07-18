@@ -65,6 +65,11 @@ module cudaBlock
         ! Current indices into the original block (blockette.f90 related data struct)
         integer(kind=intType) :: ii, jj, kk
 
+        ! integer(kind=intType) :: nx=0_intType, ny=0_intType, nz=0_intType, il=0_intType, jl=0_intType, kl=0_intType
+        ! integer(kind=intType) :: ie=0_intType, je=0_intType, ke=0_intType, ib=0_intType, jb=0_intType, kb=0_intType
+        ! logical :: rightHanded = .false.
+        ! integer(kind=intType) :: ii=0_intType, jj=0_intType, kk=0_intType
+
         ! Double halos
         real(kind=realType), dimension(:,:,:,:),pointer,device :: w
         real(kind=realType), dimension(:,:,:),pointer,device :: P,gamma,ss
@@ -108,7 +113,7 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:),pointer,device :: qx, qy, qz
 
         ! --- BCData ---
-        integer(kind=intType), pointer, device :: nSubface, n1to1, nBocos, nViscBocos
+        integer(kind=intType) :: nSubface, n1to1, nBocos, nViscBocos
 
         integer(kind=intType), dimension(:), pointer, device :: BCType
         integer(kind=intType), dimension(:), pointer, device :: BCFaceID
@@ -159,7 +164,8 @@ module cudaBlock
             bil => il, bjl => jl, bkl => kl, &
             bie => ie, bje => je, bke => ke, &
             bib => ib, bjb => jb, bkb => kb, &
-            brightHanded => rightHanded
+            brightHanded => rightHanded, &
+            bnSubface => nSubface, bn1to1 => n1to1, bnBocos => nBocos, bnViscBocos => nViscBocos
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nw,nwf,nwt
         use inputPhysics, only: equations
@@ -266,6 +272,41 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%qx(1:bil, 1:bjl, 1:bkl))
                 allocate(h_cudaDoms(nn, sps)%qy(1:bil, 1:bjl, 1:bkl))
                 allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
+
+                ! BC Data
+                h_cudaDoms(nn, sps)%nSubface = bnSubface
+                h_cudaDoms(nn, sps)%n1to1 = bn1to1
+                h_cudaDoms(nn, sps)%nBocos = bnBocos
+                h_cudaDoms(nn, sps)%nViscBocos = bnViscBocos
+
+                ! TEMP: Nullify these pointers since we aren't using them right now and they point to garbage
+                h_cudaDoms(nn, sps)%BCType => null()
+                h_cudaDoms(nn, sps)%BCFaceID => null()
+                h_cudaDoms(nn, sps)%cgnsSubface => null()
+                h_cudaDoms(nn, sps)%inBeg => null()
+                h_cudaDoms(nn, sps)%inEnd => null()
+                h_cudaDoms(nn, sps)%jnBeg => null()
+                h_cudaDoms(nn, sps)%jnEnd => null()
+                h_cudaDoms(nn, sps)%knBeg => null()
+                h_cudaDoms(nn, sps)%knEnd => null()
+                h_cudaDoms(nn, sps)%dinBeg => null()
+                h_cudaDoms(nn, sps)%dinEnd => null()
+                h_cudaDoms(nn, sps)%djnBeg => null()
+                h_cudaDoms(nn, sps)%djnEnd => null()
+                h_cudaDoms(nn, sps)%dknBeg => null()
+                h_cudaDoms(nn, sps)%dknEnd => null()
+                h_cudaDoms(nn, sps)%icBeg => null()
+                h_cudaDoms(nn, sps)%icEnd => null()
+                h_cudaDoms(nn, sps)%jcBeg => null()
+                h_cudaDoms(nn, sps)%jcEnd => null()
+                h_cudaDoms(nn, sps)%kcBeg => null()
+                h_cudaDoms(nn, sps)%kcEnd => null()
+                h_cudaDoms(nn, sps)%neighBlock => null()
+                h_cudaDoms(nn, sps)%neighProc => null()
+                h_cudaDoms(nn, sps)%l1 => null()
+                h_cudaDoms(nn, sps)%l2 => null()
+                h_cudaDoms(nn, sps)%l3 => null()
+                h_cudaDoms(nn, sps)%groupNum => null()
 
             end do spectralLoop
         end do domainsLoop
@@ -517,6 +558,35 @@ module cudaBlock
                 if (associated(h_cudaDoms(nn,sps)%qx))     deallocate(h_cudaDoms(nn,sps)%qx)
                 if (associated(h_cudaDoms(nn,sps)%qy))     deallocate(h_cudaDoms(nn,sps)%qy)
                 if (associated(h_cudaDoms(nn,sps)%qz))     deallocate(h_cudaDoms(nn,sps)%qz)
+
+                ! BC Data
+                if (associated(h_cudaDoms(nn,sps)%BCType))      deallocate(h_cudaDoms(nn,sps)%BCType)
+                if (associated(h_cudaDoms(nn,sps)%BCFaceID))    deallocate(h_cudaDoms(nn,sps)%BCFaceID)
+                if (associated(h_cudaDoms(nn,sps)%cgnsSubface)) deallocate(h_cudaDoms(nn,sps)%cgnsSubface)
+                if (associated(h_cudaDoms(nn,sps)%inBeg))       deallocate(h_cudaDoms(nn,sps)%inBeg)
+                if (associated(h_cudaDoms(nn,sps)%inEnd))       deallocate(h_cudaDoms(nn,sps)%inEnd)
+                if (associated(h_cudaDoms(nn,sps)%jnBeg))       deallocate(h_cudaDoms(nn,sps)%jnBeg)
+                if (associated(h_cudaDoms(nn,sps)%jnEnd))       deallocate(h_cudaDoms(nn,sps)%jnEnd)
+                if (associated(h_cudaDoms(nn,sps)%knBeg))       deallocate(h_cudaDoms(nn,sps)%knBeg)
+                if (associated(h_cudaDoms(nn,sps)%knEnd))       deallocate(h_cudaDoms(nn,sps)%knEnd)
+                if (associated(h_cudaDoms(nn,sps)%dinBeg))      deallocate(h_cudaDoms(nn,sps)%dinBeg)
+                if (associated(h_cudaDoms(nn,sps)%dinEnd))      deallocate(h_cudaDoms(nn,sps)%dinEnd)
+                if (associated(h_cudaDoms(nn,sps)%djnBeg))      deallocate(h_cudaDoms(nn,sps)%djnBeg)
+                if (associated(h_cudaDoms(nn,sps)%djnEnd))      deallocate(h_cudaDoms(nn,sps)%djnEnd)
+                if (associated(h_cudaDoms(nn,sps)%dknBeg))      deallocate(h_cudaDoms(nn,sps)%dknBeg)
+                if (associated(h_cudaDoms(nn,sps)%dknEnd))      deallocate(h_cudaDoms(nn,sps)%dknEnd)
+                if (associated(h_cudaDoms(nn,sps)%icBeg))       deallocate(h_cudaDoms(nn,sps)%icBeg)
+                if (associated(h_cudaDoms(nn,sps)%icEnd))       deallocate(h_cudaDoms(nn,sps)%icEnd)
+                if (associated(h_cudaDoms(nn,sps)%jcBeg))       deallocate(h_cudaDoms(nn,sps)%jcBeg)
+                if (associated(h_cudaDoms(nn,sps)%jcEnd))       deallocate(h_cudaDoms(nn,sps)%jcEnd)
+                if (associated(h_cudaDoms(nn,sps)%kcBeg))       deallocate(h_cudaDoms(nn,sps)%kcBeg)
+                if (associated(h_cudaDoms(nn,sps)%kcEnd))       deallocate(h_cudaDoms(nn,sps)%kcEnd)
+                if (associated(h_cudaDoms(nn,sps)%neighBlock))  deallocate(h_cudaDoms(nn,sps)%neighBlock)
+                if (associated(h_cudaDoms(nn,sps)%neighProc))   deallocate(h_cudaDoms(nn,sps)%neighProc)
+                if (associated(h_cudaDoms(nn,sps)%l1))          deallocate(h_cudaDoms(nn,sps)%l1)
+                if (associated(h_cudaDoms(nn,sps)%l2))          deallocate(h_cudaDoms(nn,sps)%l2)
+                if (associated(h_cudaDoms(nn,sps)%l3))          deallocate(h_cudaDoms(nn,sps)%l3)
+                if (associated(h_cudaDoms(nn,sps)%groupNum))    deallocate(h_cudaDoms(nn,sps)%groupNum)
             end do
         end do
 

@@ -11,7 +11,8 @@ CC   = mpicc
 
 
 # ------- GPU flags ----------------------------------------------------
-CUFFLAGS = -cuda
+CUFFLAGS = -cuda -gpu=ptxinfo
+# CUFFLAGS = -cuda -gpu=debug,ptxinfo,maxrregcount=128 # Debug
 
 # ------- Define Precision Flags ---------------------------------------
 # Options for Integer precision flags: -DUSE_LONG_INT
@@ -36,9 +37,12 @@ COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
 
 # ------- Define Compiler Flags ----------------------------------------
 FF77_FLAGS = -fPIC -r8 -Mr8 -lineinfo -march=native $(CUFFLAGS)
+# FF77_FLAGS = -fPIC -r8 -Mr8 -g -traceback -Mbounds -Ktrap=fp -march=native $(CUFFLAGS) #Debug
 FF90_FLAGS = $(FF77_FLAGS) 
 FFXX_OPT_FLAGS = -O3
 C_FLAGS   = -fPIC -O
+# FFXX_OPT_FLAGS = -O0 #Debug
+# C_FLAGS   = -fPIC -O0 #Debug
 
 # ------- Define Archiver  and Flags -----------------------------------
 AR       = ar
