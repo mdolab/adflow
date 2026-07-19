@@ -1461,7 +1461,7 @@ module cudaResidual
     end subroutine sumDwandFw_v1
 
     ! ========================================================================================================
-    ! NEWER WORK THAT IS CURRENTLY BROKEN
+    ! NEWER WORK (Euler and NS working. RANS to be merged soon!)
     ! ========================================================================================================
     !all non flux subroutines
     attributes(global) subroutine computeSpeedOfSoundSquared_v2
@@ -2034,245 +2034,24 @@ module cudaResidual
 
     end subroutine metrics
 
-    !sabet
-    ! attributes(global) subroutine timeStep(updateDtl)
-
-    !     use constants, only: eps, irho, ivx, ivy, ivz, irhoE, one, half, zero
-    !     use cudaFlowVarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
-    !     use cudaInputDiscretization, only: adis, acousticScaleFactor
-
-    !     implicit none
-
-    !     logical,value,intent(in) :: updateDtl
-
-    !     ! Local parameters.
-    !     real(kind=realType), parameter :: b = 2.0_realType
-
-    !     ! Variables for spectral Radius
-    !     real(kind=realType) :: plim, rlim, clim2
-    !     real(kind=realType) :: cc2, qsi, qsj, qsk, sx, sy, sz, rmu
-    !     real(kind=realType) :: ri, rj, rk, rij, rjk, rki
-    !     real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
-    !     real(kind=realType) :: sFace, tmp, uux, uuy, uuz
-    !     logical :: doScaling, updateDt
-    !     integer(kind=intType) :: i, j, k, dom, sps
-
-    !     dom = 1
-    !     sps = 1
-    !     !no nonger optional argument must be passed in
-    !     updateDt = updateDtl
-
-
-    !     ! Set the value of plim. To be fully consistent this must have
-    !     ! the dimension of a pressure. Therefore a fraction of pInfCorr
-    !     ! is used. Idem for rlim; compute clim2 as well.
-
-    !     plim = 0.001_realType * pInfCorr
-    !     rlim = 0.001_realType * rhoInf
-    !     clim2 = 0.000001_realType * gammaInf * pInfCorr / rhoInf
-    !     doScaling = .True.
-
-    !     ! Initialize sFace to zero. This value will be used if the
-    !     ! block is not moving.
-
-    !     sFace = zero
-    !     !
-    !     !           Inviscid contribution, depending on the preconditioner.
-    !     !           Compute the cell centered values of the spectral radii.
-    !     !
-    !     ! Note:  DON'T change the ranges for i. It will mess up dtl.
-    !     ! we don't copy the spectral-radii and dtl to keep the
-    !     ! code simple, therefore this loop needs the full single
-    !     ! halo range.
-
-    !     i = (blockIdx%x-1)*blockDim%x + threadIdx%x
-    !     j = (blockIdx%y-1)*blockDim%y + threadIdx%y
-    !     k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-    !     !loop 1 to cudaDoms(dom,sps)%ie
-    !     if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je .and. k <= cudaDoms(dom,sps)%ke) then
-
-    !         ! Compute the velocities and speed of sound squared.
-
-    !         uux = cudaDoms(dom,sps)%w(i, j, k, ivx)
-    !         uuy = cudaDoms(dom,sps)%w(i, j, k, ivy)
-    !         uuz = cudaDoms(dom,sps)%w(i, j, k, ivz)
-    !         cc2 = cudaDoms(dom,sps)%gamma(i, j, k) * cudaDoms(dom,sps)%P(i, j, k) / cudaDoms(dom,sps)%w(i, j, k, irho)
-    !         cc2 = max(cc2, clim2)
-
-    !         ! Set the dot product of the grid velocity and the
-    !         ! normal in i-direction for a moving face. To avoid
-    !         ! a number of multiplications by 0.5 simply the sum
-    !         ! is taken.
-
-    !         sFace = cudaDoms(dom,sps)%sFaceI(i - 1, j, k) + cudaDoms(dom,sps)%sFaceI(i, j, k)
-
-    !         ! Spectral radius in i-direction.
-
-    !         sx = cudaDoms(dom,sps)%sI(i - 1, j, k, 1) + cudaDoms(dom,sps)%sI(i, j, k, 1)
-    !         sy = cudaDoms(dom,sps)%sI(i - 1, j, k, 2) + cudaDoms(dom,sps)%sI(i, j, k, 2)
-    !         sz = cudaDoms(dom,sps)%sI(i - 1, j, k, 3) + cudaDoms(dom,sps)%sI(i, j, k, 3)
-
-    !         qsi = uux * sx + uuy * sy + uuz * sz - sFace
-
-    !         ri = half * (abs(qsi) &
-    !                         + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
-
-    !         ! The grid velocity in j-direction.
-    !         sFace = cudaDoms(dom,sps)%sFaceJ(i, j - 1, k) + cudaDoms(dom,sps)%sFaceJ(i, j, k)
-
-    !         ! Spectral radius in j-direction.
-
-    !         sx = cudaDoms(dom,sps)%sJ(i, j - 1, k, 1) + cudaDoms(dom,sps)%sJ(i, j, k, 1)
-    !         sy = cudaDoms(dom,sps)%sJ(i, j - 1, k, 2) + cudaDoms(dom,sps)%sJ(i, j, k, 2)
-    !         sz = cudaDoms(dom,sps)%sJ(i, j - 1, k, 3) + cudaDoms(dom,sps)%sJ(i, j, k, 3)
-
-    !         qsj = uux * sx + uuy * sy + uuz * sz - sFace
-
-    !         rj = half * (abs(qsj) &
-    !                         + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
-
-    !         ! The grid velocity in k-direction.
-    !         sFace = cudaDoms(dom,sps)%sFaceK(i, j, k - 1) + cudaDoms(dom,sps)%sFaceK(i, j, k)
-
-    !         ! Spectral radius in k-direction.
-
-    !         sx = cudaDoms(dom,sps)%sK(i, j, k - 1, 1) + cudaDoms(dom,sps)%sK(i, j, k, 1)
-    !         sy = cudaDoms(dom,sps)%sK(i, j, k - 1, 2) + cudaDoms(dom,sps)%sK(i, j, k, 2)
-    !         sz = cudaDoms(dom,sps)%sK(i, j, k - 1, 3) + cudaDoms(dom,sps)%sK(i, j, k, 3)
-
-    !         qsk = uux * sx + uuy * sy + uuz * sz - sFace
-
-    !         rk = half * (abs(qsk) &
-    !                         + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
-
-    !         ! Store in tdl if required
-    !         if (updateDt) then
-    !             cudaDoms(dom,sps)%dtl(i, j, k) = ri + rj + rk
-    !         end if
-
-    !         ! Avoid division by zero by clipping radi, radJ and
-    !         ! radK.
-
-    !         ri = max(ri, eps)
-    !         rj = max(rj, eps)
-    !         rk = max(rk, eps)
-
-    !         ! Compute the scaling in the three coordinate
-    !         ! directions.
-
-    !         rij = (ri / rj)**adis
-    !         rjk = (rj / rk)**adis
-    !         rki = (rk / ri)**adis
-
-    !         ! Create the scaled versions of the aspect ratios.
-    !         ! Note that the multiplication is done with radi, radJ
-    !         ! and radK, such that the influence of the clipping
-    !         ! is negligible.
-
-    !         cudaDoms(dom,sps)%radi(i, j, k) = ri * (one + one / rij + rki)
-    !         cudaDoms(dom,sps)%radj(i, j, k) = rj * (one + one / rjk + rij)
-    !         cudaDoms(dom,sps)%radk(i, j, k) = rk * (one + one / rki + rjk)
-    !     end if
-
-    !     ! The rest is only necessary if the timeStep needs to be computed
-    !     if (updateDt) then
-
-    !         viscousTerm: if (viscous) then
-
-    !             ! Loop over the owned cell centers.
-    !             !loop starts at 2
-    !             ! i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
-    !             ! j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
-    !             ! k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-    !             !loop at 2 to cudaDoms(dom,sps)%il
-    !             if (i >=2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
-
-    !                 ! Compute the effective viscosity coefficient. The
-    !                 ! factor 0.5 is a combination of two things. In the
-    !                 ! standard central discretization of a second
-    !                 ! derivative there is a factor 2 multiplying the
-    !                 ! central node. However in the code below not the
-    !                 ! average but the sum of the left and the right face
-    !                 ! is taken and squared. This leads to a factor 4.
-    !                 ! Combining both effects leads to 0.5. Furthermore,
-    !                 ! it is divided by the volume and density to obtain
-    !                 ! the correct dimensions and multiplied by the
-    !                 ! non-dimensional factor factVis.
-
-    !                 rmu = cudaDoms(dom,sps)%rlv(i, j, k)
-    !                 rmu = rmu + cudaDoms(dom,sps)%rev(i, j, k)
-    !                 rmu = half * rmu / (cudaDoms(dom,sps)%w(i, j, k, irho) * cudaDoms(dom,sps)%vol(i, j, k))
-
-    !                 ! Add the viscous contribution in i-direction to the
-    !                 ! (inverse) of the time step.
-
-    !                 sx = cudaDoms(dom,sps)%sI(i, j, k, 1) + cudaDoms(dom,sps)%sI(i - 1, j, k, 1)
-    !                 sy = cudaDoms(dom,sps)%sI(i, j, k, 2) + cudaDoms(dom,sps)%sI(i - 1, j, k, 2)
-    !                 sz = cudaDoms(dom,sps)%sI(i, j, k, 3) + cudaDoms(dom,sps)%sI(i - 1, j, k, 3)
-
-    !                 vsi = rmu * (sx * sx + sy * sy + sz * sz)
-    !                 tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsi)
-    !                 !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsi
-
-    !                 ! Add the viscous contribution in j-direction to the
-    !                 ! (inverse) of the time step.
-
-    !                 sx = cudaDoms(dom,sps)%sJ(i, j, k, 1) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 1)
-    !                 sy = cudaDoms(dom,sps)%sJ(i, j, k, 2) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 2)
-    !                 sz = cudaDoms(dom,sps)%sJ(i, j, k, 3) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 3)
-
-    !                 vsj = rmu * (sx * sx + sy * sy + sz * sz)
-    !                 tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsj)
-    !                 !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsj
-
-    !                 ! Add the viscous contribution in k-direction to the
-    !                 ! (inverse) of the time step.
-
-    !                 sx = cudaDoms(dom,sps)%sK(i, j, k, 1) + cudaDoms(dom,sps)%sK(i, j, k - 1, 1)
-    !                 sy = cudaDoms(dom,sps)%sK(i, j, k, 2) + cudaDoms(dom,sps)%sK(i, j, k - 1, 2)
-    !                 sz = cudaDoms(dom,sps)%sK(i, j, k, 3) + cudaDoms(dom,sps)%sK(i, j, k - 1, 3)
-
-    !                 vsk = rmu * (sx * sx + sy * sy + sz * sz)
-    !                 tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsk)
-    !                 !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsk
-
-    !             end if
-    !         end if viscousTerm
-    !         ! Skipping time spectral
-
-    !         ! Currently the inverse of dt/vol is stored in dtl. Invert
-    !         ! this value such that the time step per unit cfl number is
-    !         ! stored and correct in cases of high gradients.
-
-    !         ! i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
-    !         ! j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
-    !         ! k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-    !         !loop 2 to cudaDoms(dom,sps)%il (cell centers)
-    !         if (i >= 2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
-    !             dpi = abs(cudaDoms(dom,sps)%P(i + 1, j, k) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i - 1, j, k)) &
-    !                     / (cudaDoms(dom,sps)%P(i + 1, j, k) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i - 1, j, k) + plim)
-    !             dpj = abs(cudaDoms(dom,sps)%P(i, j + 1, k) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j - 1, k)) &
-    !                     / (cudaDoms(dom,sps)%P(i, j + 1, k) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j - 1, k) + plim)
-    !             dpk = abs(cudaDoms(dom,sps)%P(i, j, k + 1) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j, k - 1)) &
-    !                     / (cudaDoms(dom,sps)%P(i, j, k + 1) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j, k - 1) + plim)
-    !             rfl = one / (one + b * (dpi + dpj + dpk))
-
-    !             cudaDoms(dom,sps)%dtl(i, j, k) = rfl / cudaDoms(dom,sps)%dtl(i, j, k)
-    !         end if
-
-    !     end if
-    ! end subroutine timeStep
-
-
-        attributes(global) subroutine timeStep_p1(updateDtl)
-
+    ! sabet
+    attributes(global) subroutine timeStep(updateDt)
+        ! This routine performs the spectral radii and time step update for each cell
+        ! It is based on timeStep_block in solverUtils.F90 but contains some majors changes
+        ! The input boolean logic is reversed, it determines if a time step update should be performed at all
+        ! not whether the call is only for spectral radii. 
+        ! Scaling of the spectral radii is forced on.
+        ! The kernel does not return in case a updated spectral radii is not needed and we are only updating 
+        ! the spectral radii on this call.
+        ! The no preconditioner option is the only one here and is always done
+        ! Grid velocities are always included
         use constants, only: eps, irho, ivx, ivy, ivz, irhoE, one, half, zero
         use cudaFlowVarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
         use cudaInputDiscretization, only: adis, acousticScaleFactor
 
         implicit none
 
-        logical,value,intent(in) :: updateDtl
+        logical,value,intent(in) :: updateDt
 
         ! Local parameters.
         real(kind=realType), parameter :: b = 2.0_realType
@@ -2283,13 +2062,11 @@ module cudaResidual
         real(kind=realType) :: ri, rj, rk, rij, rjk, rki
         real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
         real(kind=realType) :: sFace, tmp, uux, uuy, uuz
-        logical :: doScaling, updateDt
         integer(kind=intType) :: i, j, k, dom, sps
 
+        ! Hardcoded to single block for now
         dom = 1
         sps = 1
-        !no nonger optional argument must be passed in
-        updateDt = updateDtl
 
 
         ! Set the value of plim. To be fully consistent this must have
@@ -2299,12 +2076,18 @@ module cudaResidual
         plim = 0.001_realType * pInfCorr
         rlim = 0.001_realType * rhoInf
         clim2 = 0.000001_realType * gammaInf * pInfCorr / rhoInf
-        doScaling = .True.
+
+        ! doScaling = .True. ! we always scale in this kernel, remove this var to reduce register pressure
 
         ! Initialize sFace to zero. This value will be used if the
         ! block is not moving.
 
         sFace = zero
+
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y
+        k = (blockIdx%z-1)*blockDim%z + threadIdx%z
+
         !
         !           Inviscid contribution, depending on the preconditioner.
         !           Compute the cell centered values of the spectral radii.
@@ -2314,9 +2097,6 @@ module cudaResidual
         ! code simple, therefore this loop needs the full single
         ! halo range.
 
-        i = (blockIdx%x-1)*blockDim%x + threadIdx%x
-        j = (blockIdx%y-1)*blockDim%y + threadIdx%y
-        k = (blockIdx%z-1)*blockDim%z + threadIdx%z
         !loop 1 to cudaDoms(dom,sps)%ie
         if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je .and. k <= cudaDoms(dom,sps)%ke) then
 
@@ -2375,6 +2155,8 @@ module cudaResidual
                             + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
 
             ! Store in tdl if required
+            ! NOTE: If we change this kernel so that threads write to more than 1 cell 
+            ! then we need to protect this write to prevent a race condition!
             if (updateDt) then
                 cudaDoms(dom,sps)%dtl(i, j, k) = ri + rj + rk
             end if
@@ -2409,10 +2191,16 @@ module cudaResidual
             viscousTerm: if (viscous) then
 
                 ! Loop over the owned cell centers.
+
                 !loop starts at 2
+
+                ! TODO: Investigate the possibility of adding this re-index in
+                ! but code will have to be updated to prevent a race condition!
+
                 ! i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
                 ! j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
                 ! k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
+
                 !loop at 2 to cudaDoms(dom,sps)%il
                 if (i >=2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
 
@@ -2467,15 +2255,20 @@ module cudaResidual
 
                 end if
             end if viscousTerm
+
             ! Skipping time spectral
 
             ! Currently the inverse of dt/vol is stored in dtl. Invert
             ! this value such that the time step per unit cfl number is
             ! stored and correct in cases of high gradients.
 
+            ! TODO: Investigate the possibility of adding this re-index in
+            ! but code will have to be updated to prevent a race condition!
+
             ! i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
             ! j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
             ! k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
+
             !loop 2 to cudaDoms(dom,sps)%il (cell centers)
             if (i >= 2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
                 dpi = abs(cudaDoms(dom,sps)%P(i + 1, j, k) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i - 1, j, k)) &
@@ -2490,153 +2283,7 @@ module cudaResidual
             end if
 
         end if
-    end subroutine timeStep_p1
-
-
-    attributes(global) subroutine timeStep_p2(updateDtl)
-
-        use constants, only: eps, irho, ivx, ivy, ivz, irhoE, one, half, zero
-        use cudaFlowVarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
-        use cudaInputDiscretization, only: adis, acousticScaleFactor
-
-        implicit none
-
-        logical,value,intent(in) :: updateDtl
-
-        ! Local parameters.
-        real(kind=realType), parameter :: b = 2.0_realType
-
-        ! Variables for spectral Radius
-        real(kind=realType) :: plim, rlim, clim2
-        real(kind=realType) :: cc2, qsi, qsj, qsk, sx, sy, sz, rmu
-        real(kind=realType) :: ri, rj, rk, rij, rjk, rki
-        real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
-        real(kind=realType) :: sFace, tmp, uux, uuy, uuz
-        logical :: doScaling, updateDt
-        integer(kind=intType) :: i, j, k, dom, sps
-
-        dom = 1
-        sps = 1
-        !no nonger optional argument must be passed in
-        updateDt = updateDtl
-
-
-        ! The rest is only necessary if the timeStep needs to be computed
-        if (updateDt) then
-
-            viscousTerm: if (viscous) then
-
-                ! Loop over the owned cell centers.
-                !loop starts at 2
-                i = (blockIdx%x-1)*blockDim%x + threadIdx%x 
-                j = (blockIdx%y-1)*blockDim%y + threadIdx%y
-                k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-                !loop at 2 to cudaDoms(dom,sps)%il
-                if (i >=2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
-
-                    ! Compute the effective viscosity coefficient. The
-                    ! factor 0.5 is a combination of two things. In the
-                    ! standard central discretization of a second
-                    ! derivative there is a factor 2 multiplying the
-                    ! central node. However in the code below not the
-                    ! average but the sum of the left and the right face
-                    ! is taken and squared. This leads to a factor 4.
-                    ! Combining both effects leads to 0.5. Furthermore,
-                    ! it is divided by the volume and density to obtain
-                    ! the correct dimensions and multiplied by the
-                    ! non-dimensional factor factVis.
-
-                    rmu = cudaDoms(dom,sps)%rlv(i, j, k)
-                    rmu = rmu + cudaDoms(dom,sps)%rev(i, j, k)
-                    rmu = half * rmu / (cudaDoms(dom,sps)%w(i, j, k, irho) * cudaDoms(dom,sps)%vol(i, j, k))
-
-                    ! Add the viscous contribution in i-direction to the
-                    ! (inverse) of the time step.
-
-                    sx = cudaDoms(dom,sps)%sI(i, j, k, 1) + cudaDoms(dom,sps)%sI(i - 1, j, k, 1)
-                    sy = cudaDoms(dom,sps)%sI(i, j, k, 2) + cudaDoms(dom,sps)%sI(i - 1, j, k, 2)
-                    sz = cudaDoms(dom,sps)%sI(i, j, k, 3) + cudaDoms(dom,sps)%sI(i - 1, j, k, 3)
-
-                    vsi = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsi)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsi
-
-                    ! Add the viscous contribution in j-direction to the
-                    ! (inverse) of the time step.
-
-                    sx = cudaDoms(dom,sps)%sJ(i, j, k, 1) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 1)
-                    sy = cudaDoms(dom,sps)%sJ(i, j, k, 2) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 2)
-                    sz = cudaDoms(dom,sps)%sJ(i, j, k, 3) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 3)
-
-                    vsj = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsj)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsj
-
-                    ! Add the viscous contribution in k-direction to the
-                    ! (inverse) of the time step.
-
-                    sx = cudaDoms(dom,sps)%sK(i, j, k, 1) + cudaDoms(dom,sps)%sK(i, j, k - 1, 1)
-                    sy = cudaDoms(dom,sps)%sK(i, j, k, 2) + cudaDoms(dom,sps)%sK(i, j, k - 1, 2)
-                    sz = cudaDoms(dom,sps)%sK(i, j, k, 3) + cudaDoms(dom,sps)%sK(i, j, k - 1, 3)
-
-                    vsk = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsk)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsk
-
-                end if
-            end if viscousTerm
-        end if
-    end subroutine timeStep_p2
-
-
-    attributes(global) subroutine timeStep_p3
-
-        use constants, only: eps, irho, ivx, ivy, ivz, irhoE, one, half, zero
-        use cudaFlowVarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
-        use cudaInputDiscretization, only: adis, acousticScaleFactor
-
-        implicit none
-
-        ! Local parameters.
-        real(kind=realType), parameter :: b = 2.0_realType
-
-        ! Variables for spectral Radius
-        real(kind=realType) :: plim, rlim, clim2
-        real(kind=realType) :: cc2, qsi, qsj, qsk, sx, sy, sz, rmu
-        real(kind=realType) :: ri, rj, rk, rij, rjk, rki
-        real(kind=realType) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
-        real(kind=realType) :: sFace, tmp, uux, uuy, uuz
-        logical :: doScaling, updateDt
-        integer(kind=intType) :: i, j, k, dom, sps
-
-        dom = 1
-        sps = 1
-
-        plim = 0.001_realType * pInfCorr
-
-        ! Skipping time spectral
-
-        ! Currently the inverse of dt/vol is stored in dtl. Invert
-        ! this value such that the time step per unit cfl number is
-        ! stored and correct in cases of high gradients.
-
-        i = (blockIdx%x-1)*blockDim%x + threadIdx%x 
-        j = (blockIdx%y-1)*blockDim%y + threadIdx%y 
-        k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-        !loop 2 to cudaDoms(dom,sps)%il (cell centers)
-        if (i >= 2 .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. j <= cudaDoms(dom,sps)%jl .and. k>=2 .and. k <= cudaDoms(dom,sps)%kl) then
-            dpi = abs(cudaDoms(dom,sps)%P(i + 1, j, k) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i - 1, j, k)) &
-                    / (cudaDoms(dom,sps)%P(i + 1, j, k) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i - 1, j, k) + plim)
-            dpj = abs(cudaDoms(dom,sps)%P(i, j + 1, k) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j - 1, k)) &
-                    / (cudaDoms(dom,sps)%P(i, j + 1, k) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j - 1, k) + plim)
-            dpk = abs(cudaDoms(dom,sps)%P(i, j, k + 1) - two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j, k - 1)) &
-                    / (cudaDoms(dom,sps)%P(i, j, k + 1) + two * cudaDoms(dom,sps)%P(i, j, k) + cudaDoms(dom,sps)%P(i, j, k - 1) + plim)
-            rfl = one / (one + b * (dpi + dpj + dpk))
-
-            cudaDoms(dom,sps)%dtl(i, j, k) = rfl / cudaDoms(dom,sps)%dtl(i, j, k)
-        end if
-
-    end subroutine timeStep_p3
+    end subroutine timeStep
 
 
     ! Miles
@@ -3686,9 +3333,9 @@ module cudaResidual
         integer(kind = intType) :: i, j, k,l, tidx, tidy, tidz
         integer(kind = intType) :: dom, sps,il,jl,kl,ie,je,ke,jmax ,kmax
 
-        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane,5)
-        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane,5)
-        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane)
+        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1)
 
         real(kind = realType) :: fs(5),dwLoc
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
@@ -6707,6 +6354,44 @@ module cudaResidual
     end subroutine saResScale
 
 
+    subroutine cudaInitRes(varStart, varEnd)
+        ! This routines zeros the residuals and nodal gradients
+        ! Only the variable range specified is zeroed on dw
+        use blockPointers, only: nDom
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use utils, only: setPointers
+        implicit none
+        integer(kind=intType), intent(in) :: varStart, varEnd
+        integer(kind = intType) :: dom, sps
+        integer(kind=intType) :: istat
+
+
+        do dom = 1,nDom
+            do sps = 1, ntimeIntervalsSpectral
+                h_cudaDoms(dom,sps)%fw                           = zero
+                h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
+                h_cudaDoms(dom,sps)%ux                           = zero
+                h_cudaDoms(dom,sps)%uy                           = zero
+                h_cudaDoms(dom,sps)%uz                           = zero
+                h_cudaDoms(dom,sps)%vx                           = zero
+                h_cudaDoms(dom,sps)%vy                           = zero
+                h_cudaDoms(dom,sps)%vz                           = zero
+                h_cudaDoms(dom,sps)%wx                           = zero
+                h_cudaDoms(dom,sps)%wy                           = zero
+                h_cudaDoms(dom,sps)%wz                           = zero
+                h_cudaDoms(dom,sps)%qx                           = zero
+                h_cudaDoms(dom,sps)%qy                           = zero
+                h_cudaDoms(dom,sps)%qz                           = zero
+            end do
+        end do
+
+        istat = cudaDeviceSynchronize()
+
+    
+        
+    end subroutine cudaInitRes
+
+
     subroutine calculateCudaResidual(updateIntermed, varStart, varEnd)
       use constants, only: zero, spalartAllmaras
       use cudafor,   only: dim3
@@ -6717,76 +6402,65 @@ module cudaResidual
       use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie, bil=>il,bjl=>jl, bkl=>kl
       use inputTimeSpectral, only: nTimeIntervalsSpectral
       use utils, only: setPointers
-    !   use flowvarrefstate, only: nw,nwf
 
 
       implicit none
 
       logical, intent(in)               :: updateIntermed
       integer(kind=intType), intent(in) :: varStart, varEnd
-      type(dim3)                        :: grid_size, block_size, grid_inv, block_inv
+      type(dim3)                        :: grid_size, block_size, grid_inv, block_inv, grid_visc, block_visc
       integer(kind=intType) :: istat
       real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
       integer(kind = intType) :: dom, sps
       integer(kind = intType) :: ibmax, jbmax, kbmax
 
-    !   real(kind=realType), dimension(:,:,:,:), allocatable :: h_dw
 
       ! NB: constant and block-field host->device copies are done by the caller
       !     (copyCudaConstantsToDevice / copyCudaBlockToDevice) before this routine.
       !     calculateCudaResidual is pure compute: zero accumulators + launch kernels.
 
-        ibmax = 0
-        jbmax = 0
-        kbmax = 0
-    ! zeroing
+
+      ! 
+      ! standard block size determination
+      ! 
+    
+      ! TODO: Make this a seperate subroutine that is general and operates for multiple blocks
+
+      ibmax = 0
+      jbmax = 0
+      kbmax = 0
       do dom = 1,nDom
         do sps = 1, ntimeIntervalsSpectral
             call setPointers(dom,1,sps)
             ibmax = max(ibmax,bib)
             jbmax = max(jbmax,bjb)
             kbmax = max(kbmax,bkb)
-            h_cudaDoms(dom,sps)%fw                           = zero
-            ! h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
-            h_cudaDoms(dom,sps)%dw                           = zero
-            h_cudaDoms(dom,sps)%ux                           = zero
-            h_cudaDoms(dom,sps)%uy                           = zero
-            h_cudaDoms(dom,sps)%uz                           = zero
-            h_cudaDoms(dom,sps)%vx                           = zero
-            h_cudaDoms(dom,sps)%vy                           = zero
-            h_cudaDoms(dom,sps)%vz                           = zero
-            h_cudaDoms(dom,sps)%wx                           = zero
-            h_cudaDoms(dom,sps)%wy                           = zero
-            h_cudaDoms(dom,sps)%wz                           = zero
-            h_cudaDoms(dom,sps)%qx                           = zero
-            h_cudaDoms(dom,sps)%qy                           = zero
-            h_cudaDoms(dom,sps)%qz                           = zero
         end do
       end do
 
-      istat = cudaDeviceSynchronize()
-
-
-      ! TESt
-
-    ! allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
-
-    ! h_dw = h_cudaDoms(1,1)%dw 
-
-    !     ! Inviscid Residual
-    ! print *,size(h_dw(2:bil,2:bjl,2:bkl,1:nwf))
-    ! print  '("Max val dw = ",E22.16," seconds.")', maxval(abs(h_dw(1:bie,1:bje,1:bke,1:nw)))
-    ! stop
-
-      ! metrics
-    !   print *,ibmax,jbmax,kbmax
       block_size = dim3(8, 8, 8)
       grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), ceiling(real(kbmax+1) / block_size%z))
 
+      ! Print the computed block and grid size
+      print '(A)',            '--------------------------------------------------'
+      print '(A)',            ' CUDA kernel launch configuration'
+      print '(A)',            '--------------------------------------------------'
+      print '(A,I0,A,I0,A,I0)', ' Max block dims (i,j,k) : ', ibmax, ' x ', jbmax, ' x ', kbmax
+      print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_size%x, ' x ', block_size%y, ' x ', block_size%z
+      print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_size%x, ' x ', grid_size%y, ' x ', grid_size%z
+      print '(A)',            '--------------------------------------------------'
 
+
+
+      ! start timing
+    
       call CPU_TIME(start)
-    !   call metrics<<<grid_size, block_size>>>
-    !   istat = cudaDeviceSynchronize()
+
+      ! 
+      ! metrics (not needed for now)
+      ! 
+      ! call metrics<<<grid_size, block_size>>>
+      ! istat = cudaDeviceSynchronize()
 
       ! call SA routines
       if (equations == RANSEquations .and. turbModel == spalartAllmaras) then
@@ -6807,49 +6481,66 @@ module cudaResidual
                 print  '("CUDA SA = ",E22.16," seconds.")', finishSA-startSA
       end if
 
-      ! call time step routine
-        call CPU_TIME(startInv)
+      
+      call CPU_TIME(startInv)
 
-    !   call timeStep<<<grid_size, block_size>>>(updateIntermed)
-    !   istat = cudaDeviceSynchronize()
-
-      call timeStep_p1<<<grid_size, block_size>>>(updateIntermed)
+      !
+      !  time step and spectral radius routine
+      !
+      call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
-      call timeStep_p2<<<grid_size, block_size>>>(updateIntermed)
-      istat = cudaDeviceSynchronize()
-      call timeStep_p3<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
-
 
       ! inviscid central flux
 
-    !  block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
-    !  grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
+    !   v0 - nieve kernel
+    !   call inviscidCentralFlux<<<grid_size, block_size>>>
+    !   istat = cudaDeviceSynchronize()
 
-    !  call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>>
-    !  istat = cudaDeviceSynchronize()
+    !   v1 - shared memory kernel
+    !   block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+    !   grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
 
-!    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
-!    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
-!    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>>
-!    istat = cudaDeviceSynchronize()
+    !   call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>>
+    !   istat = cudaDeviceSynchronize()
+    
+    !   v2 - shared memory kernel
+    !   block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+    !   grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
 
-!    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
-!    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
-!    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>>
-!    istat = cudaDeviceSynchronize()
-!
-!    call inviscidCentralFlux<<<grid_size, block_size>>>
-!    istat = cudaDeviceSynchronize()
+    !   call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>>
+    !   istat = cudaDeviceSynchronize()
 
-    block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
-    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
-    call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>>
-    istat = cudaDeviceSynchronize()
+    !   v3 - shared memory kernel
+    !   block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
+    !   grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
 
+    !   call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>>
+    !   istat = cudaDeviceSynchronize()
 
 
-    !   ! inviscid diss flux scalar
+    !   v4 - shared memory kernel with k-plane marching
+      block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
+      grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
+
+      call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>>
+      istat = cudaDeviceSynchronize()
+
+
+      ! Print the computed block and grid size (I know it's after the fact)
+      print '(A)',            '--------------------------------------------------'
+      print '(A)',            ' CUDA inviscid central launch configuration'
+      print '(A)',            '--------------------------------------------------'
+      print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_inv%x, ' x ', block_inv%y, ' x ', block_inv%z
+      print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_inv%x, ' x ', grid_inv%y, ' x ', grid_inv%z
+      print '(A)',            '--------------------------------------------------'
+
+
+      !
+      ! inviscid diss flux scalar 
+      !
+
+      ! NOTE: JST Scalar broken up into four kernels
+
       call computeSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
@@ -6859,15 +6550,18 @@ module cudaResidual
       call multiplyfwsfil<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
-       call inviscidDissFluxScalar<<<grid_size, block_size>>>
+      call inviscidDissFluxScalar<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-       call CPU_TIME(finishInv)
+      
+      call CPU_TIME(finishInv)
+      print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
 
-        print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
+      !
+      ! viscous flux
+      !
 
-      ! viscousFlux
       if (viscous) then
-      call CPU_TIME(startVisc)
+        call CPU_TIME(startVisc)
         ! call computeSpeedOfSoundSquared_v1<<<grid_size, block_size>>>
         call computeSpeedOfSoundSquared_v2<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
@@ -6880,58 +6574,38 @@ module cudaResidual
         call scaleNodalGradients_v2<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
-        block_size = dim3(4, 4, 2)
-        grid_size  = dim3(ceiling(real(ibmax+2) / block_size%x), ceiling(real(jbmax+2) / block_size%y), ceiling(real(kbmax+2) / block_size%z))
-        call viscousFlux<<<grid_size, block_size>>>
+        block_visc = dim3(4, 4, 2)
+        grid_visc  = dim3(ceiling(real(ibmax+2) / block_visc%x), ceiling(real(jbmax+2) / block_visc%y), ceiling(real(kbmax+2) / block_visc%z))
+
+
+        ! Print the computed block and grid size
+        print '(A)',            '--------------------------------------------------'
+        print '(A)',            ' CUDA viscous launch configuration'
+        print '(A)',            '--------------------------------------------------'
+        print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_visc%x, ' x ', block_visc%y, ' x ', block_visc%z
+        print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_visc%x, ' x ', grid_visc%y, ' x ', grid_visc%z
+        print '(A)',            '--------------------------------------------------'
+
+        call viscousFlux<<<grid_visc, block_visc>>>
         istat = cudaDeviceSynchronize()
+
         call CPU_TIME(finishVisc)
         print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
 
       end if
 
+      !
+      !   sumDwAndFw
+      !
 
-    !   sumDwAndFw
-    !   call sumDwandFw_v1<<<grid_size, block_size>>>
-      !  print *, "not summing dw and fw GPU"
       call sumDwandFw_v2<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
+      
       call CPU_TIME(finish)
-
-
-        print  '("CUDA Time = ",E22.16," seconds.")', finish-start
+      print  '("CUDA Time = ",E22.16," seconds.")', finish-start
       ! TODO: update residual?
 
     end subroutine calculateCudaResidual
-
-    ! subroutine cudaResAPI(res,ndimw)
-    !     ! Thin orchestrator: apply CPU boundary conditions, stage inputs host->device (into the
-    !     ! once-allocated device mirrors), run the GPU residual, and read the volume-scaled
-    !     ! residual back into res. The building-block routines are public, so a CFD solver can
-    !     ! drive them directly (allocate once at setup, then loop copy -> compute -> read back);
-    !     ! this routine is the convenience all-in-one entry used by the Python / test path.
-    !     use flowvarrefstate, only: nw
-    !     use utils, only: setPointers
-    !     use BCRoutines, only: applyallBC_block
-    !     use cudaBlock, only: allocateCudaBlock, copyCudaConstantsToDevice, copyCudaBlockToDevice
-
-    !     implicit none
-    !     integer(kind=intType), intent(in) :: ndimw
-    !     real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
-
-    !     integer(kind=intType) :: ierr
-
-    !     call setPointers(1, 1, 1)
-    !     call applyAllBC_block(.True.)                                    ! CPU BCs -> valid halos
-    !     ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
-
-    !     call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
-    !     call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
-    !     call copyCudaBlockToDevice         ! block field values host->device
-    !     call calculateCudaResidual(.True., 1, nw)   ! pure GPU compute (zero accumulators + kernels)
-    !     call getCudaResidual(res, ndimw)   ! device dw -> CPU block dw -> flat, volume-scaled res
-
-    ! end subroutine cudaResAPI
-
 
     subroutine getCudaResidual(res, ndimw)
         ! Copy the GPU residual (dw) device->host and assemble the flat, volume-scaled residual
@@ -6970,286 +6644,6 @@ module cudaResidual
         end do
 
     end subroutine getCudaResidual
-
-
-    subroutine debugCompareCudaResidual
-        ! Debugging / validation scaffolding, extracted verbatim from the old cudaResAPI. Pulls
-        ! the GPU block mirror back to the host (copyCudaBlockToHost), then compares GPU
-        ! intermediates against the CPU block values. All comparisons are left COMMENTED OUT,
-        ! exactly as in the original -- uncomment the ones you need when validating a kernel.
-        use constants
-        use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke, &
-                                    bil=>il, bjl=>jl, bkl=>kl, &
-
-                                    bux=>ux, buy=>uy, buz=>uz, &
-                                    bvx=>vx, bvy=>vy, bvz=>vz, &
-                                    bwx=>wx, bwy=>wy, bwz=>wz, &
-                                    bqx=>qx, bqy=>qy, bqz=>qz, &
-                                    bdw=>dw, bfw=>fw, bw=>w, &
-                                    bib=>ib, bjb=>jb, bkb=>kb, &
-                                    bsI=>sI, bsJ=>sJ, bsK=>sK, &
-                                    bvol=>vol, baa=>aa, bp=>p, bgamma=>gamma, &
-                                    bradi=>radi, bradj=>radj, bradk=>radk, &
-                                    brlv=>rlv, brev=>rev
-
-        use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use flowvarrefstate, only: nw,nwf,nt1,nt2,pInfCorr
-        use utils, only: setPointers
-        use flowutils, only: ballNodalGradients=>allNodalGradients, bcomputeSpeedOfSoundSquared=>computeSpeedOfSoundSquared
-        use cudaBCRoutines, only: applyallBC_block
-        use cudaBlock, only: copyCudaBlockToHost
-
-        implicit none
-
-        ! Local Variables
-        integer(kind=intType) :: nn, i, j, k, l, counter, sps, dom
-        real(kind=realType) :: ovv
-        real(kind=realType), dimension(:,:,:,:), allocatable :: h_dw, h_dw2
-        ! These are v2 versions of the variables
-        real(kind=realType), dimension(:, :, :), allocatable :: ux_v2, uy_v2, uz_v2
-        real(kind=realType), dimension(:, :, :), allocatable :: vx_v2, vy_v2, vz_v2
-        real(kind=realType), dimension(:, :, :), allocatable :: wx_v2, wy_v2, wz_v2
-        real(kind=realType), dimension(:, :, :), allocatable :: qx_v2, qy_v2, qz_v2
-
-        !versions from old working version (v1)
-        real(kind=realType), dimension(:, :, :), allocatable :: ux_v1, uy_v1, uz_v1
-        real(kind=realType), dimension(:, :, :), allocatable :: vx_v1, vy_v1, vz_v1
-        real(kind=realType), dimension(:, :, :), allocatable :: wx_v1, wy_v1, wz_v1
-        real(kind=realType), dimension(:, :, :), allocatable :: qx_v1, qy_v1, qz_v1
-
-        real(kind=realType), dimension(:,:,:,:), allocatable :: h_w, h_fw,h_dss, bdss
-        real(kind=realType), dimension(:,:,:,:), allocatable :: h_sI, h_sJ, h_sK
-        real(kind=realType), dimension(:,:,:), allocatable :: h_vol, h_aa,h_p,h_gamma, h_aa_v1,h_vol_v1
-        real(kind=realType), dimension(:,:,:), allocatable :: h_radI, h_radJ, h_radK
-        real(kind=realType), dimension(:,:,:), allocatable :: h_rlv, h_rev
-        integer(kind=intType) :: h_ie,h_je,h_ke, ierr, config
-        real(kind=realType) :: sslim
-
-        dom = 1
-        sps = 1
-
-        ! Bring the GPU block mirror back to the host for inspection.
-        call copyCudaBlockToHost
-
-        allocate(ux_v1(1:bil,1:bjl,1:bkl))
-        allocate(uy_v1(1:bil,1:bjl,1:bkl))
-        allocate(uz_v1(1:bil,1:bjl,1:bkl))
-        allocate(vx_v1(1:bil,1:bjl,1:bkl))
-        allocate(vy_v1(1:bil,1:bjl,1:bkl))
-        allocate(vz_v1(1:bil,1:bjl,1:bkl))
-        allocate(wx_v1(1:bil,1:bjl,1:bkl))
-        allocate(wy_v1(1:bil,1:bjl,1:bkl))
-        allocate(wz_v1(1:bil,1:bjl,1:bkl))
-        allocate(qx_v1(1:bil,1:bjl,1:bkl))
-        allocate(qy_v1(1:bil,1:bjl,1:bkl))
-        allocate(qz_v1(1:bil,1:bjl,1:bkl))
-
-        allocate(ux_v2(1:bil,1:bjl,1:bkl))
-        allocate(uy_v2(1:bil,1:bjl,1:bkl))
-        allocate(uz_v2(1:bil,1:bjl,1:bkl))
-        allocate(vx_v2(1:bil,1:bjl,1:bkl))
-        allocate(vy_v2(1:bil,1:bjl,1:bkl))
-        allocate(vz_v2(1:bil,1:bjl,1:bkl))
-        allocate(wx_v2(1:bil,1:bjl,1:bkl))
-        allocate(wy_v2(1:bil,1:bjl,1:bkl))
-        allocate(wz_v2(1:bil,1:bjl,1:bkl))
-        allocate(qx_v2(1:bil,1:bjl,1:bkl))
-        allocate(qy_v2(1:bil,1:bjl,1:bkl))
-        allocate(qz_v2(1:bil,1:bjl,1:bkl))
-
-        allocate(h_sI(0:bie,1:bje,1:bke,3))
-        allocate(h_sJ(1:bie,0:bje,1:bke,3))
-        allocate(h_sK(1:bie,1:bje,0:bke,3))
-        allocate(h_vol(1:bie,1:bje,1:bke))
-
-        allocate(h_rlv(1:bie,1:bje,1:bke))
-        allocate(h_rev(1:bie,1:bje,1:bke))
-
-        allocate(h_vol_v1(1:bie,1:bje,1:bke))
-
-        allocate(h_aa(1:bie,1:bje,1:bke))
-        allocate(h_aa_v1(1:bie,1:bje,1:bke))
-
-        allocate(h_p(0:bib,0:bjb,0:bkb))
-        allocate(h_gamma(0:bib,0:bjb,0:bkb))
-
-
-        ! allocate memory for cudaDoms(dom,sps)%dw
-        allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
-        allocate(h_dw2(1:bie,1:bje,1:bke,1:nw))
-        allocate(h_fw(1:bie,1:bje,1:bke,1:nwf))
-
-        allocate(h_w(0:bib,0:bjb,0:bkb,1:nw))
-
-        allocate(h_radI(1:bie,1:bje,1:bke))
-        allocate(h_radJ(1:bie,1:bje,1:bke))
-        allocate(h_radK(1:bie,1:bje,1:bke))
-        allocate(h_dss(1:bie, 1:bje, 1:bke, 1:3))
-        allocate(bdss(1:bie, 1:bje, 1:bke, 1:3))
-
-        !copy from gpu to cpu (mirror descriptors already synced by copyCudaBlockToHost above)
-        ! h_cudaDoms(1,1) = cudaDoms(1,1)
-        h_dw(1:bie,1:bje,1:bke,1:nw) = h_cudaDoms(dom,sps)%dw(1:bie,1:bje,1:bke,1:nw)
-        ! h_dw2 = dw
-
-        ! h_dw = h_dw + h_dw2
-        ! print *, bie,bje,bke
-        ! h_ie = h_cudaDoms(1,1)%ie
-        ! h_je =  h_cudaDoms(1,1)%je
-        ! h_ke = h_cudaDoms(1,1)%ke
-        ! print *, h_ie,h_je,h_ke
-        ! baa = zero
-        ! call bcomputeSpeedOfSoundSquared
-        ! call ballNodalGradients
-
-
-        ! ux_v2 = h_cudaDoms(dom,sps)%ux
-        ! uy_v2 = h_cudaDoms(dom,sps)%uy
-        ! uz_v2 = h_cudaDoms(dom,sps)%uz
-
-        ! ux_v1 = ux
-        ! uy_v1 = uy
-        ! uz_v1 = uz
-
-        ! ! print *,ux_v1(:,:,1)
-        ! ! print *,"=================="
-        ! ! print *, ux_v2(:,:,1)
-        ! ! print *,"=================="
-        ! ! print *, ux_v1(:,:,1)-ux_v2(:,:,1)
-
-        ! print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-bux))
-        ! print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-buy))
-        ! print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-buz))
-
-        ! vx_v2 = h_cudaDoms(dom,sps)%vx
-        ! vy_v2 = h_cudaDoms(dom,sps)%vy
-        ! vz_v2 = h_cudaDoms(dom,sps)%vz
-        ! vx_v1 = vx
-        ! vy_v1 = vy
-        ! vz_v1 = vz
-        ! print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-bvx))
-        ! print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-bvy))
-        ! print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-bvz))
-
-        ! wx_v2 = h_cudaDoms(dom,sps)%wx
-        ! wy_v2 = h_cudaDoms(dom,sps)%wy
-        ! wz_v2 = h_cudaDoms(dom,sps)%wz
-        ! wx_v1 = wx
-        ! wy_v1 = wy
-        ! wz_v1 = wz
-        ! print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-bwx))
-        ! print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-bwy))
-        ! print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-bwz))
-
-        ! qx_v2 = h_cudaDoms(dom,sps)%qx
-        ! qy_v2 = h_cudaDoms(dom,sps)%qy
-        ! qz_v2 = h_cudaDoms(dom,sps)%qz
-        ! qx_v1 = qx
-        ! qy_v1 = qy
-        ! qz_v1 = qz
-        ! print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-bqx))
-        ! print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-bqy))
-        ! print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-bqz))
-
-
-        ! h_w = h_cudaDoms(dom,sps)%w
-        ! print  '("Max DIFF w = ",E22.16," seconds.")', maxval(abs(h_w-bw))
-
-
-        ! ! Surface normals are good
-        ! h_sI = h_cudaDoms(dom,sps)%sI
-        ! h_sJ = h_cudaDoms(dom,sps)%sJ
-        ! h_sK = h_cudaDoms(dom,sps)%sK
-        ! print  '("Max DIFF sI = ",E22.16," seconds.")', maxval(abs(h_SI-bsI))
-        ! print  '("Max DIFF sJ = ",E22.16," seconds.")', maxval(abs(h_SJ-bsJ))
-        ! print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
-
-        ! h_vol = h_cudaDoms(dom,sps)%vol
-        ! print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol(1:bie, 1:bje, 1:bke)))
-
-        ! Viscous Residual
-        ! h_fw = h_cudaDoms(dom,sps)%fw(1:bie,1:bje,1:bke,1:nwf)
-        ! print *,size(h_fw(2:bil,2:bjl,2:bkl,1:nwf)),size(bfw(2:bil,2:bjl,2:bkl,1:nwf))
-        ! print *,"====="
-        ! print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
-        ! print *,"====="
-        ! print *, bfw(2:bil,2:bjl,2:bkl,ivx)
-        ! print  '("Max DIFF fw = ",E22.16,".")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
-        ! print  '("Sum DIFF fw = ",E22.16,".")', sum(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
-        ! print '("Max abs CPU fw = ",E22.16,".")', maxval(abs(bfw))
-        ! print '("Relative diff over cpu max abs fw = ",E22.16,".")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf)))/maxval(abs(bfw))
-        ! print *, "The location indicies of the max fw discrepancy is", maxloc(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf)))
-
-        ! Inviscid Residual
-        ! print *,size(h_dw(2:bil,2:bjl,2:bkl,1:nwf)),size(bdw(2:bil,2:bjl,2:bkl,1:nwf))
-        ! print *,"====="
-        ! print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
-        ! print *,"====="
-        ! print *, bfw(2:bil,2:bjl,2:bkl,ivx)
-        ! print  '("Max DIFF dw = ",E22.16," seconds.")', maxval(abs(h_dw(2:bil,2:bjl,2:bkl,1:nwf) - bdw(2:bil,2:bjl,2:bkl,1:nwf) ))
-        ! print  '("Sum DIFF dw = ",E22.16," seconds.")', sum(abs(h_dw(2:bil,2:bjl,2:bkl,1:nwf) - bdw(2:bil,2:bjl,2:bkl,1:nwf) ))
-
-        ! print *, "volumes:"
-        ! print *,"========"
-        ! print *, h_vol
-        ! print *, "========"
-        ! print *, bvol
-        ! print *,"========"
-        ! print *, size(h_vol), size(bvol)
-        ! ! counter = 0
-
-        ! ! Speed of sound
-        ! h_aa = h_cudaDoms(dom,sps)%aa
-        ! h_aa_v1 = aa
-        ! print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
-        ! print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa-baa(1:bie, 1:bje, 1:bke)))
-
-        ! print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
-
-        ! Viscosity
-        ! h_rlv = h_cudaDoms(dom,sps)%rlv
-        ! print  '("Max DIFF rlv cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_rlv-brlv(1:bie, 1:bje, 1:bke)))
-
-        ! Eddy Viscosity
-        ! h_rev = h_cudaDoms(dom,sps)%rev
-        ! print  '("Max DIFF rev cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_rev-brev(1:bib, 1:bjb, 1:bkb)))
-
-        ! h_p = h_cudaDoms(dom,sps)%p
-        ! print  '("Max DIFF p = ",E22.16," seconds.")', maxval(abs(h_p-bp))
-
-        ! h_gamma = h_cudaDoms(dom,sps)%gamma
-        ! print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
-
-        ! h_radI = h_cudaDoms(dom,sps)%radI
-        ! h_radJ = h_cudaDoms(dom,sps)%radJ
-        ! h_radK = h_cudaDoms(dom,sps)%radK
-        ! print *, size(h_radI), size(bradi(1:bie, 1:bje, 1:bke))
-        ! print *, size(h_radJ), size(bradj(1:bie, 1:bje, 1:bke))
-
-        ! print *, size(h_radK), size(bradk(1:bie, 1:bje, 1:bke))
-
-        ! print  '("Max DIFF radI = ",E22.16," seconds.")', maxval(abs(h_radI-bradi(1:bie, 1:bje, 1:bke)))
-        ! print  '("Max DIFF radJ = ",E22.16," seconds.")', maxval(abs(h_radJ-bradj(1:bie, 1:bje, 1:bke)))
-        ! print  '("Max DIFF radK = ",E22.16," seconds.")', maxval(abs(h_radK-bradk(1:bie, 1:bje, 1:bke)))
-        ! h_dss = h_cudaDoms(dom,sps)%dss
-        ! sslim = 0.001_realType * pInfCorr
-        ! do k = 1, ke
-        !     do j = 1, je
-        !         do i = 1, ie
-        !             bdss(i, j, k, 1) = abs((bp(i + 1, j, k) - two * bp(i, j, k) + bp(i - 1, j, k)) &
-        !                                   / (bp(i + 1, j, k) + two * bp(i, j, k) + bp(i - 1, j, k) + sslim))
-
-        !             bdss(i, j, k, 2) = abs((bp(i, j + 1, k) - two * bp(i, j, k) + bp(i, j - 1, k)) &
-        !                                   / (bp(i, j + 1, k) + two * bp(i, j, k) + bp(i, j - 1, k) + sslim))
-
-        !             bdss(i, j, k, 3) = abs((bp(i, j, k + 1) - two * bp(i, j, k) + bp(i, j, k - 1)) &
-        !                                   / (bp(i, j, k + 1) + two * bp(i, j, k) + bp(i, j, k - 1) + sslim))
-        !         end do
-        !     end do
-        ! end do
-        ! print*, "ss size:",size(h_dss),size(bdss)
-        ! print  '("Max DIFF dss = ",E22.16," seconds.")', maxval(abs(h_dss-bdss))
-    end subroutine debugCompareCudaResidual
 
 end module cudaResidual
 

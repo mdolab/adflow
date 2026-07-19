@@ -5686,7 +5686,7 @@ contains
                     ! We remove the viscosity from the stress tensor (tau)
                     ! to define tauS since we still need to separate between
                     ! laminar and turbulent stress for QCR.
-                    ! Therefore, laminar tau = mue*tauS, turbulent
+                    ! Therefore, laminar tau = mul*tauS, turbulent
                     ! tau = mue*tauS, and total tau = mut*tauS.
 
                     fracDiv = twoThird * (u_x + v_y + w_z)

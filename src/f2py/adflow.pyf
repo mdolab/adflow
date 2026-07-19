@@ -377,9 +377,6 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndimw
         end subroutine getcudaresidual
 
-        subroutine debugcomparecudaresidual
-        end subroutine debugcomparecudaresidual
-
        end module cudresidual
 
        module cudablock
@@ -403,6 +400,11 @@ python module libadflow
           logical, intent(in) :: secondhalo
         end subroutine applyallbc_block
       end module cudabcroutines
+
+      module cudadebug
+        subroutine debugcomparecudadata
+        end subroutine debugcomparecudadata
+      end module cudadebug
 
        module nksolver
          use constants

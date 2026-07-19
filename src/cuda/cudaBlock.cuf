@@ -236,6 +236,8 @@ module cudaBlock
                 if (equations == RANSEquations) then
                     allocate(h_cudaDoms(nn, sps)%d2wall(2:bil,2:bjl,2:bkl)) ! distance from the center of the cell to the nearest viscous wall
                 end if
+
+                ! no halos GPU/double halos CPU (cells)
                 allocate(h_cudaDoms(nn, sps)%volRef(2:bil,2:bjl,2:bkl)) ! cell reference volume
                 allocate(h_cudaDoms(nn, sps)%iblank(2:bil,2:bjl,2:bkl)) ! cell blanking
 
@@ -336,6 +338,7 @@ module cudaBlock
         use constants, only: zero, RANSEquations
         use blockPointers, only: nDom, &
             bie => ie, bje => je, bke => ke, &
+            bil => il, bjl => jl, bkl => kl, &
             bw => w, bp => p, bgamma => gamma, &
             bx => x, brlv => rlv, brev => rev, bvol => vol, bVolRef => volRef, bd2wall => d2wall, &
             biblank => iblank, bPorI => porI, bPorJ => porJ, bPorK => porK, &
@@ -386,8 +389,10 @@ module cudaBlock
                 if (equations == RANSEquations) then
                     h_cudaDoms(nn, sps)%d2wall = bd2wall ! distance from the center of the cell to the nearest viscous wall
                 end if
-                h_cudaDoms(nn, sps)%volRef = bvolRef ! cell reference volume
-                h_cudaDoms(nn, sps)%iblank  = biblank ! cell blanking
+
+                ! no halos GPU/double halos CPU (cells)
+                h_cudaDoms(nn, sps)%volRef = bvolRef(2:bil,2:bjl,2:bkl) ! cell reference volume
+                h_cudaDoms(nn, sps)%iblank  = biblank(2:bil,2:bjl,2:bkl) ! cell blanking
 
                 ! no halos (faces)
 
