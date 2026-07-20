@@ -1,0 +1,498 @@
+module cudaTurbulence
+! --- ADflow modules to use ---
+use precision, only: realType, intType
+use cudaBlock, only: cudaDoms=>d_cudaDoms, h_cudaDoms
+use constants
+! use cudaBCPointers
+! --- CUDA FORTRAN module ---
+use cudafor
+use cudaResidual, only: saSource, saViscous, saAdvection, 
+implicit none
+
+
+! Max line length for the SA DD-ADI tridiagonal solve (saSolve). Each thread
+! solves one line and holds bb/cc/dd/ff of this fixed size in local memory, so
+! this must be >= max(il,jl,kl). Bump it if a single block exceeds this.
+integer(kind=intType), parameter :: SA_MAXLINE = 512
+
+
+    contains
+
+
+
+
+
+! ========================================================================================================
+! SA DD-ADI solve (saSolve), wall functions omitted. dw(itu1) is used as the scratch(idvt) storage:
+! it holds the raw residual on entry, the sweeps read/write it, and saUpdate consumes it.
+! ========================================================================================================
+
+attributes(global) subroutine saQQScale(factor)
+    ! Scale the central Jacobian by the implicit-relaxation factor (qq = factor*qq).
+    implicit none
+    real(kind=realType), value :: factor
+    integer(kind=intType) :: i, j, k, dom, sps
+    dom = 1; sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+    k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl .and. k <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%qq(i,j,k) = factor * cudaDoms(dom,sps)%qq(i,j,k)
+    end if
+end subroutine saQQScale
+
+
+attributes(global) subroutine saSolveJ
+    ! dd-ADI sweep in j-direction: one thread per (k,i) line.
+    use constants, only: zero, one, two, half, itu1, irho, ivx, ivy, ivz
+    use cudaParamTurb, only: rsaCb2, rsaCb3
+    implicit none
+    integer(kind=intType) :: i, j, k, dom, sps, ny
+    real(kind=realType) :: bb(2:SA_MAXLINE), cc(2:SA_MAXLINE), dd(2:SA_MAXLINE), ff(2:SA_MAXLINE)
+    real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp, xa, ya, za, ttm, ttp
+    real(kind=realType) :: cnud, cam, cap, nutm, nutp, nu, num, nup, cdm, cdp
+    real(kind=realType) :: c1m, c1p, uu, um, up, qs, rblank, f, cb3Inv
+
+    dom = 1; sps = 1
+    cb3Inv = one / rsaCb3
+    k = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    i = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+    if (k <= cudaDoms(dom,sps)%kl .and. i <= cudaDoms(dom,sps)%il) then
+        ny = cudaDoms(dom,sps)%jl - 1
+        do j = 2, cudaDoms(dom,sps)%jl
+            voli = one / cudaDoms(dom,sps)%vol(i, j, k)
+            volmi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i, j - 1, k))
+            volpi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i, j + 1, k))
+            xm = cudaDoms(dom,sps)%sJ(i, j - 1, k, 1) * volmi
+            ym = cudaDoms(dom,sps)%sJ(i, j - 1, k, 2) * volmi
+            zm = cudaDoms(dom,sps)%sJ(i, j - 1, k, 3) * volmi
+            xp = cudaDoms(dom,sps)%sJ(i, j, k, 1) * volpi
+            yp = cudaDoms(dom,sps)%sJ(i, j, k, 2) * volpi
+            zp = cudaDoms(dom,sps)%sJ(i, j, k, 3) * volpi
+            xa = half * (cudaDoms(dom,sps)%sJ(i, j, k, 1) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 1)) * voli
+            ya = half * (cudaDoms(dom,sps)%sJ(i, j, k, 2) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 2)) * voli
+            za = half * (cudaDoms(dom,sps)%sJ(i, j, k, 3) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 3)) * voli
+            ttm = xm * xa + ym * ya + zm * za
+            ttp = xp * xa + yp * ya + zp * za
+            cnud = -rsaCb2 * cudaDoms(dom,sps)%w(i, j, k, itu1) * cb3Inv
+            cam = ttm * cnud
+            cap = ttp * cnud
+            nutm = half * (cudaDoms(dom,sps)%w(i, j - 1, k, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nutp = half * (cudaDoms(dom,sps)%w(i, j + 1, k, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nu = cudaDoms(dom,sps)%rlv(i, j, k) / cudaDoms(dom,sps)%w(i, j, k, irho)
+            num = half * (cudaDoms(dom,sps)%rlv(i, j - 1, k) / cudaDoms(dom,sps)%w(i, j - 1, k, irho) + nu)
+            nup = half * (cudaDoms(dom,sps)%rlv(i, j + 1, k) / cudaDoms(dom,sps)%w(i, j + 1, k, irho) + nu)
+            cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+            cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
+            c1m = max(cdm + cam, zero)
+            c1p = max(cdp + cap, zero)
+            bb(j) = -c1m
+            dd(j) = -c1p
+            qs = half * (cudaDoms(dom,sps)%sFaceJ(i, j, k) + cudaDoms(dom,sps)%sFaceJ(i, j - 1, k)) * voli
+            uu = xa * cudaDoms(dom,sps)%w(i, j, k, ivx) + ya * cudaDoms(dom,sps)%w(i, j, k, ivy) &
+                    + za * cudaDoms(dom,sps)%w(i, j, k, ivz) - qs
+            um = zero; up = zero
+            if (uu < zero) um = uu
+            if (uu > zero) up = uu
+            bb(j) = bb(j) - up
+            dd(j) = dd(j) + um
+            rblank = max(real(cudaDoms(dom,sps)%iblank(i, j, k), realType), zero)
+            cc(j) = cudaDoms(dom,sps)%qq(i, j, k)
+            ff(j) = cudaDoms(dom,sps)%dw(i, j, k, itu1) * rblank
+            bb(j) = bb(j) * rblank
+            dd(j) = dd(j) * rblank
+        end do
+        do j = ny, 2, -1
+            f = dd(j) / cc(j + 1)
+            cc(j) = cc(j) - f * bb(j + 1)
+            ff(j) = ff(j) - f * ff(j + 1)
+        end do
+        ff(2) = ff(2) / cc(2)
+        do j = 3, cudaDoms(dom,sps)%jl
+            ff(j) = ff(j) - bb(j) * ff(j - 1)
+            ff(j) = ff(j) / cc(j)
+        end do
+        do j = 2, cudaDoms(dom,sps)%jl
+            cudaDoms(dom,sps)%dw(i, j, k, itu1) = ff(j) * cudaDoms(dom,sps)%qq(i, j, k)
+        end do
+    end if
+end subroutine saSolveJ
+
+
+attributes(global) subroutine saSolveI
+    ! dd-ADI sweep in i-direction: one thread per (k,j) line.
+    use constants, only: zero, one, two, half, itu1, irho, ivx, ivy, ivz
+    use cudaParamTurb, only: rsaCb2, rsaCb3
+    implicit none
+    integer(kind=intType) :: i, j, k, dom, sps, nx
+    real(kind=realType) :: bb(2:SA_MAXLINE), cc(2:SA_MAXLINE), dd(2:SA_MAXLINE), ff(2:SA_MAXLINE)
+    real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp, xa, ya, za, ttm, ttp
+    real(kind=realType) :: cnud, cam, cap, nutm, nutp, nu, num, nup, cdm, cdp
+    real(kind=realType) :: c1m, c1p, uu, um, up, qs, rblank, f, cb3Inv
+
+    dom = 1; sps = 1
+    cb3Inv = one / rsaCb3
+    k = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+    if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl) then
+        nx = cudaDoms(dom,sps)%il - 1
+        do i = 2, cudaDoms(dom,sps)%il
+            voli = one / cudaDoms(dom,sps)%vol(i, j, k)
+            volmi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i - 1, j, k))
+            volpi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i + 1, j, k))
+            xm = cudaDoms(dom,sps)%sI(i - 1, j, k, 1) * volmi
+            ym = cudaDoms(dom,sps)%sI(i - 1, j, k, 2) * volmi
+            zm = cudaDoms(dom,sps)%sI(i - 1, j, k, 3) * volmi
+            xp = cudaDoms(dom,sps)%sI(i, j, k, 1) * volpi
+            yp = cudaDoms(dom,sps)%sI(i, j, k, 2) * volpi
+            zp = cudaDoms(dom,sps)%sI(i, j, k, 3) * volpi
+            xa = half * (cudaDoms(dom,sps)%sI(i, j, k, 1) + cudaDoms(dom,sps)%sI(i - 1, j, k, 1)) * voli
+            ya = half * (cudaDoms(dom,sps)%sI(i, j, k, 2) + cudaDoms(dom,sps)%sI(i - 1, j, k, 2)) * voli
+            za = half * (cudaDoms(dom,sps)%sI(i, j, k, 3) + cudaDoms(dom,sps)%sI(i - 1, j, k, 3)) * voli
+            ttm = xm * xa + ym * ya + zm * za
+            ttp = xp * xa + yp * ya + zp * za
+            cnud = -rsaCb2 * cudaDoms(dom,sps)%w(i, j, k, itu1) * cb3Inv
+            cam = ttm * cnud
+            cap = ttp * cnud
+            nutm = half * (cudaDoms(dom,sps)%w(i - 1, j, k, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nutp = half * (cudaDoms(dom,sps)%w(i + 1, j, k, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nu = cudaDoms(dom,sps)%rlv(i, j, k) / cudaDoms(dom,sps)%w(i, j, k, irho)
+            num = half * (cudaDoms(dom,sps)%rlv(i - 1, j, k) / cudaDoms(dom,sps)%w(i - 1, j, k, irho) + nu)
+            nup = half * (cudaDoms(dom,sps)%rlv(i + 1, j, k) / cudaDoms(dom,sps)%w(i + 1, j, k, irho) + nu)
+            cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+            cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
+            c1m = max(cdm + cam, zero)
+            c1p = max(cdp + cap, zero)
+            bb(i) = -c1m
+            dd(i) = -c1p
+            qs = half * (cudaDoms(dom,sps)%sFaceI(i, j, k) + cudaDoms(dom,sps)%sFaceI(i - 1, j, k)) * voli
+            uu = xa * cudaDoms(dom,sps)%w(i, j, k, ivx) + ya * cudaDoms(dom,sps)%w(i, j, k, ivy) &
+                    + za * cudaDoms(dom,sps)%w(i, j, k, ivz) - qs
+            um = zero; up = zero
+            if (uu < zero) um = uu
+            if (uu > zero) up = uu
+            bb(i) = bb(i) - up
+            dd(i) = dd(i) + um
+            rblank = max(real(cudaDoms(dom,sps)%iblank(i, j, k), realType), zero)
+            cc(i) = cudaDoms(dom,sps)%qq(i, j, k)
+            ff(i) = cudaDoms(dom,sps)%dw(i, j, k, itu1) * rblank
+            bb(i) = bb(i) * rblank
+            dd(i) = dd(i) * rblank
+        end do
+        do i = nx, 2, -1
+            f = dd(i) / cc(i + 1)
+            cc(i) = cc(i) - f * bb(i + 1)
+            ff(i) = ff(i) - f * ff(i + 1)
+        end do
+        ff(2) = ff(2) / cc(2)
+        do i = 3, cudaDoms(dom,sps)%il
+            ff(i) = ff(i) - bb(i) * ff(i - 1)
+            ff(i) = ff(i) / cc(i)
+        end do
+        do i = 2, cudaDoms(dom,sps)%il
+            cudaDoms(dom,sps)%dw(i, j, k, itu1) = ff(i) * cudaDoms(dom,sps)%qq(i, j, k)
+        end do
+    end if
+end subroutine saSolveI
+
+
+attributes(global) subroutine saSolveK
+    ! dd-ADI sweep in k-direction: one thread per (j,i) line. Final sweep: stores ff (no *qq).
+    use constants, only: zero, one, two, half, itu1, irho, ivx, ivy, ivz
+    use cudaParamTurb, only: rsaCb2, rsaCb3
+    implicit none
+    integer(kind=intType) :: i, j, k, dom, sps, nz
+    real(kind=realType) :: bb(2:SA_MAXLINE), cc(2:SA_MAXLINE), dd(2:SA_MAXLINE), ff(2:SA_MAXLINE)
+    real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp, xa, ya, za, ttm, ttp
+    real(kind=realType) :: cnud, cam, cap, nutm, nutp, nu, num, nup, cdm, cdp
+    real(kind=realType) :: c1m, c1p, uu, um, up, qs, rblank, f, cb3Inv
+
+    dom = 1; sps = 1
+    cb3Inv = one / rsaCb3
+    j = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    i = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+    if (j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il) then
+        nz = cudaDoms(dom,sps)%kl - 1
+        do k = 2, cudaDoms(dom,sps)%kl
+            voli = one / cudaDoms(dom,sps)%vol(i, j, k)
+            volmi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i, j, k - 1))
+            volpi = two / (cudaDoms(dom,sps)%vol(i, j, k) + cudaDoms(dom,sps)%vol(i, j, k + 1))
+            xm = cudaDoms(dom,sps)%sK(i, j, k - 1, 1) * volmi
+            ym = cudaDoms(dom,sps)%sK(i, j, k - 1, 2) * volmi
+            zm = cudaDoms(dom,sps)%sK(i, j, k - 1, 3) * volmi
+            xp = cudaDoms(dom,sps)%sK(i, j, k, 1) * volpi
+            yp = cudaDoms(dom,sps)%sK(i, j, k, 2) * volpi
+            zp = cudaDoms(dom,sps)%sK(i, j, k, 3) * volpi
+            xa = half * (cudaDoms(dom,sps)%sK(i, j, k, 1) + cudaDoms(dom,sps)%sK(i, j, k - 1, 1)) * voli
+            ya = half * (cudaDoms(dom,sps)%sK(i, j, k, 2) + cudaDoms(dom,sps)%sK(i, j, k - 1, 2)) * voli
+            za = half * (cudaDoms(dom,sps)%sK(i, j, k, 3) + cudaDoms(dom,sps)%sK(i, j, k - 1, 3)) * voli
+            ttm = xm * xa + ym * ya + zm * za
+            ttp = xp * xa + yp * ya + zp * za
+            cnud = -rsaCb2 * cudaDoms(dom,sps)%w(i, j, k, itu1) * cb3Inv
+            cam = ttm * cnud
+            cap = ttp * cnud
+            nutm = half * (cudaDoms(dom,sps)%w(i, j, k - 1, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nutp = half * (cudaDoms(dom,sps)%w(i, j, k + 1, itu1) + cudaDoms(dom,sps)%w(i, j, k, itu1))
+            nu = cudaDoms(dom,sps)%rlv(i, j, k) / cudaDoms(dom,sps)%w(i, j, k, irho)
+            num = half * (cudaDoms(dom,sps)%rlv(i, j, k - 1) / cudaDoms(dom,sps)%w(i, j, k - 1, irho) + nu)
+            nup = half * (cudaDoms(dom,sps)%rlv(i, j, k + 1) / cudaDoms(dom,sps)%w(i, j, k + 1, irho) + nu)
+            cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+            cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
+            c1m = max(cdm + cam, zero)
+            c1p = max(cdp + cap, zero)
+            bb(k) = -c1m
+            dd(k) = -c1p
+            qs = half * (cudaDoms(dom,sps)%sFaceK(i, j, k) + cudaDoms(dom,sps)%sFaceK(i, j, k - 1)) * voli
+            uu = xa * cudaDoms(dom,sps)%w(i, j, k, ivx) + ya * cudaDoms(dom,sps)%w(i, j, k, ivy) &
+                    + za * cudaDoms(dom,sps)%w(i, j, k, ivz) - qs
+            um = zero; up = zero
+            if (uu < zero) um = uu
+            if (uu > zero) up = uu
+            bb(k) = bb(k) - up
+            dd(k) = dd(k) + um
+            rblank = max(real(cudaDoms(dom,sps)%iblank(i, j, k), realType), zero)
+            cc(k) = cudaDoms(dom,sps)%qq(i, j, k)
+            ff(k) = cudaDoms(dom,sps)%dw(i, j, k, itu1) * rblank
+            bb(k) = bb(k) * rblank
+            dd(k) = dd(k) * rblank
+        end do
+        do k = nz, 2, -1
+            f = dd(k) / cc(k + 1)
+            cc(k) = cc(k) - f * bb(k + 1)
+            ff(k) = ff(k) - f * ff(k + 1)
+        end do
+        ff(2) = ff(2) / cc(2)
+        do k = 3, cudaDoms(dom,sps)%kl
+            ff(k) = ff(k) - bb(k) * ff(k - 1)
+            ff(k) = ff(k) / cc(k)
+        end do
+        do k = 2, cudaDoms(dom,sps)%kl
+            cudaDoms(dom,sps)%dw(i, j, k, itu1) = ff(k)
+        end do
+    end if
+end subroutine saSolveK
+
+
+attributes(global) subroutine saUpdate(factor2)
+    ! Apply the turbulence update: w(itu1) = max(w(itu1) + factor2*dvt, 0).
+    use constants, only: zero, itu1
+    implicit none
+    real(kind=realType), value :: factor2
+    integer(kind=intType) :: i, j, k, dom, sps
+    dom = 1; sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+    k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl .and. k <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%w(i, j, k, itu1) = cudaDoms(dom,sps)%w(i, j, k, itu1) &
+            + factor2 * cudaDoms(dom,sps)%dw(i, j, k, itu1)
+        cudaDoms(dom,sps)%w(i, j, k, itu1) = max(cudaDoms(dom,sps)%w(i, j, k, itu1), zero)
+    end if
+end subroutine saUpdate
+
+attributes(global) subroutine saTurbFirstHalo
+    ! Apply the non-wall-function SA boundary treatment on all six physical
+    ! faces of the supported single block:
+    !   wHalo = bvt - bmt*wInternal.
+    use constants, only: itu1
+    implicit none
+    integer(kind=intType) :: i, j, dom, sps
+
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+
+    ! iMin/iMax faces: (j,k) tangential indexing.
+    if (i <= cudaDoms(dom,sps)%jl .and. j <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%w(1, i, j, itu1) = cudaDoms(dom,sps)%bvti1(i,j) &
+            - cudaDoms(dom,sps)%bmti1(i,j) * cudaDoms(dom,sps)%w(2, i, j, itu1)
+        cudaDoms(dom,sps)%w(cudaDoms(dom,sps)%ie, i, j, itu1) = cudaDoms(dom,sps)%bvti2(i,j) &
+            - cudaDoms(dom,sps)%bmti2(i,j) &
+            * cudaDoms(dom,sps)%w(cudaDoms(dom,sps)%il, i, j, itu1)
+    end if
+
+    ! jMin/jMax faces: (i,k) tangential indexing.
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%w(i, 1, j, itu1) = cudaDoms(dom,sps)%bvtj1(i,j) &
+            - cudaDoms(dom,sps)%bmtj1(i,j) * cudaDoms(dom,sps)%w(i, 2, j, itu1)
+        cudaDoms(dom,sps)%w(i, cudaDoms(dom,sps)%je, j, itu1) = cudaDoms(dom,sps)%bvtj2(i,j) &
+            - cudaDoms(dom,sps)%bmtj2(i,j) &
+            * cudaDoms(dom,sps)%w(i, cudaDoms(dom,sps)%jl, j, itu1)
+    end if
+
+    ! kMin/kMax faces: (i,j) tangential indexing.
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl) then
+        cudaDoms(dom,sps)%w(i, j, 1, itu1) = cudaDoms(dom,sps)%bvtk1(i,j) &
+            - cudaDoms(dom,sps)%bmtk1(i,j) * cudaDoms(dom,sps)%w(i, j, 2, itu1)
+        cudaDoms(dom,sps)%w(i, j, cudaDoms(dom,sps)%ke, itu1) = cudaDoms(dom,sps)%bvtk2(i,j) &
+            - cudaDoms(dom,sps)%bmtk2(i,j) &
+            * cudaDoms(dom,sps)%w(i, j, cudaDoms(dom,sps)%kl, itu1)
+    end if
+end subroutine saTurbFirstHalo
+
+
+attributes(global) subroutine saTurbSecondHalo
+    ! Match turb2ndHalo: constant extrapolation from the first physical halo
+    ! into the second halo required by second-order SA advection.
+    use constants, only: itu1
+    implicit none
+    integer(kind=intType) :: i, j, dom, sps
+
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
+
+    if (i <= cudaDoms(dom,sps)%jl .and. j <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%w(0, i, j, itu1) = cudaDoms(dom,sps)%w(1, i, j, itu1)
+        cudaDoms(dom,sps)%w(cudaDoms(dom,sps)%ib, i, j, itu1) = &
+            cudaDoms(dom,sps)%w(cudaDoms(dom,sps)%ie, i, j, itu1)
+    end if
+
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%kl) then
+        cudaDoms(dom,sps)%w(i, 0, j, itu1) = cudaDoms(dom,sps)%w(i, 1, j, itu1)
+        cudaDoms(dom,sps)%w(i, cudaDoms(dom,sps)%jb, j, itu1) = &
+            cudaDoms(dom,sps)%w(i, cudaDoms(dom,sps)%je, j, itu1)
+    end if
+
+    if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl) then
+        cudaDoms(dom,sps)%w(i, j, 0, itu1) = cudaDoms(dom,sps)%w(i, j, 1, itu1)
+        cudaDoms(dom,sps)%w(i, j, cudaDoms(dom,sps)%kb, itu1) = &
+            cudaDoms(dom,sps)%w(i, j, cudaDoms(dom,sps)%ke, itu1)
+    end if
+end subroutine saTurbSecondHalo
+
+
+
+
+subroutine calculateCudaTurbSolve()
+    ! GPU equivalent of turbSolveDDADI for SA, minus wall functions:
+    !   build residual (dw(itu1)) + central Jacobian qq, DD-ADI implicit solve,
+    !   update nuTilde, recompute eddy viscosity, and refresh both physical halo
+    !   layers for every turbulence subiteration. bmt/bvt are copied from the CPU
+    !   by copyCudaBlockToDevice. Inter-block/overset exchange is not ported.
+    use constants, only: zero, one, itu1, turbRelaxImplicit, turbRelaxExplicit
+    use cudafor, only: dim3
+    use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb
+    use inputTimeSpectral, only: nTimeIntervalsSpectral
+    use inputIteration, only: turbRelax, alfaTurb, nSubIterTurb
+    use utils, only: setPointers
+    implicit none
+    type(dim3) :: grid_size, block_size, grid2d, block2d
+    integer :: istat
+    integer(kind=intType) :: dom, sps, iter, ibmax, jbmax, kbmax, maxdim
+    real(kind=realType) :: factor, factor2
+
+    ! Implicit-relaxation factor for qq, and the update relaxation factor (match sa.F90).
+    factor = one
+    if (turbRelax == turbRelaxImplicit) factor = one + (one - alfaTurb) / alfaTurb
+    factor2 = one
+    if (turbRelax == turbRelaxExplicit) factor2 = alfaTurb
+
+    ! Find the launch bounds.
+    ibmax = 0
+    jbmax = 0
+    kbmax = 0
+    do dom = 1, nDom
+        do sps = 1, nTimeIntervalsSpectral
+            call setPointers(dom, 1, sps)
+            ibmax = max(ibmax, bib); jbmax = max(jbmax, bjb); kbmax = max(kbmax, bkb)
+        end do
+    end do
+
+    maxdim = max(ibmax, max(jbmax, kbmax))
+    block_size = dim3(8, 8, 8)
+    grid_size  = dim3(ceiling(real(ibmax+1)/block_size%x), ceiling(real(jbmax+1)/block_size%y), &
+                        ceiling(real(kbmax+1)/block_size%z))
+    block2d = dim3(8, 8, 1)
+    grid2d  = dim3(ceiling(real(maxdim+1)/8), ceiling(real(maxdim+1)/8), 1)
+
+    do iter = 1, nSubIterTurb
+        ! Zero the residual/scratch accumulator for this subiteration.
+        do dom = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                h_cudaDoms(dom, sps)%dw(:, :, :, itu1) = zero
+            end do
+        end do
+        istat = cudaDeviceSynchronize()
+
+        ! Build residual (dw(itu1)) and central Jacobian qq.
+        call saSource<<<grid_size, block_size>>>    
+        istat = cudaDeviceSynchronize()
+
+        call saAdvection<<<grid_size, block_size>>> 
+        istat = cudaDeviceSynchronize()
+
+        call saViscous<<<grid_size, block_size>>>   
+        istat = cudaDeviceSynchronize()
+
+        ! DD-ADI implicit solve (j, then i, then k; each depends on the previous).
+        call saQQScale<<<grid_size, block_size>>>(factor); 
+        istat = cudaDeviceSynchronize()
+
+        call saSolveJ<<<grid2d, block2d>>>  
+        istat = cudaDeviceSynchronize()
+
+        call saSolveI<<<grid2d, block2d>>> 
+        istat = cudaDeviceSynchronize()
+
+        call saSolveK<<<grid2d, block2d>>>  
+        istat = cudaDeviceSynchronize()
+
+        ! Update nuTilde and eddy viscosity, then refresh the first and second
+        ! physical halo layers before the next subiteration.
+        call saUpdate<<<grid_size, block_size>>>(factor2)
+        istat = cudaDeviceSynchronize()
+
+        call saEddyViscosity<<<grid_size, block_size>>>         
+        istat = cudaDeviceSynchronize()
+
+        call saTurbFirstHalo<<<grid2d, block2d>>>               
+        istat = cudaDeviceSynchronize()
+
+        call saTurbSecondHalo<<<grid2d, block2d>>>             
+        istat = cudaDeviceSynchronize()
+    end do
+end subroutine calculateCudaTurbSolve
+
+
+subroutine getCudaTurbSolution(nuOut, revOut, ndimc)
+    ! Read the GPU-updated nuTilde (w(itu1)) and eddy viscosity (rev) over owned cells
+    ! into flat host arrays. Does NOT touch the CPU block state (uses local temps), so the
+    ! CPU can still run its own reference solve afterwards from the same starting state.
+    use constants, only: itu1
+    use blockPointers, only: nDom, bil=>il, bjl=>jl, bkl=>kl, bie=>ie, bje=>je, bke=>ke
+    use inputTimeSpectral, only: nTimeIntervalsSpectral
+    use cudaBlock, only: copyCudaBlockToHost
+    use utils, only: setPointers
+    implicit none
+    integer(kind=intType), intent(in) :: ndimc
+    real(kind=realType), dimension(ndimc), intent(out) :: nuOut, revOut
+    integer(kind=intType) :: nn, sps, i, j, k, counter
+    real(kind=realType), allocatable :: wtmp(:, :, :), revtmp(:, :, :)
+
+    call copyCudaBlockToHost   ! sync host descriptors from device
+    counter = 0
+    do nn = 1, nDom
+        do sps = 1, nTimeIntervalsSpectral
+            call setPointers(nn, 1, sps)
+            allocate(wtmp(1:bie, 1:bje, 1:bke), revtmp(1:bie, 1:bje, 1:bke))
+            wtmp = h_cudaDoms(nn, sps)%w(1:bie, 1:bje, 1:bke, itu1)   ! device -> host
+            revtmp = h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke)
+            do k = 2, bkl
+                do j = 2, bjl
+                    do i = 2, bil
+                        counter = counter + 1
+                        nuOut(counter) = wtmp(i, j, k)
+                        revOut(counter) = revtmp(i, j, k)
+                    end do
+                end do
+            end do
+            deallocate(wtmp, revtmp)
+        end do
+    end do
+end subroutine getCudaTurbSolution
+
+
+end module cudaTurbulence

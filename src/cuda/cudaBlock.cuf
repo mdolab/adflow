@@ -84,27 +84,26 @@ module cudaBlock
         ! to save memory. Care must be taken when copying to and from them.
         real(kind=realType), dimension(:,:,:, :),pointer,device :: fw
         real(kind=realType), dimension(:,:,:, :),pointer,device :: dw
-
-        ! SA solve: central Jacobian qq (owned cells), plus the itu1-diagonal and
-        ! right-hand side of the turbulent boundary treatment (copied from CPU).
-        real(kind=realType), dimension(:,:,:),pointer,device :: qq
-        real(kind=realType), dimension(:,:),pointer,device :: bmti1, bmti2  ! (j,k)
-        real(kind=realType), dimension(:,:),pointer,device :: bmtj1, bmtj2  ! (i,k)
-        real(kind=realType), dimension(:,:),pointer,device :: bmtk1, bmtk2  ! (i,j)
-        real(kind=realType), dimension(:,:),pointer,device :: bvti1, bvti2  ! (j,k)
-        real(kind=realType), dimension(:,:),pointer,device :: bvtj1, bvtj2  ! (i,k)
-        real(kind=realType), dimension(:,:),pointer,device :: bvtk1, bvtk2  ! (i,j)
         real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
 
         ! No halos
         real(kind=realType), dimension(:,:,:),pointer,device :: volRef, d2wall
+        real(kind=realType), dimension(:,:,:),pointer,device :: qq ! SA central jacobian
         integer(kind=intType), dimension(:,:,:),pointer,device :: iblank
+
+        ! single halos (faces on block boundaries)
+        ! WARNING: Only allocated for single variable turbulence models on GPU
+        real(kind=realType), dimension(:,:),pointer,device :: bmti1, bmti2  ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the iMin, iMax boundaries.
+        real(kind=realType), dimension(:,:),pointer,device :: bmtj1, bmtj2  ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the jMin, jMax boundaries.
+        real(kind=realType), dimension(:,:),pointer,device :: bmtk1, bmtk2  ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
+        real(kind=realType), dimension(:,:),pointer,device :: bvti1, bvti2  ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the iMin, iMax boundaries.
+        real(kind=realType), dimension(:,:),pointer,device :: bvtj1, bvtj2  ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the jMin, jMax boundaries.
+        real(kind=realType), dimension(:,:),pointer,device :: bvtk1, bvtk2  ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
 
         ! Face Porosities
         integer(kind=porType), dimension(:,:,:),pointer,device :: porI
         integer(kind=porType), dimension(:,:,:),pointer,device :: porJ
         integer(kind=porType), dimension(:,:,:),pointer,device :: porK
-
 
         ! Face projected areas
         real(kind=realType), dimension(:,:,:, :),pointer,device :: sI
@@ -237,14 +236,6 @@ module cudaBlock
                 ! single halos GPU/double halos CPU (cells)
                 allocate(h_cudaDoms(nn, sps)%fw(1:bie, 1:bje, 1:bke, 1:nwf)) ! dissipative/viscous residual
                 allocate(h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw)) ! convective/total residual
-
-                allocate(h_cudaDoms(nn, sps)%qq(2:bil, 2:bjl, 2:bkl))
-                allocate(h_cudaDoms(nn, sps)%bmti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bmti2(1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%bmtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bmtj2(1:bie, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%bmtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bmtk2(1:bie, 1:bje))
-                allocate(h_cudaDoms(nn, sps)%bvti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bvti2(1:bje, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%bvtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bvtj2(1:bie, 1:bke))
-                allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje))
                 allocate(h_cudaDoms(nn, sps)%rlv(1:bie, 1:bje, 1:bke)) ! laminar viscosity
                 allocate(h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke)) ! eddy viscosity
                 allocate(h_cudaDoms(nn, sps)%vol(1:bie, 1:bje, 1:bke)) ! cell volumes
@@ -253,12 +244,23 @@ module cudaBlock
                 ! no halos (cells)
                 if (equations == RANSEquations) then
                     allocate(h_cudaDoms(nn, sps)%d2wall(2:bil,2:bjl,2:bkl)) ! distance from the center of the cell to the nearest viscous wall
+                    allocate(h_cudaDoms(nn, sps)%qq(2:bil, 2:bjl, 2:bkl)) ! SA central jacobian
                 end if
 
                 ! no halos GPU/double halos CPU (cells)
                 allocate(h_cudaDoms(nn, sps)%volRef(2:bil,2:bjl,2:bkl)) ! cell reference volume
                 allocate(h_cudaDoms(nn, sps)%iblank(2:bil,2:bjl,2:bkl)) ! cell blanking
 
+                ! single halos (faces on block boundaries)
+                ! WARNING: Only allocated for single variable turbulence models on GPU
+                if (equations == RANSEquations) then
+                    allocate(h_cudaDoms(nn, sps)%bmti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bmti2(1:bje, 1:bke)) ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the iMin, iMax boundaries.
+                    allocate(h_cudaDoms(nn, sps)%bmtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bmtj2(1:bie, 1:bke)) ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the jMin, jMax boundaries.
+                    allocate(h_cudaDoms(nn, sps)%bmtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bmtk2(1:bie, 1:bje)) ! Matrix used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
+                    allocate(h_cudaDoms(nn, sps)%bvti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bvti2(1:bje, 1:bke)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the iMin, iMax boundaries.
+                    allocate(h_cudaDoms(nn, sps)%bvtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bvtj2(1:bie, 1:bke)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the jMin, jMax boundaries.
+                    allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
+                end if
 
                 ! no halos (faces)
 

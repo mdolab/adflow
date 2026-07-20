@@ -194,4 +194,5 @@ cudaFiles = cuda/cudaConstants.cuf\
         cuda/cudaBCDataMod.cuf\
         cuda/cudaBCPointers.cuf\
         cuda/cudaBCRoutines.cuf\
+		cuda/cudaTurbulence.cuf\
 		cuda/cudaDebug.cuf
