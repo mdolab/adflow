@@ -67,7 +67,7 @@ contains
 
         ! Apply BCs for a single block
         use constants
-        use blockPointers, only: nDom, nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
+        use blockPointers, only: nDom, nBocos, BCType, BCFaceID, nViscBocos, w, dw, x, vol, il, jl, kl, &
                                  sectionID, wOld, volOld, BCData, &
                                  si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
                                  bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
@@ -80,7 +80,7 @@ contains
         use cudafor, only: dim3
         use cudaBlock, only: allocateCudaBlock, copyCudaBlockToDevice, &
                              allocateCudaBCData, copyCudaBCDataToDevice
-        use cudaBCPointers, only: copyCudaBC
+        use cudaBCPointers, only: setCudaBCPointers
         use cudaBCDataMod, only: copyCudaBCDataMod
         implicit none
 
@@ -141,11 +141,12 @@ contains
                 ! First set pointers on CPU
                 call setBCPointers(nn, .False.)
                 ! Then copy all data to device
-                call copyCudaBC(nn, sps)
+                call setCudaBCPointers(nn, sps)
                 call copyCudaBCDataMod
 
                 ! Run routine on GPU
-                call bcSymm1stHalo<<<grid_size, block_size>>>(nn)
+                call bcSymm1stHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn))
+                istat = cudaDeviceSynchronize()
             end if
         end do
 
@@ -156,10 +157,11 @@ contains
                    ! First set pointers on CPU
                    call setBCPointers(nn, .False.)
                    ! Then copy all data to device
-                   call copyCudaBC(nn, sps)
+                   call setCudaBCPointers(nn, sps)
                    call copyCudaBCDataMod
                    ! Run routine on GPU
-                   call bcSymm2ndHalo<<<grid_size, block_size>>>(nn)
+                   call bcSymm2ndHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn))
+                   istat = cudaDeviceSynchronize()
                end if
            end do
        end if
@@ -199,9 +201,10 @@ contains
            if (BCType(nn) == NSWallAdiabatic) then
                call setBCPointers(nn, .False.)
                ! Then copy all data to device
-               call copyCudaBC(nn, sps)
+               call setCudaBCPointers(nn, sps)
                call copyCudaBCDataMod
-               call bcNSWallAdiabatic<<<grid_size, block_size>>>(nn, secondHalo, correctForK)
+               call bcNSWallAdiabatic<<<grid_size, block_size>>>(nn, BCFaceID(nn), secondHalo, correctForK)
+               istat = cudaDeviceSynchronize()
            end if
        end do
 !
@@ -228,10 +231,11 @@ contains
                call setBCPointers(nn, .False.)
                ! Then copy all data to device
                ! call copyCudaBCData
-               call copyCudaBC(nn, sps)
+               call setCudaBCPointers(nn, sps)
                call copyCudaBCDataMod
                ! Run routine on GPU
-               call bcFarField<<<grid_size, block_size>>>(nn, secondHalo, correctForK)
+               call bcFarField<<<grid_size, block_size>>>(nn, BCFaceID(nn), secondHalo, correctForK)
+               istat = cudaDeviceSynchronize()
            end if
        end do
 !
@@ -305,7 +309,7 @@ contains
     ! ===================================================================
     !   Actual implementation of each of the boundary condition routines
     ! ===================================================================
-    attributes(global) subroutine bcSymm1stHalo(nn)
+    attributes(global) subroutine bcSymm1stHalo(nn, faceID)
 
         !  bcSymm1stHalo applies the symmetry boundary conditions to a
         !  block.  * It is assumed that the pointers in blockPointers are
@@ -319,16 +323,18 @@ contains
         use constants
         ! use cudaBlock, only: BCData=>d_BCdata
         use cudaflowVarRefState, only: viscous, eddyModel
-        use cudaBCPointers, only: gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              iStart, jStart, iSize, jSize, rev1, rev2
+        use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+        use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Subroutine arguments.
-        integer(kind=intType), intent(in), value :: nn
+        integer(kind=intType), intent(in), value :: nn, faceID
 
         ! Local variables.
-        integer(kind=intType) :: i, j, l
-        real(kind=realType) :: vn, nnx, nny, nnz
+        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
+        integer(kind=intType) :: i, j
+        integer(kind=intType) :: I1, J1, K1, I2, J2, K2
+        real(kind=realType) :: vn
 
         ! Loop over the generic subface to set the state in the
         ! 1-st level halos
@@ -337,35 +343,38 @@ contains
         i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
         j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+        if ((i - iStart) < isize .and. (j - jStart) < jsize) then
+
+            call faceLayerIndices(faceID, 1, i, j, dm, sps, I1, J1, K1) ! 1st halo
+            call faceLayerIndices(faceID, 2, i, j, dm, sps, I2, J2, K2) ! 1st interior
 
             ! Determine twice the normal velocity component,
             ! which must be substracted from the donor velocity
             ! to obtain the halo velocity.
 
-            vn = two * (ww2(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
-                        ww2(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
-                        ww2(i, j, ivz) * BCData(nn)%norm(i, j, 3))
+            vn = two * (d_cudaDoms(dm, sps)%w(I2, J2, K2, ivx) * BCData(nn)%norm(i, j, 1) + &
+                        d_cudaDoms(dm, sps)%w(I2, J2, K2, ivy) * BCData(nn)%norm(i, j, 2) + &
+                        d_cudaDoms(dm, sps)%w(I2, J2, K2, ivz) * BCData(nn)%norm(i, j, 3))
 
             ! Determine the flow variables in the halo cell.
 
-            ww1(i, j, irho) = ww2(i, j, irho)
-            ww1(i, j, ivx) = ww2(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
-            ww1(i, j, ivy) = ww2(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
-            ww1(i, j, ivz) = ww2(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
-            ww1(i, j, irhoE) = ww2(i, j, irhoE)
+            d_cudaDoms(dm, sps)%w(I1, J1, K1, irho) = d_cudaDoms(dm, sps)%w(I2, J2, K2, irho)
+            d_cudaDoms(dm, sps)%w(I1, J1, K1, ivx) = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivx) - vn * BCData(nn)%norm(i, j, 1)
+            d_cudaDoms(dm, sps)%w(I1, J1, K1, ivy) = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivy) - vn * BCData(nn)%norm(i, j, 2)
+            d_cudaDoms(dm, sps)%w(I1, J1, K1, ivz) = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivz) - vn * BCData(nn)%norm(i, j, 3)
+            d_cudaDoms(dm, sps)%w(I1, J1, K1, irhoE) = d_cudaDoms(dm, sps)%w(I2, J2, K2, irhoE)
 
             ! Set the pressure and gamma and possibly the
             ! laminar and eddy viscosity in the halo.
 
-            gamma1(i, j) = gamma2(i, j)
-            pp1(i, j) = pp2(i, j)
-            if (viscous) rlv1(i, j) = rlv2(i, j)
-            if (eddyModel) rev1(i, j) = rev2(i, j)
+            d_cudaDoms(dm, sps)%gamma(I1, J1, K1) = d_cudaDoms(dm, sps)%gamma(I2, J2, K2)
+            d_cudaDoms(dm, sps)%P(I1, J1, K1) = d_cudaDoms(dm, sps)%P(I2, J2, K2)
+            if (viscous) d_cudaDoms(dm, sps)%rlv(I1, J1, K1) = d_cudaDoms(dm, sps)%rlv(I2, J2, K2)
+            if (eddyModel) d_cudaDoms(dm, sps)%rev(I1, J1, K1) = d_cudaDoms(dm, sps)%rev(I2, J2, K2)
         end if
     end subroutine bcSymm1stHalo
 
-    attributes(global) subroutine bcSymm2ndHalo(nn)
+    attributes(global) subroutine bcSymm2ndHalo(nn, faceID)
 
         !  bcSymm2ndHalo applies the symmetry boundary conditions to a
         !  block for the 2nd halo. This routine is separate as it makes
@@ -373,45 +382,52 @@ contains
         use constants
         ! use cudaBlock, only: BCData => d_BCdata
         use cudaflowVarRefState, only: viscous, eddyModel
-        use cudaBCPointers, only: gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, &
-                              rev0, rev3, iStart, jStart, iSize, jSize
+        use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+        use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Subroutine arguments.
-        integer(kind=intType), intent(in), value :: nn
+        integer(kind=intType), intent(in), value :: nn, faceID
 
         ! Local variables.
-        integer(kind=intType) :: i, j, l
-        real(kind=realType) :: vn, nnx, nny, nnz
+        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
+        integer(kind=intType) :: i, j
+        integer(kind=intType) :: I0, J0, K0, I3, J3, K3
+        real(kind=realType) :: vn
 
-        ! If we need the second halo, do everything again, but using ww0,
-        ! ww3 etc instead of ww2 and ww1.
+        ! If we need the second halo, do everything again, but using layer 0
+        ! (2nd/outermost halo) and layer 3 (2nd interior) instead of 1 and 2.
 
          ! --- Initialize GPU thread indices Launch params ---
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+        if ((i - iStart) < isize .and. (j - jStart) < jsize) then
 
-            vn = two * (ww3(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
-                        ww3(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
-                        ww3(i, j, ivz) * BCData(nn)%norm(i, j, 3))
+            call faceLayerIndices(faceID, 0, i, j, dm, sps, I0, J0, K0) ! 2nd/outermost halo
+            call faceLayerIndices(faceID, 3, i, j, dm, sps, I3, J3, K3) ! 2nd interior
+
+            vn = two * (d_cudaDoms(dm, sps)%w(I3, J3, K3, ivx) * BCData(nn)%norm(i, j, 1) + &
+                        d_cudaDoms(dm, sps)%w(I3, J3, K3, ivy) * BCData(nn)%norm(i, j, 2) + &
+                        d_cudaDoms(dm, sps)%w(I3, J3, K3, ivz) * BCData(nn)%norm(i, j, 3))
 
             ! Determine the flow variables in the halo cell.
-            ww0(i, j, irho) = ww3(i, j, irho)
-            ww0(i, j, ivx) = ww3(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
-            ww0(i, j, ivy) = ww3(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
-            ww0(i, j, ivz) = ww3(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, irho) = d_cudaDoms(dm, sps)%w(I3, J3, K3, irho)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivx) = d_cudaDoms(dm, sps)%w(I3, J3, K3, ivx) - vn * BCData(nn)%norm(i, j, 1)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivy) = d_cudaDoms(dm, sps)%w(I3, J3, K3, ivy) - vn * BCData(nn)%norm(i, j, 2)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivz) = d_cudaDoms(dm, sps)%w(I3, J3, K3, ivz) - vn * BCData(nn)%norm(i, j, 3)
 
-            ww0(i, j, irhoE) = ww3(i, j, irhoE)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, irhoE) = d_cudaDoms(dm, sps)%w(I3, J3, K3, irhoE)
 
             ! Set the pressure and gamma and possibly the
             ! laminar and eddy viscosity in the halo.
 
-            gamma0(i, j) = gamma3(i, j)
-            pp0(i, j) = pp3(i, j)
-            if (viscous) rlv0(i, j) = rlv3(i, j)
-            if (eddyModel) rev0(i, j) = rev3(i, j)
+            d_cudaDoms(dm, sps)%gamma(I0, J0, K0) = d_cudaDoms(dm, sps)%gamma(I3, J3, K3)
+            d_cudaDoms(dm, sps)%P(I0, J0, K0) = d_cudaDoms(dm, sps)%P(I3, J3, K3)
+            ! rlv/rev are single-halo on GPU -- layer 0 (2nd/outermost halo) has no backing
+            ! memory (see cudaBCPointers.cuf file header). Skipped for now; TODO(rlv-2nd-halo).
+            if (viscous) d_cudaDoms(dm, sps)%rlv(I0, J0, K0) = d_cudaDoms(dm, sps)%rlv(I3, J3, K3)
+            if (eddyModel) d_cudaDoms(dm, sps)%rev(I0, J0, K0) = d_cudaDoms(dm, sps)%rev(I3, J3, K3)
         end if
 
     end subroutine bcSymm2ndHalo
@@ -573,7 +589,7 @@ contains
 !
 !    ! end subroutine bcSymmPolar2ndHalo
 !
-   attributes(global) subroutine bcFarfield(nn, secondHalo, correctForK)
+   attributes(global) subroutine bcFarfield(nn, faceID, secondHalo, correctForK)
 
        ! bcFarfield applies the farfield boundary condition to a block.
        ! It is assumed that the BCPointers are already set *
@@ -581,17 +597,18 @@ contains
        use constants
        ! use blockPointers, only: BCData
        use cudaFlowVarRefState, only: eddyModel, viscous, gammaInf, wInf, pInfCorr
-       use cudaBCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, &
-                             rev0, rev1, rev2, gamma2, iStart, jStart, iSize, jSize
+       use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+       use cudaBlock, only: d_cudaDoms
        implicit none
 
        ! Subroutine arguments.
        logical, intent(in), value :: secondHalo, correctForK
-       integer, intent(in), value :: nn
+       integer, intent(in), value :: nn, faceID
        ! Local variables.
-       integer(kind=intType) ::  i, j, k, l 
+       integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
+       integer(kind=intType) :: i, j
+       integer(kind=intType) :: I1, J1, K1, I2, J2, K2
 
-       real(kind=realType) :: nnx, nny, nnz
        real(kind=realType) :: gm1, ovgm1, ac1, ac2
        real(kind=realType) :: r0, u0, v0, w0, qn0, vn0, c0, s0
        real(kind=realType) :: re, ue, ve, we, qne, ce
@@ -618,10 +635,10 @@ contains
        ! --- Initialize GPU thread indices Launch params ---
        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
-       if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
-       ! do ii = 0, isize * jsize - 1
-       !     i = mod(ii, isize) + iStart
-       !     j = ii / isize + jStart
+       if ((i - iStart) < isize .and. (j - jStart) < jsize) then
+
+           call faceLayerIndices(faceID, 1, i, j, dm, sps, I1, J1, K1) ! 1st halo
+           call faceLayerIndices(faceID, 2, i, j, dm, sps, I2, J2, K2) ! 1st interior
 
            ! Compute the normal velocity of the free stream and
            ! substract the normal velocity of the mesh.
@@ -633,12 +650,12 @@ contains
            ! velocity and the speed of sound of the current state
            ! in the internal cell.
 
-           re = one / ww2(i, j, irho)
-           ue = ww2(i, j, ivx)
-           ve = ww2(i, j, ivy)
-           we = ww2(i, j, ivz)
+           re = one / d_cudaDoms(dm, sps)%w(I2, J2, K2, irho)
+           ue = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivx)
+           ve = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivy)
+           we = d_cudaDoms(dm, sps)%w(I2, J2, K2, ivz)
            qne = ue * BCData(nn)%norm(i, j, 1) + ve * BCData(nn)%norm(i, j, 2) + we * BCData(nn)%norm(i, j, 3)
-           ce = sqrt(gamma2(i, j) * pp2(i, j) * re)
+           ce = sqrt(d_cudaDoms(dm, sps)%gamma(I2, J2, K2) * d_cudaDoms(dm, sps)%P(I2, J2, K2) * re)
 
            ! Compute the new values of the riemann inVariants in
            ! the halo cell. Either the value in the internal cell
@@ -667,7 +684,8 @@ contains
                vf = ve + (qnf - qne) * BCData(nn)%norm(i, j, 2)
                wf = we + (qnf - qne) * BCData(nn)%norm(i, j, 3)
 
-               sf = ww2(i, j, irho)**gamma2(i, j) / pp2(i, j)
+               sf = d_cudaDoms(dm, sps)%w(I2, J2, K2, irho)**d_cudaDoms(dm, sps)%gamma(I2, J2, K2) &
+                    / d_cudaDoms(dm, sps)%P(I2, J2, K2)
 
            else
                ! Inflow
@@ -681,51 +699,52 @@ contains
            ! Compute the density, velocity and pressure in the
            ! halo cell.
 
-           cc = cf * cf / gamma2(i, j)
+           cc = cf * cf / d_cudaDoms(dm, sps)%gamma(I2, J2, K2)
            qq = uf * uf + vf * vf + wf * wf
-           ww1(i, j, irho) = (sf * cc)**ovgm1
-           ww1(i, j, ivx) = uf
-           ww1(i, j, ivy) = vf
-           ww1(i, j, ivz) = wf
-           pp1(i, j) = ww1(i, j, irho) * cc
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, irho) = (sf * cc)**ovgm1
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivx) = uf
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivy) = vf
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivz) = wf
+           d_cudaDoms(dm, sps)%P(I1, J1, K1) = d_cudaDoms(dm, sps)%w(I1, J1, K1, irho) * cc
 
            ! Simply set the laminar and eddy viscosity to
            ! the value in the donor cell. Their values do
            ! not matter too much in the far field.
 
-           if (viscous) rlv1(i, j) = rlv2(i, j)
-           if (eddyModel) rev1(i, j) = rev2(i, j)
+           if (viscous) d_cudaDoms(dm, sps)%rlv(I1, J1, K1) = d_cudaDoms(dm, sps)%rlv(I2, J2, K2)
+           if (eddyModel) d_cudaDoms(dm, sps)%rev(I1, J1, K1) = d_cudaDoms(dm, sps)%rev(I2, J2, K2)
        end if
 
        ! Compute the energy for these halos.
-       call computeEtot(1_intType, correctForK)
+       call computeEtot(faceID, 1_intType, correctForK)
 
        ! Extrapolate the state vectors in case a second halo
        ! is needed.
-       if (secondHalo) call extrapolate2ndHalo(correctForK)
+       if (secondHalo) call extrapolate2ndHalo(faceID, correctForK)
 
    end subroutine bcFarfield
 !
-   attributes(global) subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
+   attributes(global) subroutine bcNSWallAdiabatic(nn, faceID, secondHalo, correctForK)
 
        ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
        ! condition the pointers already defined.
 
        use constants
        ! use blockPointers, only: BCData
-       use cudaBCPointers, only: ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
-                             rev1, rev2, iStart, jStart, iSize, jSize
+       use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
        use cudaflowVarRefState, only: viscous, eddyModel
        use cudaInputDiscretization, only: viscWallBCTreatment
        use cudaIteration, only: currentLevel, groundLevel
+       use cudaBlock, only: d_cudaDoms
        implicit none
 
        logical, intent(in), value :: secondHalo, correctForK
-       integer(kind=intType), intent(in), value :: nn
-       integer(kind=intType) :: sps = 1 ! hard-coding sps = 1 because of how the subroutine signature works
+       integer(kind=intType), intent(in), value :: nn, faceID
+       integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
        real(kind=realType) :: rhok
        integer(kind=intType) :: wallTreatment
        integer(kind=intType) :: i, j ! GPU thread indices
+       integer(kind=intType) :: I1, J1, K1, I2, J2, K2, I3, J3, K3
 
        ! Initialize rhok to zero. This will be overwritten if a
        ! correction for k must be applied.
@@ -739,31 +758,35 @@ contains
        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-       if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+       if ((i - iStart) < isize .and. (j - jStart) < jsize) then
+
+           call faceLayerIndices(faceID, 1, i, j, dm, sps, I1, J1, K1) ! 1st halo
+           call faceLayerIndices(faceID, 2, i, j, dm, sps, I2, J2, K2) ! 1st interior
+           call faceLayerIndices(faceID, 3, i, j, dm, sps, I3, J3, K3) ! 2nd interior
 
            ! Set the value of rhok if a correcton must be applied.
            ! It probably does not matter too much, because k is very
            ! small near the wall.
 
-           if (correctForK) rhok = ww2(i, j, irho) * ww2(i, j, itu1)
+           if (correctForK) rhok = d_cudaDoms(dm, sps)%w(I2, J2, K2, irho) * d_cudaDoms(dm, sps)%w(I2, J2, K2, itu1)
 
            ! Determine the variables in the halo. As the spacing
            ! is very small a constant pressure boundary condition
            ! (except for the k correction) is okay. Take the slip
            ! velocity into account.
 
-           ww1(i, j, irho) = ww2(i, j, irho)
-           ww1(i, j, ivx) = -ww2(i, j, ivx) + two * BCData(nn)%uSlip(i, j, 1)
-           ww1(i, j, ivy) = -ww2(i, j, ivy) + two * BCData(nn)%uSlip(i, j, 2)
-           ww1(i, j, ivz) = -ww2(i, j, ivz) + two * BCData(nn)%uSlip(i, j, 3)
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, irho) = d_cudaDoms(dm, sps)%w(I2, J2, K2, irho)
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivx) = -d_cudaDoms(dm, sps)%w(I2, J2, K2, ivx) + two * BCData(nn)%uSlip(i, j, 1)
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivy) = -d_cudaDoms(dm, sps)%w(I2, J2, K2, ivy) + two * BCData(nn)%uSlip(i, j, 2)
+           d_cudaDoms(dm, sps)%w(I1, J1, K1, ivz) = -d_cudaDoms(dm, sps)%w(I2, J2, K2, ivz) + two * BCData(nn)%uSlip(i, j, 3)
 
            ! Set the viscosities. There is no need to test for a
            ! viscous problem of course. The eddy viscosity is
            ! set to the negative value, as it should be zero on
            ! the wall.
 
-           rlv1(i, j) = rlv2(i, j)
-           if (eddyModel) rev1(i, j) = -rev2(i, j)
+           d_cudaDoms(dm, sps)%rlv(I1, J1, K1) = d_cudaDoms(dm, sps)%rlv(I2, J2, K2)
+           if (eddyModel) d_cudaDoms(dm, sps)%rev(I1, J1, K1) = -d_cudaDoms(dm, sps)%rev(I2, J2, K2)
 
            ! Make sure that on the coarser grids the constant pressure
            ! boundary condition is used.
@@ -776,25 +799,26 @@ contains
            case (constantPressure)
 
            ! Constant pressure. Set the gradient to zero.
-           pp1(i, j) = pp2(i, j) - four * third * rhok
+           d_cudaDoms(dm, sps)%P(I1, J1, K1) = d_cudaDoms(dm, sps)%P(I2, J2, K2) - four * third * rhok
 
            case default
 
-           pp1(i, j) = 2 * pp2(i, j) - pp3(i, j)
+           d_cudaDoms(dm, sps)%P(I1, J1, K1) = 2 * d_cudaDoms(dm, sps)%P(I2, J2, K2) - d_cudaDoms(dm, sps)%P(I3, J3, K3)
            ! Adjust value if pressure is negative
-           if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+           if (d_cudaDoms(dm, sps)%P(I1, J1, K1) .le. zero) &
+               d_cudaDoms(dm, sps)%P(I1, J1, K1) = d_cudaDoms(dm, sps)%P(I2, J2, K2)
 
            end select BCTreatment
        end if
 
        ! Compute the energy for these halo's.
 
-       call computeEtot(1_intType, correctForK)
+       call computeEtot(faceID, 1_intType, correctForK)
 
        ! Extrapolate the state vectors in case a second halo
        ! is needed.
 
-       if (secondHalo) call extrapolate2ndHalo(correctForK)
+       if (secondHalo) call extrapolate2ndHalo(faceID, correctForK)
 
    end subroutine bcNSWallAdiabatic
 !
@@ -1018,25 +1042,25 @@ contains
 !    ! ========================================
     !  DEVICE SUBROUTINES
     ! ========================================
-    attributes(device) subroutine computeEtot(haloSlot, correctForK)
+    attributes(device) subroutine computeEtot(faceID, haloSlot, correctForK)
 
         ! Simplified total energy computation for boundary conditions.
         ! Only implements the constant cpModel
 
-        ! haloSlot selects which pointer pair to update: 0 -> ww0/pp0,
-        ! 1 -> ww1/pp1. Device subprograms cannot accept the module's
-        ! deferred-shape pointer arrays (ww0..ww3, pp0..pp3) as arguments
-        ! (NVFORTRAN "array reshaping is not supported"), so the arrays
-        ! are referenced directly here instead of being passed in.
+        ! haloSlot selects which layer to update: 0 -> layer 0 (2nd/outermost halo),
+        ! else -> layer 1 (1st halo) -- see faceLayerIndices.
 
         use constants, only: third, five, half, irho, ivx, ivy, ivz, irhoE, itu1, one
         use cudaInputPhysics, only: gammaConstant
-        use cudaBCPointers, only: ww0, ww1, pp0, pp1, iSize, jSize, iStart, jStart
+        use cudaBCPointers, only: iSize, jSize, iStart, jStart, faceLayerIndices
+        use cudaBlock, only: d_cudaDoms
         implicit none
 
-        integer(kind=intType) :: haloSlot
-        logical :: correctForK
-        integer(kind=intType) :: i, j
+        integer(kind=intType), value :: faceID, haloSlot
+        logical, value :: correctForK
+        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
+        integer(kind=intType) :: i, j, layer
+        integer(kind=intType) :: I3, J3, K3
         real(kind=realType) :: ovgm1, factK
 
         ! Constant cp and thus constant gamma.
@@ -1052,33 +1076,27 @@ contains
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+        if ((i - iStart) < isize .and. (j - jStart) < jsize) then
             if (haloSlot == 0) then
-                if (.not. correctForK) then
-                    ww0(i, j, iRhoE) = ovgm1 * pp0(i, j) &
-                                        + half * ww0(i, j, irho) * (ww0(i, j, ivx)**2 &
-                                                                    + ww0(i, j, ivy)**2 &
-                                                                    + ww0(i, j, ivz)**2)
-                else
-                    ww0(i, j, iRhoE) = ovgm1 * pp0(i, j) &
-                                        + half * ww0(i, j, irho) * (ww0(i, j, ivx)**2 &
-                                                                    + ww0(i, j, ivy)**2 &
-                                                                    + ww0(i, j, ivz)**2) &
-                                        - factK * ww0(i, j, irho) * ww0(i, j, itu1)
-                end if
+                layer = 0
             else
-                if (.not. correctForK) then
-                    ww1(i, j, iRhoE) = ovgm1 * pp1(i, j) &
-                                        + half * ww1(i, j, irho) * (ww1(i, j, ivx)**2 &
-                                                                    + ww1(i, j, ivy)**2 &
-                                                                    + ww1(i, j, ivz)**2)
-                else
-                    ww1(i, j, iRhoE) = ovgm1 * pp1(i, j) &
-                                        + half * ww1(i, j, irho) * (ww1(i, j, ivx)**2 &
-                                                                    + ww1(i, j, ivy)**2 &
-                                                                    + ww1(i, j, ivz)**2) &
-                                        - factK * ww1(i, j, irho) * ww1(i, j, itu1)
-                end if
+                layer = 1
+            end if
+            call faceLayerIndices(faceID, layer, i, j, dm, sps, I3, J3, K3)
+
+            if (.not. correctForK) then
+                d_cudaDoms(dm, sps)%w(I3, J3, K3, iRhoE) = ovgm1 * d_cudaDoms(dm, sps)%P(I3, J3, K3) &
+                                    + half * d_cudaDoms(dm, sps)%w(I3, J3, K3, irho) * ( &
+                                        d_cudaDoms(dm, sps)%w(I3, J3, K3, ivx)**2 &
+                                        + d_cudaDoms(dm, sps)%w(I3, J3, K3, ivy)**2 &
+                                        + d_cudaDoms(dm, sps)%w(I3, J3, K3, ivz)**2)
+            else
+                d_cudaDoms(dm, sps)%w(I3, J3, K3, iRhoE) = ovgm1 * d_cudaDoms(dm, sps)%P(I3, J3, K3) &
+                                    + half * d_cudaDoms(dm, sps)%w(I3, J3, K3, irho) * ( &
+                                        d_cudaDoms(dm, sps)%w(I3, J3, K3, ivx)**2 &
+                                        + d_cudaDoms(dm, sps)%w(I3, J3, K3, ivy)**2 &
+                                        + d_cudaDoms(dm, sps)%w(I3, J3, K3, ivz)**2) &
+                                    - factK * d_cudaDoms(dm, sps)%w(I3, J3, K3, irho) * d_cudaDoms(dm, sps)%w(I3, J3, K3, itu1)
             end if
         end if
 
@@ -1086,25 +1104,28 @@ contains
         ! Skipping cpTempCurveFits
 
     end subroutine computeEtot
-        
-    attributes(device) subroutine extrapolate2ndHalo(correctForK)
+
+    attributes(device) subroutine extrapolate2ndHalo(faceID, correctForK)
 
         ! extrapolate2ndHalo determines the states of the second layer
         ! halo cells for the given subface of the block. It is assumed
         ! that the appropriate BCPointers are already set
 
         use constants, only: irho, ivx, ivy, ivz, two
-        use cudaBCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, &
-                              rlv0, rlv1, rlv2, rev0, rev1, rev2, iSize, jSize, iStart, jStart
+        use cudaBCPointers, only: iSize, jSize, iStart, jStart, faceLayerIndices
         use cudaFlowVarRefState, only: viscous, eddyModel
+        use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Input variables
+        integer(kind=intType), value :: faceID
         logical :: correctForK
 
         ! Working variables
         real(kind=realType), parameter :: factor = 0.5_realType
-        integer(kind=intType) :: i, j, l, ii
+        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
+        integer(kind=intType) :: i, j
+        integer(kind=intType) :: I0, J0, K0, I1, J1, K1, I2, J2, K2
 
         ! Loop over the generic subface to set the state in the halo cells.
 
@@ -1112,29 +1133,40 @@ contains
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+        if ((i - iStart) < isize .and. (j - jStart) < jsize) then
+
+            call faceLayerIndices(faceID, 0, i, j, dm, sps, I0, J0, K0) ! 2nd/outermost halo
+            call faceLayerIndices(faceID, 1, i, j, dm, sps, I1, J1, K1) ! 1st halo
+            call faceLayerIndices(faceID, 2, i, j, dm, sps, I2, J2, K2) ! 1st interior
 
             ! Extrapolate the density, momentum and pressure.
             ! Make sure that a certain threshold is kept.
 
-            ww0(i, j, irho) = two * ww1(i, j, irho) - ww2(i, j, irho)
-            ww0(i, j, irho) = max(factor * ww1(i, j, irho), ww0(i, j, irho))
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, irho) = two * d_cudaDoms(dm, sps)%w(I1, J1, K1, irho) &
+                                                       - d_cudaDoms(dm, sps)%w(I2, J2, K2, irho)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, irho) = max(factor * d_cudaDoms(dm, sps)%w(I1, J1, K1, irho), &
+                                                           d_cudaDoms(dm, sps)%w(I0, J0, K0, irho))
 
-            ww0(i, j, ivx) = two * ww1(i, j, ivx) - ww2(i, j, ivx)
-            ww0(i, j, ivy) = two * ww1(i, j, ivy) - ww2(i, j, ivy)
-            ww0(i, j, ivz) = two * ww1(i, j, ivz) - ww2(i, j, ivz)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivx) = two * d_cudaDoms(dm, sps)%w(I1, J1, K1, ivx) &
+                                                      - d_cudaDoms(dm, sps)%w(I2, J2, K2, ivx)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivy) = two * d_cudaDoms(dm, sps)%w(I1, J1, K1, ivy) &
+                                                      - d_cudaDoms(dm, sps)%w(I2, J2, K2, ivy)
+            d_cudaDoms(dm, sps)%w(I0, J0, K0, ivz) = two * d_cudaDoms(dm, sps)%w(I1, J1, K1, ivz) &
+                                                      - d_cudaDoms(dm, sps)%w(I2, J2, K2, ivz)
 
-            pp0(i, j) = max(factor * pp1(i, j), two * pp1(i, j) - pp2(i, j))
+            d_cudaDoms(dm, sps)%P(I0, J0, K0) = max(factor * d_cudaDoms(dm, sps)%P(I1, J1, K1), &
+                                                     two * d_cudaDoms(dm, sps)%P(I1, J1, K1) - d_cudaDoms(dm, sps)%P(I2, J2, K2))
 
             ! The laminar and eddy viscosity, if present. These values
             ! are simply taken constant. Their values do not matter.
-
-            if (viscous) rlv0(i, j) = rlv1(i, j)
-            if (eddyModel) rev0(i, j) = rev1(i, j)
+            ! rlv/rev are single-halo on GPU -- layer 0 (2nd/outermost halo) has no backing
+            ! memory (see cudaBCPointers.cuf file header). Skipped for now; TODO(rlv-2nd-halo).
+            if (viscous) d_cudaDoms(dm, sps)%rlv(I0, J0, K0) = d_cudaDoms(dm, sps)%rlv(I1, J1, K1)
+            if (eddyModel) d_cudaDoms(dm, sps)%rev(I0, J0, K0) = d_cudaDoms(dm, sps)%rev(I1, J1, K1)
         end if
 
         ! Compute the energy for this halo range.
-        call computeEtot(0_intType, correctForK)
+        call computeEtot(faceID, 0_intType, correctForK)
 
     end subroutine extrapolate2ndHalo
 

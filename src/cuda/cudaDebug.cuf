@@ -161,14 +161,14 @@ subroutine debugCompareCudaData
     call reportR3('aa', g_aa, baa(1:bie, 1:bje, 1:bke))
     deallocate (g_aa)
 
-    allocate (g_rlv(1:bie, 1:bje, 1:bke))
+    allocate (g_rlv(0:bib, 0:bjb, 0:bkb))
     g_rlv = h_cudaDoms(dom, sps)%rlv
-    call reportR3('rlv', g_rlv, brlv(1:bie, 1:bje, 1:bke))
+    call reportR3('rlv', g_rlv, brlv)
     deallocate (g_rlv)
 
-    allocate (g_rev(1:bie, 1:bje, 1:bke))
+    allocate (g_rev(0:bib, 0:bjb, 0:bkb))
     g_rev = h_cudaDoms(dom, sps)%rev
-    call reportR3('rev', g_rev, brev(1:bie, 1:bje, 1:bke))
+    call reportR3('rev', g_rev, brev)
     deallocate (g_rev)
 
     call banner('SPECTRAL RADII / TIME STEP')
@@ -324,8 +324,21 @@ subroutine debugCompareCudaData
             call reportR3('  norm', g_norm, bBCData(mm)%norm)
             deallocate (g_norm)
 
+        case (NSWallAdiabatic)
+                        print '(2X,"boco ",I0,": nswalladiabatic, icBeg:icEnd=",I0,":",I0,", jcBeg:jcEnd=",I0,":",I0)', &
+                mm, bBCData(mm)%icBeg, bBCData(mm)%icEnd, bBCData(mm)%jcBeg, bBCData(mm)%jcEnd
+
+            allocate (g_norm(lbound(bBCData(mm)%uslip, 1):ubound(bBCData(mm)%uslip, 1), &
+                                lbound(bBCData(mm)%uslip, 2):ubound(bBCData(mm)%uslip, 2), &
+                                lbound(bBCData(mm)%uslip, 3):ubound(bBCData(mm)%uslip, 3)))
+            g_norm = h_BCData(mm)%uslip
+            call reportR3('  uslip', g_norm, bBCData(mm)%uslip)
+            deallocate (g_norm)
+
+
         case default
             call reportSkip('boco '//trim(itoa(mm)), 'BC type not mirrored to device, see allocateCudaBCData')
+            print *, bBCType(mm)
 
         end select
     end do
