@@ -24,7 +24,9 @@ clean:
 	rm -fr src/build/adflow_project.dep
 	rm -f *~ config.mk;
 
-
+clean-bcs:
+	rm -fr src/build/bc*
+	rm -fr src/build/BC*
 
 adflow_build:
 	ln -sf config/config.mk config.mk;

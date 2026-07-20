@@ -56,11 +56,114 @@ module cudaBCPointers
     type(cudaBCType), device, allocatable,dimension(:,:) :: d_cudaBCDoms(:,:)
     type(cudaBCType), allocatable,dimension(:,:) :: h_cudaBCDoms(:,:)
 
-    contains 
-    
-    subroutine copyCudaBC
-        use blockPointers, only: nDom
-        use BCPointers, only: iStart, iEnd, iSize, jStart, jEnd, jSize, &
+    contains
+
+    subroutine allocateCudaBC
+        ! Allocate the persistent device/host BC-pointer mirrors (d_cudaBCDoms /
+        ! h_cudaBCDoms), one entry per BOCO (not per domain -- BC face data is inherently
+        ! per-subface: each boco has its own face-local iSize x jSize arrays, and a single
+        ! domain typically has many bocos). Runs ONCE per run (guarded) -- same lifecycle
+        ! rationale as cudaBlock::allocateCudaBlock/allocateCudaBCData. Field VALUES are
+        ! copied every call by copyCudaBC, which calls this first.
+        use blockPointers, only: nBocos
+        use BCPointers, only: iStart, iEnd, iSize, jStart, jEnd, jSize, bsFace => sFace
+        use utils, only: setBCPointers
+
+        implicit none
+
+        integer(kind=intType) :: mm, sps    ! boco and time spectral interval indices
+        integer(kind=intType) :: nTimeIntervalsSpectral = 1
+
+        if (allocated(d_cudaBCDoms)) return
+
+        ! Allocate device
+        allocate(d_cudaBCDoms(nBocos, nTimeIntervalsSpectral))
+        ! Allocate host
+        allocate(h_cudaBCDoms(nBocos, nTimeIntervalsSpectral))
+
+        do mm = 1, nBocos ! loop over bocos of the current (single) domain
+            do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
+
+                call setBCPointers(mm, .True.)
+
+                ! Indices
+                allocate(h_cudaBCDoms(mm,sps)%iStart, h_cudaBCDoms(mm,sps)%iEnd, h_cudaBCDoms(mm,sps)%iSize, &
+                         h_cudaBCDoms(mm,sps)%jStart, h_cudaBCDoms(mm,sps)%jEnd, h_cudaBCDoms(mm,sps)%jSize)
+
+                h_cudaBCDoms(mm, sps)%iStart = iStart
+                h_cudaBCDoms(mm, sps)%iEnd = iEnd
+                h_cudaBCDoms(mm, sps)%iSize = iSize
+                h_cudaBCDoms(mm, sps)%jStart = jStart
+                h_cudaBCDoms(mm, sps)%jEnd = jEnd
+                h_cudaBCDoms(mm, sps)%jSize = jSize
+
+                ! Allocate BC data
+                ! allocate(h_cudaBCDoms(mm,sps)%ww0(iSize, jSize, nw)) ! 2nd halo flowfield states
+                ! allocate(h_cudaBCDoms(mm,sps)%ww1(iSize, jSize, nw)) ! 1st halo flowfield states
+                ! allocate(h_cudaBCDoms(mm,sps)%ww2(iSize, jSize, nw)) ! 1st interior flowfield states
+                ! allocate(h_cudaBCDoms(mm,sps)%ww3(iSize, jSize, nw)) ! 2nd interior flowfield states
+                ! allocate(h_cudaBCDoms(mm,sps)%pp0(iSize, jSize)) ! 2nd halo pressure states
+                ! allocate(h_cudaBCDoms(mm,sps)%pp1(iSize, jSize)) ! 1st halo pressure states
+                ! allocate(h_cudaBCDoms(mm,sps)%pp2(iSize, jSize)) ! 1st interior pressure states
+                ! allocate(h_cudaBCDoms(mm,sps)%pp3(iSize, jSize)) ! 2nd interior pressure states
+                ! allocate(h_cudaBCDoms(mm,sps)%rlv0(iSize, jSize)) ! 2nd halo laminar viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rlv1(iSize, jSize)) ! 1st halo laminar viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rlv2(iSize, jSize)) ! 1st interior laminar viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rlv3(iSize, jSize)) ! 2nd interior laminar viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rev0(iSize, jSize)) ! 2nd halo eddy viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rev1(iSize, jSize)) ! 1st halo eddy viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rev2(iSize, jSize)) ! 1st interior eddy viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%rev3(iSize, jSize)) ! 2nd interior eddy viscosity states
+                ! allocate(h_cudaBCDoms(mm,sps)%gamma0(iSize, jSize)) ! 2nd halo gamma states
+                ! allocate(h_cudaBCDoms(mm,sps)%gamma1(iSize, jSize)) ! 1st halo gamma states
+                ! allocate(h_cudaBCDoms(mm,sps)%gamma2(iSize, jSize)) ! 1st interior gamma states
+                ! allocate(h_cudaBCDoms(mm,sps)%gamma3(iSize, jSize)) ! 2nd interior gamma states
+                ! allocate(h_cudaBCDoms(mm,sps)%ssi(iSize, jSize, 3)) ! i face normal
+                ! allocate(h_cudaBCDoms(mm,sps)%ssj(iSize, jSize, 3)) ! j face normal
+                ! allocate(h_cudaBCDoms(mm,sps)%ssk(iSize, jSize, 3)) ! k face normal
+                ! allocate(h_cudaBCDoms(mm,sps)%ss(iSize, jSize, 3)) ! mesh velocities (see block.F90) this var naming sucks
+                ! allocate(h_cudaBCDoms(mm,sps)%xx(iSize, jSize, 3)) ! coordinates
+                ! allocate(h_cudaBCDoms(mm,sps)%dd2wall(iSize, jSize)) ! distance squared to wall
+                ! sFace (face velocity dot normal) is only pointed at sFaceI/J/K by
+                ! setBCPointers when addGridVelocities is true (utils.F90:1140-1155) -- for a
+                ! static mesh (or a subface with no prescribed motion) it's left disassociated.
+                ! Guard on associated(bsFace) rather than importing addGridVelocities here, so
+                ! this stays correct regardless of why the CPU side left it unset.
+                ! if (associated(bsFace)) then
+                !     allocate(h_cudaBCDoms(mm,sps)%sFace(iSize, jSize)) ! dot product of face velocity & normal
+                ! end if
+                ! allocate(h_cudaBCDoms(mm,sps)%gcp(iSize, jSize)) ! global cell index
+
+            end do
+        end do
+
+        ! Push descriptors to the device mirror (members are device pointers -> aliasing,
+        ! so the host->device value copies in copyCudaBC are visible without a further
+        ! struct copy).
+        do mm = 1, nBocos
+            do sps = 1, nTimeIntervalsSpectral
+                d_cudaBCDoms(mm, sps) = h_cudaBCDoms(mm, sps)
+            end do
+        end do
+
+    end subroutine allocateCudaBC
+
+    subroutine copyCudaBC(nn, sps)
+        ! Copy BC-pointer field VALUES host->device for boco `nn` (spectral instance `sps`),
+        ! then point the bare module-level "current" pointers (ww0, ww1, ..., iStart, ...)
+        ! at d_cudaBCDoms(nn,sps) so the BC kernels that read those bare names (bcSymm1stHalo,
+        ! bcFarfield, bcNSWallAdiabatic, ...) see valid device memory.
+        !
+        ! IMPORTANT: this does NOT call setBCPointers itself. The caller (applyAllBC_block)
+        ! already calls setBCPointers(nn, ...) for the real current boco right before calling
+        ! this -- this used to loop over 1..nDom internally and call setBCPointers(its own
+        ! loop var, .True.) again, which silently overwrote the caller's context with boco
+        ! #1's data whenever the real current boco wasn't #1 (harmless only by coincidence
+        ! when nDom==1 and boco #1 happened to be the one being processed). Removed; this
+        ! routine now just trusts the BCPointers module state the caller already set up.
+        !
+        ! Allocation is done once by allocateCudaBC, called (guarded) below.
+        use BCPointers, only: &
             bww0=>ww0, bww1=>ww1, bww2=>ww2, bww3=>ww3, &
             bpp0=>pp0, bpp1=>pp1, bpp2=>pp2, bpp3=>pp3, &
             brlv0=>rlv0, brlv1=>rlv1, brlv2=>rlv2, brlv3=>rlv3, &
@@ -69,103 +172,89 @@ module cudaBCPointers
             bssi=>ssi, bssj=>ssj, bssk=>ssk, bss=>ss, bxx=>xx, bdd2wall=>dd2wall, &
             bsFace=>sFace, bgcp=>gcp
 
-        use utils, only: setBCPointers
-        
         implicit none
-        
-        integer(kind=intType) :: nn, sps    ! domain and time spectral interval indices
-        integer(kind=intType) :: nTimeIntervalsSpectral=1
 
-        ! Allocate device 
-        allocate(d_cudaBCDoms(nDom, nTimeIntervalsSpectral))
-        ! Allocate host
-        allocate(h_cudaBCDoms(nDom, nTimeIntervalsSpectral))
-        
-        do nn = 1, nDom ! loop over domains
-            do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
-                
-                call setBCPointers(nn, .True.)
+        integer(kind=intType), intent(in) :: nn, sps  ! current boco and time spectral interval indices
 
-                ! Indices
-                allocate(h_cudaBCDoms(nn,sps)%iStart, h_cudaBCDoms(nn,sps)%iEnd, h_cudaBCDoms(nn,sps)%iSize, &
-                         h_cudaBCDoms(nn,sps)%jStart, h_cudaBCDoms(nn,sps)%jEnd, h_cudaBCDoms(nn,sps)%jSize)
+        call allocateCudaBC ! guarded -- a no-op after the first call
 
-                h_cudaBCDoms(nn, sps)%iStart = iStart
-                h_cudaBCDoms(nn, sps)%iEnd = iEnd
-                h_cudaBCDoms(nn, sps)%iSize = iSize
-                h_cudaBCDoms(nn, sps)%jStart = jStart
-                h_cudaBCDoms(nn, sps)%jEnd = jEnd
-                h_cudaBCDoms(nn, sps)%jSize = jSize
+        ! Set the BC data
+        h_cudaBCDoms(nn,sps)%ww0 = bww0
+        h_cudaBCDoms(nn,sps)%ww1 = bww1
+        h_cudaBCDoms(nn,sps)%ww2 = bww2
+        h_cudaBCDoms(nn,sps)%ww3 = bww3
+        h_cudaBCDoms(nn,sps)%pp0 = bpp0
+        h_cudaBCDoms(nn,sps)%pp1 = bpp1
+        h_cudaBCDoms(nn,sps)%pp2 = bpp2
+        h_cudaBCDoms(nn,sps)%pp3 = bpp3
+        h_cudaBCDoms(nn,sps)%rlv0 = brlv0
+        h_cudaBCDoms(nn,sps)%rlv1 = brlv1
+        h_cudaBCDoms(nn,sps)%rlv2 = brlv2
+        h_cudaBCDoms(nn,sps)%rlv3 = brlv3
+        h_cudaBCDoms(nn,sps)%rev0 = brev0
+        h_cudaBCDoms(nn,sps)%rev1 = brev1
+        h_cudaBCDoms(nn,sps)%rev2 = brev2
+        h_cudaBCDoms(nn,sps)%rev3 = brev3
+        h_cudaBCDoms(nn,sps)%gamma0 = bgamma0
+        h_cudaBCDoms(nn,sps)%gamma1 = bgamma1
+        h_cudaBCDoms(nn,sps)%gamma2 = bgamma2
+        h_cudaBCDoms(nn,sps)%gamma3 = bgamma3
+        h_cudaBCDoms(nn,sps)%ssi = bssi
+        h_cudaBCDoms(nn,sps)%ssj = bssj
+        h_cudaBCDoms(nn,sps)%ssk = bssk
+        h_cudaBCDoms(nn,sps)%ss = bss
+        h_cudaBCDoms(nn,sps)%xx = bxx
+        h_cudaBCDoms(nn,sps)%dd2wall = bdd2wall
+        ! Guard exactly as in allocateCudaBC -- skip whenever this boco has no
+        ! prescribed face velocity, matching whatever was (or wasn't) allocated.
+        if (associated(bsFace)) then
+            h_cudaBCDoms(nn,sps)%sFace = bsFace
+        end if
+        h_cudaBCDoms(nn,sps)%gcp = bgcp
 
-                ! Allocate BC data
-                allocate(h_cudaBCDoms(nn,sps)%ww0(iSize, jSize, nw)) ! 2nd halo flowfield states
-                allocate(h_cudaBCDoms(nn,sps)%ww1(iSize, jSize, nw)) ! 1st halo flowfield states
-                allocate(h_cudaBCDoms(nn,sps)%ww2(iSize, jSize, nw)) ! 1st interior flowfield states
-                allocate(h_cudaBCDoms(nn,sps)%ww3(iSize, jSize, nw)) ! 2nd interior flowfield states
-                allocate(h_cudaBCDoms(nn,sps)%pp0(iSize, jSize)) ! 2nd halo pressure states
-                allocate(h_cudaBCDoms(nn,sps)%pp1(iSize, jSize)) ! 1st halo pressure states
-                allocate(h_cudaBCDoms(nn,sps)%pp2(iSize, jSize)) ! 1st interior pressure states
-                allocate(h_cudaBCDoms(nn,sps)%pp3(iSize, jSize)) ! 2nd interior pressure states
-                allocate(h_cudaBCDoms(nn,sps)%rlv0(iSize, jSize)) ! 2nd halo laminar viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rlv1(iSize, jSize)) ! 1st halo laminar viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rlv2(iSize, jSize)) ! 1st interior laminar viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rlv3(iSize, jSize)) ! 2nd interior laminar viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rev0(iSize, jSize)) ! 2nd halo eddy viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rev1(iSize, jSize)) ! 1st halo eddy viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rev2(iSize, jSize)) ! 1st interior eddy viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%rev3(iSize, jSize)) ! 2nd interior eddy viscosity states
-                allocate(h_cudaBCDoms(nn,sps)%gamma0(iSize, jSize)) ! 2nd halo gamma states
-                allocate(h_cudaBCDoms(nn,sps)%gamma1(iSize, jSize)) ! 1st halo gamma states
-                allocate(h_cudaBCDoms(nn,sps)%gamma2(iSize, jSize)) ! 1st interior gamma states
-                allocate(h_cudaBCDoms(nn,sps)%gamma3(iSize, jSize)) ! 2nd interior gamma states
-                allocate(h_cudaBCDoms(nn,sps)%ssi(iSize, jSize, 3)) ! i face normal
-                allocate(h_cudaBCDoms(nn,sps)%ssj(iSize, jSize, 3)) ! j face normal
-                allocate(h_cudaBCDoms(nn,sps)%ssk(iSize, jSize, 3)) ! k face normal
-                allocate(h_cudaBCDoms(nn,sps)%ss(iSize, jSize, 3)) ! mesh velocities (see block.F90) this var naming sucks
-                allocate(h_cudaBCDoms(nn,sps)%xx(iSize, jSize, 3)) ! coordinates
-                allocate(h_cudaBCDoms(nn,sps)%dd2wall(iSize, jSize)) ! distance squared to wall
-                allocate(h_cudaBCDoms(nn,sps)%sFace(iSize, jSize)) ! dot product of face velocity & normal 
-                allocate(h_cudaBCDoms(nn,sps)%gcp(iSize, jSize)) ! global cell index
-
-                ! Set the BC data
-                h_cudaBCDoms(nn,sps)%ww0 = bww0
-                h_cudaBCDoms(nn,sps)%ww1 = bww1
-                h_cudaBCDoms(nn,sps)%ww2 = bww2
-                h_cudaBCDoms(nn,sps)%ww3 = bww3
-                h_cudaBCDoms(nn,sps)%pp0 = bpp0
-                h_cudaBCDoms(nn,sps)%pp1 = bpp1
-                h_cudaBCDoms(nn,sps)%pp2 = bpp2
-                h_cudaBCDoms(nn,sps)%pp3 = bpp3
-                h_cudaBCDoms(nn,sps)%rlv0 = brlv0
-                h_cudaBCDoms(nn,sps)%rlv1 = brlv1
-                h_cudaBCDoms(nn,sps)%rlv2 = brlv2
-                h_cudaBCDoms(nn,sps)%rlv3 = brlv3
-                h_cudaBCDoms(nn,sps)%rev0 = brev0
-                h_cudaBCDoms(nn,sps)%rev1 = brev1
-                h_cudaBCDoms(nn,sps)%rev2 = brev2
-                h_cudaBCDoms(nn,sps)%rev3 = brev3
-                h_cudaBCDoms(nn,sps)%gamma0 = bgamma0
-                h_cudaBCDoms(nn,sps)%gamma1 = bgamma1
-                h_cudaBCDoms(nn,sps)%gamma2 = bgamma2
-                h_cudaBCDoms(nn,sps)%gamma3 = bgamma3
-                h_cudaBCDoms(nn,sps)%ssi = bssi
-                h_cudaBCDoms(nn,sps)%ssj = bssj
-                h_cudaBCDoms(nn,sps)%ssk = bssk
-                h_cudaBCDoms(nn,sps)%ss = bss
-                h_cudaBCDoms(nn,sps)%xx = bxx
-                h_cudaBCDoms(nn,sps)%dd2wall = bdd2wall
-                h_cudaBCDoms(nn,sps)%sFace = bsFace
-                h_cudaBCDoms(nn,sps)%gcp = bgcp
-                
-            end do
-        end do
-
-        ! --- Copy data from host back to device---
-        do nn = 1, nDom
-            do sps = 1, nTimeIntervalsSpectral
-                d_cudaBCDoms(nn, sps) = h_cudaBCDoms(nn, sps)
-            end do
-        end do
+        ! Activate: point the bare "current" device pointers (declared at the top of this
+        ! module) at boco `nn`'s data, so the attributes(global) BC kernels -- which import
+        ! these bare names via `use cudaBCPointers, only: ww0, ww1, ...` -- read valid
+        ! memory instead of a disassociated pointer. This is a device-pointer-to-device-
+        ! target association done from host code; no kernel launch is involved.
+        ww0 => d_cudaBCDoms(nn,sps)%ww0
+        ww1 => d_cudaBCDoms(nn,sps)%ww1
+        ww2 => d_cudaBCDoms(nn,sps)%ww2
+        ww3 => d_cudaBCDoms(nn,sps)%ww3
+        pp0 => d_cudaBCDoms(nn,sps)%pp0
+        pp1 => d_cudaBCDoms(nn,sps)%pp1
+        pp2 => d_cudaBCDoms(nn,sps)%pp2
+        pp3 => d_cudaBCDoms(nn,sps)%pp3
+        rlv0 => d_cudaBCDoms(nn,sps)%rlv0
+        rlv1 => d_cudaBCDoms(nn,sps)%rlv1
+        rlv2 => d_cudaBCDoms(nn,sps)%rlv2
+        rlv3 => d_cudaBCDoms(nn,sps)%rlv3
+        rev0 => d_cudaBCDoms(nn,sps)%rev0
+        rev1 => d_cudaBCDoms(nn,sps)%rev1
+        rev2 => d_cudaBCDoms(nn,sps)%rev2
+        rev3 => d_cudaBCDoms(nn,sps)%rev3
+        gamma0 => d_cudaBCDoms(nn,sps)%gamma0
+        gamma1 => d_cudaBCDoms(nn,sps)%gamma1
+        gamma2 => d_cudaBCDoms(nn,sps)%gamma2
+        gamma3 => d_cudaBCDoms(nn,sps)%gamma3
+        ssi => d_cudaBCDoms(nn,sps)%ssi
+        ssj => d_cudaBCDoms(nn,sps)%ssj
+        ssk => d_cudaBCDoms(nn,sps)%ssk
+        ss => d_cudaBCDoms(nn,sps)%ss
+        xx => d_cudaBCDoms(nn,sps)%xx
+        dd2wall => d_cudaBCDoms(nn,sps)%dd2wall
+        if (associated(d_cudaBCDoms(nn,sps)%sFace)) then
+            sFace => d_cudaBCDoms(nn,sps)%sFace
+        else
+            nullify(sFace)
+        end if
+        gcp => d_cudaBCDoms(nn,sps)%gcp
+        iStart => d_cudaBCDoms(nn,sps)%iStart
+        iEnd => d_cudaBCDoms(nn,sps)%iEnd
+        iSize => d_cudaBCDoms(nn,sps)%iSize
+        jStart => d_cudaBCDoms(nn,sps)%jStart
+        jEnd => d_cudaBCDoms(nn,sps)%jEnd
+        jSize => d_cudaBCDoms(nn,sps)%jSize
 
     end subroutine copyCudaBC
 end module cudaBCPointers

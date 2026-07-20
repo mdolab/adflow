@@ -98,10 +98,10 @@ contains
         
         ! --- GPU SETUP ---
         ! Allocate the device mirrors once (guarded), then copy block + BC data to device.
-        call allocateCudaBlock
-        call copyCudaBlockToDevice
-        call allocateCudaBCData
-        call copyCudaBCDataToDevice
+        ! call allocateCudaBlock
+        ! call copyCudaBlockToDevice
+        ! call allocateCudaBCData
+        ! call copyCudaBCDataToDevice
 
         ibmax = 0
         jbmax = 0
@@ -141,11 +141,10 @@ contains
                 ! First set pointers on CPU
                 call setBCPointers(nn, .False.)
                 ! Then copy all data to device
-                call copyCudaBC
+                call copyCudaBC(nn, sps)
                 call copyCudaBCDataMod
 
                 ! Run routine on GPU
-                !TODO: pickup debugging here GGGGGGGGGGGGGGGGGGGGGGGGGGGG
                 call bcSymm1stHalo<<<grid_size, block_size>>>(nn)
             end if
         end do
@@ -157,7 +156,7 @@ contains
                    ! First set pointers on CPU
                    call setBCPointers(nn, .False.)
                    ! Then copy all data to device
-                   call copyCudaBC
+                   call copyCudaBC(nn, sps)
                    call copyCudaBCDataMod
                    ! Run routine on GPU
                    call bcSymm2ndHalo<<<grid_size, block_size>>>(nn)
@@ -200,7 +199,7 @@ contains
            if (BCType(nn) == NSWallAdiabatic) then
                call setBCPointers(nn, .False.)
                ! Then copy all data to device
-               call copyCudaBC
+               call copyCudaBC(nn, sps)
                call copyCudaBCDataMod
                call bcNSWallAdiabatic<<<grid_size, block_size>>>(nn, secondHalo, correctForK)
            end if
@@ -229,7 +228,7 @@ contains
                call setBCPointers(nn, .False.)
                ! Then copy all data to device
                ! call copyCudaBCData
-               call copyCudaBC
+               call copyCudaBC(nn, sps)
                call copyCudaBCDataMod
                ! Run routine on GPU
                call bcFarField<<<grid_size, block_size>>>(nn, secondHalo, correctForK)

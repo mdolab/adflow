@@ -6,7 +6,7 @@ use constants
 ! use cudaBCPointers
 ! --- CUDA FORTRAN module ---
 use cudafor
-use cudaResidual, only: saSource, saViscous, saAdvection, 
+use cudaResidual, only: saSource, saViscous, saAdvection 
 implicit none
 
 

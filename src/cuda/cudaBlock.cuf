@@ -664,7 +664,7 @@ module cudaBlock
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use iteration, only: nALESteps
         use utils, only: setBCPointers, terminate
-        use constants, only: farField, symm
+        use constants, only: farField, symm, NSWallAdiabatic
 
         implicit none
 
@@ -709,6 +709,13 @@ module cudaBlock
                         call terminate("allocateCudaBCData", "Memory allocation failure for &
                         &a symm boundary")
 
+                case (NSWallAdiabatic)
+
+                   allocate(h_BCData(mm)%uSlip(iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("allocateCudaBCData", "Memory allocation failure for &
+                        &an adiabatic wall")
+
                 ! TODO [ ] : other BC types
 
                 end select
@@ -733,7 +740,7 @@ module cudaBlock
             nBocos, bBCType => BCType
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setBCPointers
-        use constants, only: farField, symm
+        use constants, only: farField, symm, NSWallAdiabatic
 
         implicit none
 
@@ -756,6 +763,10 @@ module cudaBlock
                 case (symm)
 
                     h_BCData(mm)%norm = bBCData(mm)%norm
+
+                case (NSWallAdiabatic)
+
+                    h_BCData(mm)%uSlip = bBCData(mm)%uSlip
 
                 ! TODO [ ] : other BC types
 
@@ -784,6 +795,7 @@ module cudaBlock
             if (associated(h_BCData(mm)%rface))    deallocate(h_BCData(mm)%rface)
             if (associated(h_BCData(mm)%rfaceALE)) deallocate(h_BCData(mm)%rfaceALE)
             if (associated(h_BCData(mm)%norm))     deallocate(h_BCData(mm)%norm)
+            if (associated(h_BCData(mm)%uSlip))    deallocate(h_BCData(mm)%uSlip)
         end do
 
         deallocate(h_BCData)
@@ -864,38 +876,4 @@ module cudaBlock
     end subroutine copyCudaBlockToHost
 
 
-    subroutine setupCudaAPI
-        ! This routine setups the CUDA device memory allocation and copies all data block and BC on this rank to 
-        ! the device.
-        use utils, only: setPointers
-        use BCRoutines, only: applyallBC_block
-
-        implicit none
-
-        integer(kind=intType) :: ierr
-        
-        ! TODO: Reafactor for general purpose
-        call setPointers(1, 1, 1) ! harcoded to a single block for now
-        call applyAllBC_block(.True.) ! ensure halos are valid (well only for a single block)
-
-        ! set the CUDA shared mem config
-        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
-
-
-        call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
-        call allocateCudaBCData            ! allocate bc device mirrors
-        call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
-        call copyCudaBlockToDevice         ! block field values host->device
-        call copyCudaBCDataToDevice         ! bc field values host->device
-    
-    end subroutine setupCudaAPI
-
-    subroutine destroyCudaAPI
-        implicit none
-        ! This routine deallocates the CUDA device data
-
-        call deallocateCudaBlock             ! deallocate the block
-        call deallocateCudaBCData            ! deallocate bcs
-
-    end subroutine destroyCudaAPI
 end module cudaBlock

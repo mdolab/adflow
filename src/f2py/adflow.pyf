@@ -397,12 +397,6 @@ python module libadflow
 
        module cudablock
 
-        subroutine setupcudaapi
-        end subroutine setupcudaapi
-
-        subroutine destroycudaapi
-        end subroutine destroycudaapi
-
         subroutine debugcopynodalgradientstodevice
         end subroutine debugcopynodalgradientstodevice
 
@@ -410,6 +404,19 @@ python module libadflow
         end subroutine debugcopyresidualstodevice
 
        end module cudablock
+
+       module cudaapi
+       
+        subroutine setupcudaapi
+        end subroutine setupcudaapi
+
+        subroutine destroycudaapi
+        end subroutine destroycudaapi
+
+       end module cudaapi
+
+
+
 
       module cudabcroutines
         subroutine applyallbc_block(secondhalo)

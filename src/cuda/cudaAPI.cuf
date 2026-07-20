@@ -1,0 +1,44 @@
+module cudaAPI
+    use cudafor
+    use constants, only: intType
+    implicit none
+    contains
+    subroutine setupCudaAPI
+        ! This routine setups the CUDA device memory allocation and copies all data block and BC on this rank to 
+        ! the device.
+        use utils, only: setPointers
+        use cudaBlock, only: allocateCudaBlock, allocateCudaBCData, copyCudaConstantsToDevice, copyCudaBlockToDevice, copyCudaBCDataToDevice
+        use cudaBCRoutines, only: applyAllBC
+
+        implicit none
+
+        integer(kind=intType) :: ierr
+        
+        ! TODO: Reafactor for general purpose
+        ! call setPointers(1, 1, 1) ! harcoded to a single block for now
+        ! call applyAllBC_block(.True.) ! ensure halos are valid (well only for a single block)
+        
+        ! set the CUDA shared mem config
+        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
+
+
+        call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
+        call allocateCudaBCData            ! allocate bc device mirrors
+        call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
+        call copyCudaBlockToDevice         ! block field values host->device
+        call copyCudaBCDataToDevice         ! bc field values host->device
+
+        ! call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
+    
+    end subroutine setupCudaAPI
+
+    subroutine destroyCudaAPI
+        use cudaBlock, only: deallocateCudaBlock, deallocateCudaBCData
+        implicit none
+        ! This routine deallocates the CUDA device data
+
+        call deallocateCudaBlock             ! deallocate the block
+        call deallocateCudaBCData            ! deallocate bcs
+
+    end subroutine destroyCudaAPI
+end module cudaAPI

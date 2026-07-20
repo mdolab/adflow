@@ -2923,15 +2923,15 @@ contains
         integer :: jj
         integer :: mass, len, time, temp, angle
 
-        real(kind=realType), dimension(3) :: rotCenter, rotAngles
-        real(kind=realType), dimension(3) :: tlation
+        real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
+        real(kind=cgnsPerType), dimension(3) :: tlation
 
         real(kind=realType) :: mult, trans
 
         ! Check if this is a periodic boundary.
         call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-                                     real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
-                                     real(tlation, cgnsPerType), ierr)
+                                     rotCenter, rotAngles, &
+                                     tlation, ierr)
 
         testPeriodic: if (ierr == CG_OK) then
 
