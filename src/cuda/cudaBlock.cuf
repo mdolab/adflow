@@ -84,6 +84,16 @@ module cudaBlock
         ! to save memory. Care must be taken when copying to and from them.
         real(kind=realType), dimension(:,:,:, :),pointer,device :: fw
         real(kind=realType), dimension(:,:,:, :),pointer,device :: dw
+
+        ! SA solve: central Jacobian qq (owned cells), plus the itu1-diagonal and
+        ! right-hand side of the turbulent boundary treatment (copied from CPU).
+        real(kind=realType), dimension(:,:,:),pointer,device :: qq
+        real(kind=realType), dimension(:,:),pointer,device :: bmti1, bmti2  ! (j,k)
+        real(kind=realType), dimension(:,:),pointer,device :: bmtj1, bmtj2  ! (i,k)
+        real(kind=realType), dimension(:,:),pointer,device :: bmtk1, bmtk2  ! (i,j)
+        real(kind=realType), dimension(:,:),pointer,device :: bvti1, bvti2  ! (j,k)
+        real(kind=realType), dimension(:,:),pointer,device :: bvtj1, bvtj2  ! (i,k)
+        real(kind=realType), dimension(:,:),pointer,device :: bvtk1, bvtk2  ! (i,j)
         real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
 
         ! No halos
@@ -227,6 +237,14 @@ module cudaBlock
                 ! single halos GPU/double halos CPU (cells)
                 allocate(h_cudaDoms(nn, sps)%fw(1:bie, 1:bje, 1:bke, 1:nwf)) ! dissipative/viscous residual
                 allocate(h_cudaDoms(nn, sps)%dw(1:bie, 1:bje, 1:bke, 1:nw)) ! convective/total residual
+
+                allocate(h_cudaDoms(nn, sps)%qq(2:bil, 2:bjl, 2:bkl))
+                allocate(h_cudaDoms(nn, sps)%bmti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bmti2(1:bje, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%bmtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bmtj2(1:bie, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%bmtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bmtk2(1:bie, 1:bje))
+                allocate(h_cudaDoms(nn, sps)%bvti1(1:bje, 1:bke), h_cudaDoms(nn, sps)%bvti2(1:bje, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%bvtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bvtj2(1:bie, 1:bke))
+                allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje))
                 allocate(h_cudaDoms(nn, sps)%rlv(1:bie, 1:bje, 1:bke)) ! laminar viscosity
                 allocate(h_cudaDoms(nn, sps)%rev(1:bie, 1:bje, 1:bke)) ! eddy viscosity
                 allocate(h_cudaDoms(nn, sps)%vol(1:bie, 1:bje, 1:bke)) ! cell volumes
@@ -335,7 +353,7 @@ module cudaBlock
         ! (dw, fw, and the nodal gradients ux..qz) are intentionally NOT touched here. The
         ! few intermediates the residual kernels fill but do not themselves re-zero
         ! (aa, radI/radJ/radK, dtl, dss) are initialized to zero here.
-        use constants, only: zero, RANSEquations
+        use constants, only: zero, RANSEquations, itu1
         use blockPointers, only: nDom, &
             bie => ie, bje => je, bke => ke, &
             bil => il, bjl => jl, bkl => kl, &
@@ -345,6 +363,10 @@ module cudaBlock
             bShockSensor => shockSensor, &
             bsi => si, bsj => sj, bsk => sk, &
             bsFaceI => sFaceI, bsFaceJ => sFaceJ, bsFaceK => sFaceK, &
+            bbmti1 => bmti1, bbmti2 => bmti2, bbmtj1 => bmtj1, bbmtj2 => bmtj2, &
+            bbmtk1 => bmtk1, bbmtk2 => bmtk2, &
+            bbvti1 => bvti1, bbvti2 => bvti2, bbvtj1 => bvtj1, bbvtj2 => bvtj2, &
+            bbvtk1 => bvtk1, bbvtk2 => bvtk2, &
             addGridVelocities
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputPhysics, only: equations
@@ -388,6 +410,20 @@ module cudaBlock
                 ! no halos (cells)
                 if (equations == RANSEquations) then
                     h_cudaDoms(nn, sps)%d2wall = bd2wall ! distance from the center of the cell to the nearest viscous wall
+
+                    ! CPU bmt* are (face1,face2,nt1:nt2,nt1:nt2); for SA nt1=nt2=itu1.
+                    h_cudaDoms(nn, sps)%bmti1 = bbmti1(1:bje, 1:bke, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bmti2 = bbmti2(1:bje, 1:bke, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bmtj1 = bbmtj1(1:bie, 1:bke, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bmtj2 = bbmtj2(1:bie, 1:bke, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bmtk1 = bbmtk1(1:bie, 1:bje, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bmtk2 = bbmtk2(1:bie, 1:bje, itu1, itu1)
+                    h_cudaDoms(nn, sps)%bvti1 = bbvti1(1:bje, 1:bke, itu1)
+                    h_cudaDoms(nn, sps)%bvti2 = bbvti2(1:bje, 1:bke, itu1)
+                    h_cudaDoms(nn, sps)%bvtj1 = bbvtj1(1:bie, 1:bke, itu1)
+                    h_cudaDoms(nn, sps)%bvtj2 = bbvtj2(1:bie, 1:bke, itu1)
+                    h_cudaDoms(nn, sps)%bvtk1 = bbvtk1(1:bie, 1:bje, itu1)
+                    h_cudaDoms(nn, sps)%bvtk2 = bbvtk2(1:bie, 1:bje, itu1)
                 end if
 
                 ! no halos GPU/double halos CPU (cells)
@@ -537,6 +573,20 @@ module cudaBlock
                 if (associated(h_cudaDoms(nn,sps)%radK))   deallocate(h_cudaDoms(nn,sps)%radK)
                 if (associated(h_cudaDoms(nn,sps)%dtl))    deallocate(h_cudaDoms(nn,sps)%dtl)
                 if (associated(h_cudaDoms(nn,sps)%dss))    deallocate(h_cudaDoms(nn,sps)%dss)
+
+                if (associated(h_cudaDoms(nn,sps)%qq))     deallocate(h_cudaDoms(nn,sps)%qq)
+                if (associated(h_cudaDoms(nn,sps)%bmti1))  deallocate(h_cudaDoms(nn,sps)%bmti1)
+                if (associated(h_cudaDoms(nn,sps)%bmti2))  deallocate(h_cudaDoms(nn,sps)%bmti2)
+                if (associated(h_cudaDoms(nn,sps)%bmtj1))  deallocate(h_cudaDoms(nn,sps)%bmtj1)
+                if (associated(h_cudaDoms(nn,sps)%bmtj2))  deallocate(h_cudaDoms(nn,sps)%bmtj2)
+                if (associated(h_cudaDoms(nn,sps)%bmtk1))  deallocate(h_cudaDoms(nn,sps)%bmtk1)
+                if (associated(h_cudaDoms(nn,sps)%bmtk2))  deallocate(h_cudaDoms(nn,sps)%bmtk2)
+                if (associated(h_cudaDoms(nn,sps)%bvti1))  deallocate(h_cudaDoms(nn,sps)%bvti1)
+                if (associated(h_cudaDoms(nn,sps)%bvti2))  deallocate(h_cudaDoms(nn,sps)%bvti2)
+                if (associated(h_cudaDoms(nn,sps)%bvtj1))  deallocate(h_cudaDoms(nn,sps)%bvtj1)
+                if (associated(h_cudaDoms(nn,sps)%bvtj2))  deallocate(h_cudaDoms(nn,sps)%bvtj2)
+                if (associated(h_cudaDoms(nn,sps)%bvtk1))  deallocate(h_cudaDoms(nn,sps)%bvtk1)
+                if (associated(h_cudaDoms(nn,sps)%bvtk2))  deallocate(h_cudaDoms(nn,sps)%bvtk2)
                 if (associated(h_cudaDoms(nn,sps)%d2wall)) deallocate(h_cudaDoms(nn,sps)%d2wall)
                 if (associated(h_cudaDoms(nn,sps)%volRef)) deallocate(h_cudaDoms(nn,sps)%volRef)
                 if (associated(h_cudaDoms(nn,sps)%iblank)) deallocate(h_cudaDoms(nn,sps)%iblank)

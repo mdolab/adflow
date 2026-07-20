@@ -377,7 +377,21 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndimw
         end subroutine getcudaresidual
 
+        subroutine calculatecudaturbsolve
+        end subroutine calculatecudaturbsolve
+
+        subroutine getcudaturbsolution(nuout,revout,ndimc)
+           real(kind=realtype) dimension(ndimc),intent(out),depend(ndimc) :: nuout
+           real(kind=realtype) dimension(ndimc),intent(out),depend(ndimc) :: revout
+           integer(kind=inttype) intent(in) :: ndimc
+        end subroutine getcudaturbsolution
+
        end module cudresidual
+
+       module turbapi
+        subroutine turbsolveddadi
+        end subroutine turbsolveddadi
+       end module turbapi
 
        module cudablock
 
