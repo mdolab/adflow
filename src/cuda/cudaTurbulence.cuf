@@ -364,14 +364,232 @@ attributes(global) subroutine saTurbSecondHalo
 end subroutine saTurbSecondHalo
 
 
+! ================================================================
+!  GPU bcTurbTreatment (SA): compute the boundary-treatment matrices
+!  bmt/bvt on-device, mirroring turbBCRoutines::bcTurbTreatment.
+!  Replaces copying bmt/bvt from the CPU. Supported BC types:
+!  viscous wall, symmetry / Euler wall, and farfield. Wall functions,
+!  inflow/outflow and interface BCs are not ported.
+! ================================================================
+
+attributes(global) subroutine saZeroTurbBC
+    ! Zero every bmt/bvt face array so unset/internal faces stay explicit.
+    use constants, only: zero
+    implicit none
+    integer(kind=intType) :: i, j, dom, sps
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y
+
+    ! iMin/iMax faces: (j,k) -> bounds (je,ke).
+    if (i <= cudaDoms(dom,sps)%je .and. j <= cudaDoms(dom,sps)%ke) then
+        cudaDoms(dom,sps)%bmti1(i,j) = zero; cudaDoms(dom,sps)%bmti2(i,j) = zero
+        cudaDoms(dom,sps)%bvti1(i,j) = zero; cudaDoms(dom,sps)%bvti2(i,j) = zero
+    end if
+    ! jMin/jMax faces: (i,k) -> bounds (ie,ke).
+    if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%ke) then
+        cudaDoms(dom,sps)%bmtj1(i,j) = zero; cudaDoms(dom,sps)%bmtj2(i,j) = zero
+        cudaDoms(dom,sps)%bvtj1(i,j) = zero; cudaDoms(dom,sps)%bvtj2(i,j) = zero
+    end if
+    ! kMin/kMax faces: (i,j) -> bounds (ie,je).
+    if (i <= cudaDoms(dom,sps)%ie .and. j <= cudaDoms(dom,sps)%je) then
+        cudaDoms(dom,sps)%bmtk1(i,j) = zero; cudaDoms(dom,sps)%bmtk2(i,j) = zero
+        cudaDoms(dom,sps)%bvtk1(i,j) = zero; cudaDoms(dom,sps)%bvtk2(i,j) = zero
+    end if
+end subroutine saZeroTurbBC
+
+attributes(global) subroutine saTurbBCConst(faceID, iBeg, iEnd, jBeg, jEnd, bmtVal)
+    ! Constant-diagonal SA treatment for one subface: viscous wall
+    ! (bmtVal = +1, wHalo = -wInternal) or symmetry / Euler wall
+    ! (bmtVal = -1, wHalo = wInternal). bvt is zero on these faces.
+    use constants, only: zero, iMin, iMax, jMin, jMax, kMin, kMax
+    implicit none
+    integer(kind=intType), value :: faceID, iBeg, iEnd, jBeg, jEnd
+    real(kind=realType), value :: bmtVal
+    integer(kind=intType) :: i, j, dom, sps
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1
+    if (i > iEnd .or. j > jEnd) return
+
+    select case (faceID)
+    case (iMin); cudaDoms(dom,sps)%bmti1(i,j) = bmtVal; cudaDoms(dom,sps)%bvti1(i,j) = zero
+    case (iMax); cudaDoms(dom,sps)%bmti2(i,j) = bmtVal; cudaDoms(dom,sps)%bvti2(i,j) = zero
+    case (jMin); cudaDoms(dom,sps)%bmtj1(i,j) = bmtVal; cudaDoms(dom,sps)%bvtj1(i,j) = zero
+    case (jMax); cudaDoms(dom,sps)%bmtj2(i,j) = bmtVal; cudaDoms(dom,sps)%bvtj2(i,j) = zero
+    case (kMin); cudaDoms(dom,sps)%bmtk1(i,j) = bmtVal; cudaDoms(dom,sps)%bvtk1(i,j) = zero
+    case (kMax); cudaDoms(dom,sps)%bmtk2(i,j) = bmtVal; cudaDoms(dom,sps)%bvtk2(i,j) = zero
+    end select
+end subroutine saTurbBCConst
+
+attributes(global) subroutine saTurbBCFarfield(nn, faceID, iBeg, iEnd, jBeg, jEnd)
+    ! Farfield SA treatment for one subface. Sign of the free-stream
+    ! normal velocity decides inflow vs outflow per face cell:
+    !   outflow (dot > 0): zero-Neumann  -> bmt = -1, bvt = 0
+    !   inflow           : prescribe     -> bmt =  0, bvt = wInf(itu1)
+    ! Mirrors turbBCRoutines::bcTurbFarfield (grid motion via rface).
+    use constants, only: zero, one, itu1, ivx, ivy, ivz, iMin, iMax, jMin, jMax, kMin, kMax
+    use cudaFlowVarRefState, only: wInf
+    use cudaBlock, only: d_BCData
+    implicit none
+    integer(kind=intType), value :: nn, faceID, iBeg, iEnd, jBeg, jEnd
+    integer(kind=intType) :: i, j, dom, sps
+    real(kind=realType) :: dot, bmtv, bvtv
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1
+    if (i > iEnd .or. j > jEnd) return
+
+    dot = d_BCData(nn)%norm(i,j,1) * wInf(ivx) &
+        + d_BCData(nn)%norm(i,j,2) * wInf(ivy) &
+        + d_BCData(nn)%norm(i,j,3) * wInf(ivz) - d_BCData(nn)%rface(i,j)
+
+    if (dot > zero) then
+        bmtv = -one;  bvtv = zero          ! outflow: zero-Neumann
+    else
+        bmtv = zero;  bvtv = wInf(itu1)    ! inflow: prescribe free stream
+    end if
+
+    select case (faceID)
+    case (iMin); cudaDoms(dom,sps)%bmti1(i,j) = bmtv; cudaDoms(dom,sps)%bvti1(i,j) = bvtv
+    case (iMax); cudaDoms(dom,sps)%bmti2(i,j) = bmtv; cudaDoms(dom,sps)%bvti2(i,j) = bvtv
+    case (jMin); cudaDoms(dom,sps)%bmtj1(i,j) = bmtv; cudaDoms(dom,sps)%bvtj1(i,j) = bvtv
+    case (jMax); cudaDoms(dom,sps)%bmtj2(i,j) = bmtv; cudaDoms(dom,sps)%bvtj2(i,j) = bvtv
+    case (kMin); cudaDoms(dom,sps)%bmtk1(i,j) = bmtv; cudaDoms(dom,sps)%bvtk1(i,j) = bvtv
+    case (kMax); cudaDoms(dom,sps)%bmtk2(i,j) = bmtv; cudaDoms(dom,sps)%bvtk2(i,j) = bvtv
+    end select
+end subroutine saTurbBCFarfield
+
+subroutine saBCTurbTreatment
+    ! Host driver: GPU equivalent of turbBCRoutines::bcTurbTreatment for SA.
+    ! Zeroes bmt/bvt, then loops the physical boundary subfaces and dispatches
+    ! per BC type. BC subface ranges + face id + type are read on the host from
+    ! blockPointers; farfield normals/rface are read on-device from d_BCData.
+    use constants, only: one, NSWallAdiabatic, NSWallIsothermal, &
+                         Symm, SymmPolar, EulerWall, FarField
+    use cudafor, only: dim3
+    use blockPointers, only: nDom, nBocos, BCType, BCFaceID, BCData, &
+                             bie=>ie, bje=>je, bke=>ke
+    use inputTimeSpectral, only: nTimeIntervalsSpectral
+    use utils, only: setPointers
+    implicit none
+    type(dim3) :: grid_size, block_size
+    integer :: istat
+    integer(kind=intType) :: dom, sps, nn, maxdim, iBeg, iEnd, jBeg, jEnd, faceID
+
+    do dom = 1, nDom
+        do sps = 1, nTimeIntervalsSpectral
+            call setPointers(dom, 1, sps)
+            maxdim = max(bie, max(bje, bke))
+            block_size = dim3(8, 8, 1)
+            grid_size  = dim3(ceiling(real(maxdim+1)/8), ceiling(real(maxdim+1)/8), 1)
+
+            ! Zero all bmt/bvt so unset faces are treated explicitly.
+            call saZeroTurbBC<<<grid_size, block_size>>>
+            istat = cudaDeviceSynchronize()
+
+            ! Fill per physical boundary subface (host-side BC-type dispatch).
+            do nn = 1, nBocos
+                iBeg = BCData(nn)%icBeg; iEnd = BCData(nn)%icEnd
+                jBeg = BCData(nn)%jcBeg; jEnd = BCData(nn)%jcEnd
+                faceID = BCFaceID(nn)
+                select case (BCType(nn))
+                case (NSWallAdiabatic, NSWallIsothermal)
+                    call saTurbBCConst<<<grid_size, block_size>>>(faceID, iBeg, iEnd, jBeg, jEnd, one)
+                case (Symm, SymmPolar, EulerWall)
+                    call saTurbBCConst<<<grid_size, block_size>>>(faceID, iBeg, iEnd, jBeg, jEnd, -one)
+                case (FarField)
+                    call saTurbBCFarfield<<<grid_size, block_size>>>(nn, faceID, iBeg, iEnd, jBeg, jEnd)
+                end select
+                istat = cudaDeviceSynchronize()
+            end do
+        end do
+    end do
+end subroutine saBCTurbTreatment
+
+
+! ================================================================
+!  GPU eddy-viscosity halo: the rev part of applyAllTurbBCThisBlock
+!  (bcEddyWall / bcEddyNoWall). rev(halo) = sgn * rev(first interior):
+!  sgn = -1 on a viscous wall (rev = 0 at the wall), sgn = +1 otherwise
+!  (homogeneous Neumann). First physical halo only, matching the CPU.
+! ================================================================
+
+attributes(global) subroutine saEddyBCHalo(faceID, iBeg, iEnd, jBeg, jEnd, sgn)
+    use constants, only: iMin, iMax, jMin, jMax, kMin, kMax
+    implicit none
+    integer(kind=intType), value :: faceID, iBeg, iEnd, jBeg, jEnd
+    real(kind=realType), value :: sgn
+    integer(kind=intType) :: i, j, dom, sps
+    dom = 1
+    sps = 1
+    i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1
+    j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1
+    if (i > iEnd .or. j > jEnd) return
+
+    select case (faceID)
+    case (iMin); cudaDoms(dom,sps)%rev(1, i, j) = sgn * cudaDoms(dom,sps)%rev(2, i, j)
+    case (iMax); cudaDoms(dom,sps)%rev(cudaDoms(dom,sps)%ie, i, j) = &
+                     sgn * cudaDoms(dom,sps)%rev(cudaDoms(dom,sps)%il, i, j)
+    case (jMin); cudaDoms(dom,sps)%rev(i, 1, j) = sgn * cudaDoms(dom,sps)%rev(i, 2, j)
+    case (jMax); cudaDoms(dom,sps)%rev(i, cudaDoms(dom,sps)%je, j) = &
+                     sgn * cudaDoms(dom,sps)%rev(i, cudaDoms(dom,sps)%jl, j)
+    case (kMin); cudaDoms(dom,sps)%rev(i, j, 1) = sgn * cudaDoms(dom,sps)%rev(i, j, 2)
+    case (kMax); cudaDoms(dom,sps)%rev(i, j, cudaDoms(dom,sps)%ke) = &
+                     sgn * cudaDoms(dom,sps)%rev(i, j, cudaDoms(dom,sps)%kl)
+    end select
+end subroutine saEddyBCHalo
+
+subroutine saApplyEddyBC
+    ! Host driver: GPU equivalent of the eddy-viscosity halo part of
+    ! applyAllTurbBCThisBlock (bcEddyWall on viscous walls, bcEddyNoWall
+    ! elsewhere). SA is always an eddy-viscosity model, so this always runs.
+    use constants, only: one, NSWallAdiabatic, NSWallIsothermal
+    use cudafor, only: dim3
+    use blockPointers, only: nDom, nBocos, BCType, BCFaceID, BCData, &
+                             bie=>ie, bje=>je, bke=>ke
+    use inputTimeSpectral, only: nTimeIntervalsSpectral
+    use utils, only: setPointers
+    implicit none
+    type(dim3) :: grid_size, block_size
+    integer :: istat
+    integer(kind=intType) :: dom, sps, nn, maxdim, iBeg, iEnd, jBeg, jEnd, faceID
+    real(kind=realType) :: sgn
+
+    do dom = 1, nDom
+        do sps = 1, nTimeIntervalsSpectral
+            call setPointers(dom, 1, sps)
+            maxdim = max(bie, max(bje, bke))
+            block_size = dim3(8, 8, 1)
+            grid_size  = dim3(ceiling(real(maxdim+1)/8), ceiling(real(maxdim+1)/8), 1)
+            do nn = 1, nBocos
+                iBeg = BCData(nn)%icBeg; iEnd = BCData(nn)%icEnd
+                jBeg = BCData(nn)%jcBeg; jEnd = BCData(nn)%jcEnd
+                faceID = BCFaceID(nn)
+                if (BCType(nn) == NSWallAdiabatic .or. BCType(nn) == NSWallIsothermal) then
+                    sgn = -one    ! viscous wall: eddy viscosity zero at the wall
+                else
+                    sgn = one     ! homogeneous Neumann
+                end if
+                call saEddyBCHalo<<<grid_size, block_size>>>(faceID, iBeg, iEnd, jBeg, jEnd, sgn)
+                istat = cudaDeviceSynchronize()
+            end do
+        end do
+    end do
+end subroutine saApplyEddyBC
+
+
 
 
 subroutine calculateCudaTurbSolve()
     ! GPU equivalent of turbSolveDDADI for SA, minus wall functions:
     !   build residual (dw(itu1)) + central Jacobian qq, DD-ADI implicit solve,
     !   update nuTilde, recompute eddy viscosity, and refresh both physical halo
-    !   layers for every turbulence subiteration. bmt/bvt are copied from the CPU
-    !   by copyCudaBlockToDevice. Inter-block/overset exchange is not ported.
+    !   layers for every turbulence subiteration. bmt/bvt are computed on-device
+    !   by saBCTurbTreatment. Inter-block/overset exchange is not ported.
     use constants, only: zero, one, itu1, turbRelaxImplicit, turbRelaxExplicit
     use cudafor, only: dim3
     use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb
@@ -407,6 +625,11 @@ subroutine calculateCudaTurbSolve()
                         ceiling(real(kbmax+1)/block_size%z))
     block2d = dim3(8, 8, 1)
     grid2d  = dim3(ceiling(real(maxdim+1)/8), ceiling(real(maxdim+1)/8), 1)
+
+    ! Compute bmt/bvt on-device (GPU bcTurbTreatment) from the frozen flow,
+    ! once before the subiteration loop (the halo refresh below reuses them).
+    call saBCTurbTreatment
+    istat = cudaDeviceSynchronize()
 
     do iter = 1, nSubIterTurb
         ! Zero the residual/scratch accumulator for this subiteration.
@@ -445,10 +668,14 @@ subroutine calculateCudaTurbSolve()
         call saUpdate<<<grid_size, block_size>>>(factor2)
         istat = cudaDeviceSynchronize()
 
-        call saEddyViscosity<<<grid_size, block_size>>>         
+        call saEddyViscosity<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
-        call saTurbFirstHalo<<<grid2d, block2d>>>               
+        ! Eddy-viscosity halo (bcEddyWall / bcEddyNoWall) on the fresh interior rev.
+        call saApplyEddyBC
+        istat = cudaDeviceSynchronize()
+
+        call saTurbFirstHalo<<<grid2d, block2d>>>
         istat = cudaDeviceSynchronize()
 
         call saTurbSecondHalo<<<grid2d, block2d>>>             
