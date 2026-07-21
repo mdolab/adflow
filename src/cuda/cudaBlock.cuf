@@ -735,12 +735,14 @@ module cudaBlock
     subroutine copyCudaBCDataToDevice
         ! Copy BC-data field VALUES host->device into the (already-allocated) mirror.
         ! Called every residual evaluation; allocation is done once by allocateCudaBCData.
+        ! Note: We do not copy ALL the BC data that the CPU code does as the routines actually only
+        ! use a small subset. Therefore to save memory we only copy what is strictly necessary to compute the boco
         use blockPointers, only: nDom, &
             bBCData => BCData,&
             nBocos, bBCType => BCType
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setBCPointers
-        use constants, only: farField, symm, NSWallAdiabatic
+        use constants, only: farField, symm, NSWallAdiabatic, EulerWall
 
         implicit none
 
@@ -755,18 +757,25 @@ module cudaBlock
                 select case (bBCType(mm))
 
                 case (farField)
-
                     h_BCData(mm)%rface = bBCData(mm)%rface
                     h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
                     h_BCData(mm)%norm = bBCData(mm)%norm
+                    h_BCData(mm)%normALE = bBCData(mm)%normALE
 
                 case (symm)
-
                     h_BCData(mm)%norm = bBCData(mm)%norm
+                    h_BCData(mm)%normALE = bBCData(mm)%normALE
 
                 case (NSWallAdiabatic)
-
                     h_BCData(mm)%uSlip = bBCData(mm)%uSlip
+                    h_BCData(mm)%uSlipALE = bBCData(mm)%uSlipALE
+
+                case (EulerWall)
+                    h_BCData(mm)%norm = bBCData(mm)%norm
+                    h_BCData(mm)%normALE = bBCData(mm)%normALE
+                    h_BCData(mm)%rface = bBCData(mm)%rface
+                    h_BCData(mm)%rFaceALE = bBCData(mm)%rFaceALE
+
 
                 ! TODO [ ] : other BC types
 

@@ -2229,8 +2229,8 @@ module cudaResidual
                     sz = cudaDoms(dom,sps)%sI(i, j, k, 3) + cudaDoms(dom,sps)%sI(i - 1, j, k, 3)
 
                     vsi = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsi)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsi
+                    ! tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsi)
+                    cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsi
 
                     ! Add the viscous contribution in j-direction to the
                     ! (inverse) of the time step.
@@ -2240,8 +2240,8 @@ module cudaResidual
                     sz = cudaDoms(dom,sps)%sJ(i, j, k, 3) + cudaDoms(dom,sps)%sJ(i, j - 1, k, 3)
 
                     vsj = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsj)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsj
+                    ! tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsj)
+                    cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsj
 
                     ! Add the viscous contribution in k-direction to the
                     ! (inverse) of the time step.
@@ -2251,8 +2251,8 @@ module cudaResidual
                     sz = cudaDoms(dom,sps)%sK(i, j, k, 3) + cudaDoms(dom,sps)%sK(i, j, k - 1, 3)
 
                     vsk = rmu * (sx * sx + sy * sy + sz * sz)
-                    tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsk)
-                    !cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsk
+                    ! tmp = atomicadd(cudaDoms(dom,sps)%dtl(i, j, k) , vsk)
+                    cudaDoms(dom,sps)%dtl(i, j, k) = cudaDoms(dom,sps)%dtl(i, j, k) + vsk
 
                 end if
             end if viscousTerm
