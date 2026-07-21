@@ -68,6 +68,11 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:,:),pointer,device :: w
         real(kind=realType), dimension(:,:,:),pointer,device :: P,gamma,ss
 
+        ! Saved zeroth-stage state for the Runge-Kutta smoother (filled on-device
+        ! by rkStoreZerothStage in cudaSmoothers; not copied from the host each eval)
+        real(kind=realType), dimension(:,:,:,:),pointer,device :: wn
+        real(kind=realType), dimension(:,:,:),pointer,device :: pn
+
         ! Single halos
         real(kind=realType), dimension(:,:,:,:), pointer,device :: x
         real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
@@ -196,6 +201,10 @@ module cudaBlock
                 allocate(h_cudaDoms(nn,sps)%p(0:bib, 0:bjb, 0:bkb)) ! static pressures
                 allocate(h_cudaDoms(nn,sps)%gamma(0:bib, 0:bjb, 0:bkb)) ! spec heat ratio
                 allocate(h_cudaDoms(nn,sps)%ss(0:bib, 0:bjb, 0:bkb)) ! shock sensors
+
+                ! saved zeroth-stage RK state (same extents as w/p)
+                allocate(h_cudaDoms(nn,sps)%wn(0:bib, 0:bjb, 0:bkb, 1:nw))
+                allocate(h_cudaDoms(nn,sps)%pn(0:bib, 0:bjb, 0:bkb))
 
                 ! single halos
                 allocate(h_cudaDoms(nn, sps)%x(0:bie, 0:bje, 0:bke, 1:3))
@@ -376,6 +385,8 @@ module cudaBlock
             do sps = 1, nTimeIntervalsSpectral
                 if (associated(h_cudaDoms(nn,sps)%w))      deallocate(h_cudaDoms(nn,sps)%w)
                 if (associated(h_cudaDoms(nn,sps)%p))      deallocate(h_cudaDoms(nn,sps)%p)
+                if (associated(h_cudaDoms(nn,sps)%wn))     deallocate(h_cudaDoms(nn,sps)%wn)
+                if (associated(h_cudaDoms(nn,sps)%pn))     deallocate(h_cudaDoms(nn,sps)%pn)
                 if (associated(h_cudaDoms(nn,sps)%gamma))  deallocate(h_cudaDoms(nn,sps)%gamma)
                 if (associated(h_cudaDoms(nn,sps)%ss))     deallocate(h_cudaDoms(nn,sps)%ss)
                 if (associated(h_cudaDoms(nn,sps)%x))      deallocate(h_cudaDoms(nn,sps)%x)
