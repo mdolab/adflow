@@ -158,6 +158,9 @@ contains
             cudaDoms(dom,sps)%p(i, j, k) = max(cudaDoms(dom,sps)%p(i, j, k), &
                                                1.e-4_realType * pInfCorr)
 
+
+            !TODO: Needs Etot
+
         end if
 
     end subroutine rkStageUpdateState

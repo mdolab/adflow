@@ -76,6 +76,7 @@ subroutine debugCompareCudaData
     ! BC input-data staging temporaries (shape depends on the subface, sized per-boco below)
     real(kind=realType), dimension(:, :), allocatable :: g_rface
     real(kind=realType), dimension(:, :, :), allocatable :: g_norm, g_rfaceALE
+    real(kind=realType), dimension(:, :, :, :), allocatable :: g_normALE
 
     ! Hard coded for now
     dom = 1
@@ -334,6 +335,37 @@ subroutine debugCompareCudaData
             g_norm = h_BCData(mm)%uslip
             call reportR3('  uslip', g_norm, bBCData(mm)%uslip)
             deallocate (g_norm)
+        case (EulerWall)
+                        print '(2X,"boco ",I0,": eulerwall, icBeg:icEnd=",I0,":",I0,", jcBeg:jcEnd=",I0,":",I0)', &
+                mm, bBCData(mm)%icBeg, bBCData(mm)%icEnd, bBCData(mm)%jcBeg, bBCData(mm)%jcEnd
+
+            allocate (g_rface(lbound(bBCData(mm)%rface, 1):ubound(bBCData(mm)%rface, 1), &
+                                lbound(bBCData(mm)%rface, 2):ubound(bBCData(mm)%rface, 2)))
+            g_rface = h_BCData(mm)%rface
+            call reportR2('  rface', g_rface, bBCData(mm)%rface)
+            deallocate (g_rface)
+
+            allocate (g_rfaceALE(lbound(bBCData(mm)%rFaceALE, 1):ubound(bBCData(mm)%rFaceALE, 1), &
+                                    lbound(bBCData(mm)%rFaceALE, 2):ubound(bBCData(mm)%rFaceALE, 2), &
+                                    lbound(bBCData(mm)%rFaceALE, 3):ubound(bBCData(mm)%rFaceALE, 3)))
+            g_rfaceALE = h_BCData(mm)%rfaceALE
+            call reportR3('  rfaceALE', g_rfaceALE, bBCData(mm)%rFaceALE)
+            deallocate (g_rfaceALE)
+
+            allocate (g_norm(lbound(bBCData(mm)%norm, 1):ubound(bBCData(mm)%norm, 1), &
+                                lbound(bBCData(mm)%norm, 2):ubound(bBCData(mm)%norm, 2), &
+                                lbound(bBCData(mm)%norm, 3):ubound(bBCData(mm)%norm, 3)))
+            g_norm = h_BCData(mm)%norm
+            call reportR3('  norm', g_norm, bBCData(mm)%norm)
+            deallocate (g_norm)
+
+            allocate (g_normALE(lbound(bBCData(mm)%normALE, 1):ubound(bBCData(mm)%normALE, 1), &
+                                    lbound(bBCData(mm)%normALE, 2):ubound(bBCData(mm)%normALE, 2), &
+                                    lbound(bBCData(mm)%normALE, 3):ubound(bBCData(mm)%normALE, 3), &
+                                    lbound(bBCData(mm)%normALE, 4):ubound(bBCData(mm)%normALE, 4)))
+            g_normALE = h_BCData(mm)%normALE
+            call reportR4('  normALE', g_normALE, bBCData(mm)%normALE)
+            deallocate (g_normALE)
 
 
         case default

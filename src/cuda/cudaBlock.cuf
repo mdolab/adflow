@@ -669,13 +669,14 @@ module cudaBlock
         ! member arrays. Runs ONCE per run (guarded) -- same lifecycle rationale as
         ! allocateCudaBlock. BC-data VALUES are copied every evaluation by
         ! copyCudaBCDataToDevice.
+        ! THIS IS HARDCODED TO A SINGLE BLOCK
         use blockPointers, only: nDom, &
             bBCData => BCData,&
             nBocos, bBCType => BCType
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use iteration, only: nALESteps
         use utils, only: setBCPointers, terminate
-        use constants, only: farField, symm, NSWallAdiabatic
+        use constants, only: farField, symm, NSWallAdiabatic, EulerWall
 
         implicit none
 
@@ -726,6 +727,16 @@ module cudaBlock
                     if (ierr /= 0) &
                         call terminate("allocateCudaBCData", "Memory allocation failure for &
                         &an adiabatic wall")
+
+                case (EulerWall)
+
+                   allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd), &
+                   h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd), &
+                   h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3), &
+                   h_BCData(mm)%normALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("allocateCudaBCData", "Memory allocation failure for &
+                        &an euler wall")
 
                 ! TODO [ ] : other BC types
 

@@ -126,4 +126,63 @@ module cudaBCPointers
 
     end subroutine faceLayerIndices
 
+
+    attributes(device) subroutine spatialFaceIndices(faceID, dir, i, j, dm, sps, I3, J3, K3)
+        ! Converts a face-local (i,j) position + faceID into the i j k index needed to index
+        ! into a per face array. Basically faceLayerIndices but for face quantities like normals
+        ! instead of cell centered quantities
+        use constants, only: iMin, iMax, jMin, jMax, kMin, kMax
+        use cudaBlock, only: d_cudaDoms
+        implicit none
+
+        integer(kind=intType), intent(in), value :: faceID, dir, i, j, dm, sps
+        integer(kind=intType), intent(out) :: I3, J3, K3
+
+        select case (faceID)
+        case (iMin)
+            if (dir .eq. 1) then
+                I3 = 1
+                J3 = i
+                K3 = j
+            else
+                I3 = 2
+                J3 = i
+                K3 = j
+            end if
+        case (iMax)
+            I3 = d_cudaDoms(dm, sps)%il
+            J3 = i
+            K3 = j
+        case (jMin)
+            if (dir .eq. 1) then
+                I3 = i
+                J3 = 1
+                K3 = j
+            else
+                I3 = i
+                J3 = 2
+                K3 = j
+            end if
+        case (jMax)
+            I3 = i
+            J3 = d_cudaDoms(dm, sps)%jl
+            K3 = j
+        case (kMin)
+            if (dir .eq. 1) then
+                I3 = i
+                J3 = j
+                K3 = 1
+            else
+                I3 = i
+                J3 = j
+                K3 = 2
+            end if
+        case (kMax)
+            I3 = i
+            J3 = j
+            K3 = d_cudaDoms(dm, sps)%kl
+        end select
+
+    end subroutine spatialFaceIndices
+
 end module cudaBCPointers
