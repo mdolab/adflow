@@ -74,6 +74,11 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:,:),pointer,device :: w
         real(kind=realType), dimension(:,:,:),pointer,device :: P,gamma,ss
 
+        ! Saved zeroth-stage state for the Runge-Kutta smoother (filled on-device
+        ! by rkStoreZerothStage in cudaSmoothers; not copied from the host each eval)
+        real(kind=realType), dimension(:,:,:,:),pointer,device :: wn
+        real(kind=realType), dimension(:,:,:),pointer,device :: pn
+
         ! Single halos
         real(kind=realType), dimension(:,:,:,:), pointer,device :: x
         real(kind=realType), dimension(:,:,:),device,pointer :: radI, radJ, radK, dtl
@@ -261,6 +266,10 @@ module cudaBlock
                     allocate(h_cudaDoms(nn, sps)%bvtj1(1:bie, 1:bke), h_cudaDoms(nn, sps)%bvtj2(1:bie, 1:bke)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the jMin, jMax boundaries.
                     allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
                 end if
+
+                ! saved zeroth-stage RK state (same extents as w/p)
+                allocate(h_cudaDoms(nn,sps)%wn(0:bib, 0:bjb, 0:bkb, 1:nw))
+                allocate(h_cudaDoms(nn,sps)%pn(0:bib, 0:bjb, 0:bkb))
 
                 ! no halos (faces)
 
@@ -563,6 +572,8 @@ module cudaBlock
             do sps = 1, nTimeIntervalsSpectral
                 if (associated(h_cudaDoms(nn,sps)%w))      deallocate(h_cudaDoms(nn,sps)%w)
                 if (associated(h_cudaDoms(nn,sps)%p))      deallocate(h_cudaDoms(nn,sps)%p)
+                if (associated(h_cudaDoms(nn,sps)%wn))     deallocate(h_cudaDoms(nn,sps)%wn)
+                if (associated(h_cudaDoms(nn,sps)%pn))     deallocate(h_cudaDoms(nn,sps)%pn)
                 if (associated(h_cudaDoms(nn,sps)%gamma))  deallocate(h_cudaDoms(nn,sps)%gamma)
                 if (associated(h_cudaDoms(nn,sps)%ss))     deallocate(h_cudaDoms(nn,sps)%ss)
                 if (associated(h_cudaDoms(nn,sps)%x))      deallocate(h_cudaDoms(nn,sps)%x)

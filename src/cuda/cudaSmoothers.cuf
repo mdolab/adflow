@@ -1,6 +1,171 @@
+! @File    :   cudaSmoothers.cuf
+! @Desc    :   CUDA FORTRAN port of solver/smoothers.F90  
+
 module cudaSmoothers
+    use precision, only: realType, intType
+    use cudaBlock, only: cudaDoms => d_cudaDoms, h_cudaDoms
+    use constants
+    use cudafor
+    implicit none
 
 contains
+
+    !=================================================================
+    !  Device kernels
+    !=================================================================
+
+    attributes(global) subroutine rkStoreZerothStage()
+        !
+        !  Store the zeroth Runge-Kutta stage state: wn = w (flow vars) and pn = p, over
+        !  the owned cells. Replaces the CPU nn/sps store loops in RungeKuttaSmoother.
+        !
+        use constants, only: irho
+        use cudaFlowVarRefState, only: nwf
+        implicit none
+
+        integer(kind=intType) :: i, j, k, l, dom, sps
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
+            .and. k <= cudaDoms(dom,sps)%kl) then
+
+            do l = 1, nwf
+                cudaDoms(dom,sps)%wn(i, j, k, l) = cudaDoms(dom,sps)%w(i, j, k, l)
+            end do
+            cudaDoms(dom,sps)%pn(i, j, k) = cudaDoms(dom,sps)%p(i, j, k)
+
+        end if
+
+    end subroutine rkStoreZerothStage
+
+    !=================================================================
+
+    attributes(global) subroutine rkStageUpdateDw(dtScale)
+        !
+        !  Scale the residual dw by the local time step for one RK stage (steady /
+        !  timeSpectral). dtScale = currentCfl * etaRk(rkStage), already multiplied by the
+        !  low-speed-preconditioner factor on the host, so this kernel is branch-free.
+        !  Mirrors CPU executeRkStage lines ~196-218.
+        !
+        use constants, only: irho, imx, imy, imz, irhoE
+        implicit none
+
+        real(kind=realType), value, intent(in) :: dtScale
+
+        integer(kind=intType) :: i, j, k, dom, sps
+        real(kind=realType) :: dt
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
+            .and. k <= cudaDoms(dom,sps)%kl) then
+
+            dt = dtScale * cudaDoms(dom,sps)%dtl(i, j, k)
+
+            cudaDoms(dom,sps)%dw(i, j, k, irho)  = cudaDoms(dom,sps)%dw(i, j, k, irho)  * dt
+            cudaDoms(dom,sps)%dw(i, j, k, imx)   = cudaDoms(dom,sps)%dw(i, j, k, imx)   * dt
+            cudaDoms(dom,sps)%dw(i, j, k, imy)   = cudaDoms(dom,sps)%dw(i, j, k, imy)   * dt
+            cudaDoms(dom,sps)%dw(i, j, k, imz)   = cudaDoms(dom,sps)%dw(i, j, k, imz)   * dt
+            cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) * dt
+
+        end if
+
+    end subroutine rkStageUpdateDw
+
+    !=================================================================
+
+    attributes(global) subroutine rkStageUpdateState(correctForK)
+        !
+        !  Compute the new state vector from the scaled updates dw and the saved zeroth
+        !  stage (wn, pn). Updates density (clamped), velocities, and pressure (clamped),
+        !  over the owned cells. Mirrors CPU executeRkStage lines ~298-346.
+        !
+        use constants, only: irho, ivx, ivy, ivz, irhoE, imx, imy, imz, itu1, &
+                             one, zero, five, third
+        use cudaFlowVarRefState, only: rhoInf, pInfCorr
+        implicit none
+
+        logical, value, intent(in) :: correctForK
+
+        real(kind=realType), parameter :: fiveThird = five * third
+
+        integer(kind=intType) :: i, j, k, dom, sps
+        real(kind=realType) :: gm1, gm53, ovr, v2, dp, factK, ru, rv, rw
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
+            .and. k <= cudaDoms(dom,sps)%kl) then
+
+            factK = zero
+
+            ! Store gamma - 1 and gamma - 5/3 a bit easier.
+            gm1  = cudaDoms(dom,sps)%gamma(i, j, k) - one
+            gm53 = cudaDoms(dom,sps)%gamma(i, j, k) - fiveThird
+
+            ! Compute the pressure update from the conservative updates.
+            ovr = one / cudaDoms(dom,sps)%w(i, j, k, irho)
+            v2 = cudaDoms(dom,sps)%w(i, j, k, ivx)**2 &
+                 + cudaDoms(dom,sps)%w(i, j, k, ivy)**2 &
+                 + cudaDoms(dom,sps)%w(i, j, k, ivz)**2
+            if (correctForK) factK = gm53 * cudaDoms(dom,sps)%w(i, j, k, itu1)
+
+            dp = (ovr * cudaDoms(dom,sps)%p(i, j, k) + factK &
+                  - gm1 * (ovr * cudaDoms(dom,sps)%w(i, j, k, irhoE) - v2)) &
+                 * cudaDoms(dom,sps)%dw(i, j, k, irho) &
+                 + gm1 * (cudaDoms(dom,sps)%dw(i, j, k, irhoE) &
+                          - cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%dw(i, j, k, imx) &
+                          - cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%dw(i, j, k, imy) &
+                          - cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%dw(i, j, k, imz))
+
+            ! Compute the density. Correct for negative values.
+            cudaDoms(dom,sps)%w(i, j, k, irho) = cudaDoms(dom,sps)%wn(i, j, k, irho) &
+                                                 - cudaDoms(dom,sps)%dw(i, j, k, irho)
+            cudaDoms(dom,sps)%w(i, j, k, irho) = max(cudaDoms(dom,sps)%w(i, j, k, irho), &
+                                                     1.e-4_realType * rhoInf)
+
+            ! Compute the velocities.
+            ru = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivx) &
+                 - cudaDoms(dom,sps)%dw(i, j, k, imx)
+            rv = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivy) &
+                 - cudaDoms(dom,sps)%dw(i, j, k, imy)
+            rw = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivz) &
+                 - cudaDoms(dom,sps)%dw(i, j, k, imz)
+
+            ovr = one / cudaDoms(dom,sps)%w(i, j, k, irho)
+            cudaDoms(dom,sps)%w(i, j, k, ivx) = ovr * ru
+            cudaDoms(dom,sps)%w(i, j, k, ivy) = ovr * rv
+            cudaDoms(dom,sps)%w(i, j, k, ivz) = ovr * rw
+
+            ! Compute the pressure. Correct for negative values.
+            cudaDoms(dom,sps)%p(i, j, k) = cudaDoms(dom,sps)%pn(i, j, k) - dp
+            cudaDoms(dom,sps)%p(i, j, k) = max(cudaDoms(dom,sps)%p(i, j, k), &
+                                               1.e-4_realType * pInfCorr)
+
+        end if
+
+    end subroutine rkStageUpdateState
+
+    !=================================================================
+    !  Host drivers
+    !=================================================================
+
     subroutine RungeKuttaSmoother
         !
         !       RungeKuttaSmoother performs one multi-stage runge kutta
@@ -10,12 +175,180 @@ contains
         !       the latest values. However, the residual corresponding to
         !       these values is not computed.
         !
+        !       STEADY / timeSpectral path only.
+        !
+        use cudafor, only: dim3
+        use flowVarRefState, only: nwf
+        use inputIteration, only: nRKStages
+        use blockPointers, only: bil => il, bjl => jl, bkl => kl
+        use utils, only: setPointers
+        use cudaResidual, only: calculateCudaResidual
+        implicit none
+
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: istat, rkStage
+
+        ! Store the variables of the zeroth runge kutta stage on the device.
+        ! Single block (dom=sps=1), consistent with the residual kernels.
+        call setPointers(1, 1, 1)
+        block_size = dim3(8, 8, 8)
+        grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
+                          ceiling(real(bjl - 1) / block_size%y), &
+                          ceiling(real(bkl - 1) / block_size%z))
+
+        call rkStoreZerothStage<<<grid_size, block_size>>>()
+        istat = cudaDeviceSynchronize()
+
+        ! Loop over all but the last Runge Kutta stages.
+        do rkStage = 1, (nRKStages - 1)
+
+            ! Execute a Runge Kutta stage and exchange the externals.
+            call executeRkStage(rkStage)
+
+            ! Compute the residuals for the next stage. calculateCudaResidual is the
+            ! device analog of the CPU initres + sourceTerms + residual sequence.
+            call calculateCudaResidual(.True., 1, nwf)
+
+        end do
+
+        ! Execute the last RK stage.
+        call executeRkStage(nRKStages)
+
     end subroutine RungeKuttaSmoother
 
-    subroutine executeRkStage
+    !=================================================================
+
+    subroutine executeRkStage(rkStage)
         !
-        !       executeRkStage executes one runge kutta stage. The stage
-        !       number, rkStage, is defined in the local module iteration.
+        !       executeRkStage executes one runge kutta stage (STEADY /
+        !       timeSpectral path). rkStage is passed in from the caller.
         !
+        use cudafor, only: dim3
+        use constants, only: noResAveraging, alwaysResAveraging, steady, timeSpectral
+        use flowVarRefState, only: nwf, kPresent
+        use inputIteration, only: cfl, cflCoarse, etaRk, resAveraging
+        use inputDiscretization, only: lowSpeedPreconditioner
+        use inputPhysics, only: equationMode
+        use iteration, only: currentLevel, groundLevel, exchangePressureEarly
+        use blockPointers, only: bil => il, bjl => jl, bkl => kl
+        use utils, only: setPointers, terminate
+        ! --- teammate-provided device drivers / kernels ---
+        use cudaBCRoutines, only: applyAllBC
+        ! NOTE: whalo1 / whalo2 and the three post-update helper kernels
+        !       (computeEtotBlock / computeLamViscosity / computeEddyViscosity) are
+        !       provided elsewhere and pulled in when available (see TODOs below).
+        implicit none
+
+        integer(kind=intType), intent(in) :: rkStage
+
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: istat
+        real(kind=realType) :: currentCfl, dtScale
+        logical :: secondHalo, smoothResidual, correctForK
+
+        call setPointers(1, 1, 1)
+
+        ! Second halo only on the finest grid in the mg cycle.
+        if (currentLevel <= groundLevel) then
+            secondHalo = .true.
+        else
+            secondHalo = .false.
+        end if
+
+        ! Current cfl number.
+        currentCfl = cflCoarse
+        if (currentLevel == 1) currentCfl = cfl
+
+        ! Whether or not residual averaging must be applied.
+        if (resAveraging == noResAveraging) then
+            smoothResidual = .false.
+        else if (resAveraging == alwaysResAveraging) then
+            smoothResidual = .true.
+        else if (mod(rkStage, 2_intType) == 1) then
+            smoothResidual = .true.
+        else
+            smoothResidual = .false.
+        end if
+
+        ! Whether or not the total energy must be corrected for the turbulent
+        ! kinetic energy.
+        if (kPresent .and. (currentLevel <= groundLevel)) then
+            correctForK = .true.
+        else
+            correctForK = .false.
+        end if
+
+        ! cfl number times the RK coefficient. Fold the low-speed-preconditioner
+        ! factor into the scale here (host knows the flag) so the dw kernel stays
+        ! branch-free. Only the steady / timeSpectral equation mode is supported here;
+        ! the unsteady dual-time branch is deliberately out of scope (see file header).
+        select case (equationMode)
+        case (steady, timeSpectral)
+            dtScale = currentCfl * etaRk(rkStage)
+            if (lowSpeedPreconditioner) dtScale = 0.8_realType * dtScale
+        case default
+            call terminate("cudaSmoothers::executeRkStage", &
+                           "Only the steady / timeSpectral path is implemented on the GPU")
+            return
+        end select
+
+        ! Launch configuration over the owned cells (2..il, 2..jl, 2..kl).
+        block_size = dim3(8, 8, 8)
+        grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
+                          ceiling(real(bjl - 1) / block_size%y), &
+                          ceiling(real(bkl - 1) / block_size%z))
+
+        ! Scale the residual updates.
+        call rkStageUpdateDw<<<grid_size, block_size>>>(dtScale)
+        istat = cudaDeviceSynchronize()
+
+        ! Possibility to smooth the updates.
+        ! TODO: residual averaging on the device. resAveraging defaults to
+        !       noResAveraging, so smoothResidual is normally .false. When the device
+        !       residualAveraging kernel is available, launch it here under this guard.
+        if (smoothResidual) then
+            ! call residualAveraging<<<grid_size, block_size>>>
+            ! istat = cudaDeviceSynchronize()
+        end if
+
+        ! Compute the new state vector.
+        call rkStageUpdateState<<<grid_size, block_size>>>(correctForK)
+        istat = cudaDeviceSynchronize()
+
+        ! Total energy + laminar / eddy viscosity in the owned cells.
+        ! TODO: teammate-provided device kernels. Launch over the owned-cell grid, e.g.
+        !       call computeEtotBlock<<<grid_size, block_size>>>(correctForK)
+        !       istat = cudaDeviceSynchronize()
+        !       call computeLamViscosity<<<grid_size, block_size>>>(.False.)
+        !       istat = cudaDeviceSynchronize()
+        !       call computeEddyViscosity<<<grid_size, block_size>>>(.False.)
+        !       istat = cudaDeviceSynchronize()
+
+        ! Exchange the pressure early if required (fine grid only, first halo).
+        ! TODO: whalo1 device driver.
+        ! if (exchangePressureEarly .and. currentLevel <= groundLevel) &
+        !     call whalo1(currentLevel, 1_intType, 0_intType, .true., .false., .false.)
+
+        ! Apply all boundary conditions to all blocks on this level.
+        !
+        ! WARNING / INTEGRATION TODO: the current cudaBCRoutines::applyAllBC_block calls
+        ! copyCudaBlockToDevice, which re-stages the HOST block w/p into the device mirror.
+        ! That would clobber the w/p this stage just computed ON the device. For an
+        ! on-device iterative smoother the device is the source of truth between stages, so
+        ! applyAllBC must NOT re-copy host->device here. This needs coordination with the BC
+        ! owner: either a device-resident applyAllBC variant that skips the host->device
+        ! copy, or copy the device w/p back to the host before this call. Left as a call so
+        ! the structure matches the CPU smoother; correctness depends on resolving this.
+        call applyAllBC(secondHalo)
+
+        ! Exchange the solution (whalo1 or whalo2).
+        ! TODO: whalo device drivers.
+        ! if (secondHalo) then
+        !     call whalo2(currentLevel, 1_intType, nwf, .true., .true., .true.)
+        ! else
+        !     call whalo1(currentLevel, 1_intType, nwf, .true., .true., .true.)
+        ! end if
+
     end subroutine executeRkStage
+
 end module cudaSmoothers
