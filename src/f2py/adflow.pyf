@@ -377,6 +377,10 @@ python module libadflow
            integer(kind=inttype) intent(in) :: ndimw
         end subroutine getcudaresidual
 
+        subroutine getdeviceressum(monsum)
+           real(kind=realtype) intent(out) :: monsum
+        end subroutine getdeviceressum
+
        end module cudresidual
 
        module cudaturbulence
@@ -403,6 +407,15 @@ python module libadflow
         subroutine debugcopyresidualstodevice
         end subroutine debugcopyresidualstodevice
 
+        subroutine copycudaresidualtohost
+        end subroutine copycudaresidualtohost
+
+        subroutine copycudablocktohost
+        end subroutine copycudablocktohost
+
+        subroutine copycudastatestohost
+        end subroutine copycudastatestohost
+
        end module cudablock
 
        module cudaapi
@@ -416,13 +429,17 @@ python module libadflow
        end module cudaapi
 
 
-
-
       module cudabcroutines
-        subroutine applyallbc_block(secondhalo)
+        subroutine applyallbc(secondhalo)
           logical, intent(in) :: secondhalo
-        end subroutine applyallbc_block
+        end subroutine applyallbc
       end module cudabcroutines
+
+
+      module cudasmoothers
+        subroutine rungekuttasmoother
+        end subroutine rungekuttasmoother
+      end module cudasmoothers
 
       module cudadebug
         subroutine debugcomparecudadata

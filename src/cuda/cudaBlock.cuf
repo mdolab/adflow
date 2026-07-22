@@ -885,6 +885,29 @@ module cudaBlock
 
     end subroutine copyCudaResidualToHost
 
+    subroutine copyCudaStatesToHost
+        ! Copy the GPU residual accumulator dw device->host into the CPU block dw (the normal
+        ! ADflow block storage that NKSolver::getRes reads). Called once after the residual
+        ! kernels. Assembling the flat, volume-scaled residual vector is done separately by
+        ! cudaResidual::getCudaResidual.
+        use blockPointers, only: nDom, bw => w, bib => ib, bjb => jb, bkb => kb
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowVarRefState, only: nw
+        use utils, only: setPointers
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps
+
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(nn, 1, sps)
+                bw(0:bib, 0:bjb, 0:bkb, 1:nw) = h_cudaDoms(nn, sps)%w(0:bib, 0:bjb, 0:bkb, 1:nw)
+            end do
+        end do
+
+    end subroutine copyCudaStatesToHost
+
 
     subroutine copyCudaBlockToHost
         ! Sync the host block mirror descriptors from the device (h_cudaDoms = d_cudaDoms) so

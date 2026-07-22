@@ -38,6 +38,7 @@ contains
             do l = 1, nwf
                 cudaDoms(dom,sps)%wn(i, j, k, l) = cudaDoms(dom,sps)%w(i, j, k, l)
             end do
+            ! cudaDoms(dom,sps)%wn(i, j, k, 1:nwf) = cudaDoms(dom,sps)%w(i, j, k, 1:nwf)
             cudaDoms(dom,sps)%pn(i, j, k) = cudaDoms(dom,sps)%p(i, j, k)
 
         end if
@@ -71,7 +72,7 @@ contains
         if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
             .and. k <= cudaDoms(dom,sps)%kl) then
 
-            dt = dtScale * cudaDoms(dom,sps)%dtl(i, j, k)
+            dt = dtScale * cudaDoms(dom,sps)%dtl(i, j, k) ! Remeber that dtl is dt/(CFL*vol) so CFL and vol are baked in!
 
             cudaDoms(dom,sps)%dw(i, j, k, irho)  = cudaDoms(dom,sps)%dw(i, j, k, irho)  * dt
             cudaDoms(dom,sps)%dw(i, j, k, imx)   = cudaDoms(dom,sps)%dw(i, j, k, imx)   * dt
@@ -159,8 +160,6 @@ contains
                                                1.e-4_realType * pInfCorr)
 
 
-            !TODO: Needs Etot
-
         end if
 
     end subroutine rkStageUpdateState
@@ -193,7 +192,7 @@ contains
 
         ! Store the variables of the zeroth runge kutta stage on the device.
         ! Single block (dom=sps=1), consistent with the residual kernels.
-        call setPointers(1, 1, 1)
+        ! call setPointers(1, 1, 1) ! Already done this
         block_size = dim3(8, 8, 8)
         grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
                           ceiling(real(bjl - 1) / block_size%y), &
@@ -210,7 +209,8 @@ contains
 
             ! Compute the residuals for the next stage. calculateCudaResidual is the
             ! device analog of the CPU initres + sourceTerms + residual sequence.
-            call calculateCudaResidual(.True., 1, nwf)
+            ! Do not update the time step mid stage
+            call calculateCudaResidual(.False., 1, nwf)
 
         end do
 
@@ -237,6 +237,7 @@ contains
         use utils, only: setPointers, terminate
         ! --- teammate-provided device drivers / kernels ---
         use cudaBCRoutines, only: applyAllBC
+        use cudaResidual, only: computeEtotBlock, computeLamViscosity, computeEddyViscosity
         ! NOTE: whalo1 / whalo2 and the three post-update helper kernels
         !       (computeEtotBlock / computeLamViscosity / computeEddyViscosity) are
         !       provided elsewhere and pulled in when available (see TODOs below).
@@ -249,7 +250,7 @@ contains
         real(kind=realType) :: currentCfl, dtScale
         logical :: secondHalo, smoothResidual, correctForK
 
-        call setPointers(1, 1, 1)
+        ! call setPointers(1, 1, 1) ! Already done this
 
         ! Second halo only on the finest grid in the mg cycle.
         if (currentLevel <= groundLevel) then
@@ -309,23 +310,22 @@ contains
         ! TODO: residual averaging on the device. resAveraging defaults to
         !       noResAveraging, so smoothResidual is normally .false. When the device
         !       residualAveraging kernel is available, launch it here under this guard.
-        if (smoothResidual) then
+        ! if (smoothResidual) then
             ! call residualAveraging<<<grid_size, block_size>>>
             ! istat = cudaDeviceSynchronize()
-        end if
+        ! end if
 
         ! Compute the new state vector.
         call rkStageUpdateState<<<grid_size, block_size>>>(correctForK)
         istat = cudaDeviceSynchronize()
 
         ! Total energy + laminar / eddy viscosity in the owned cells.
-        ! TODO: teammate-provided device kernels. Launch over the owned-cell grid, e.g.
-        !       call computeEtotBlock<<<grid_size, block_size>>>(correctForK)
-        !       istat = cudaDeviceSynchronize()
-        !       call computeLamViscosity<<<grid_size, block_size>>>(.False.)
-        !       istat = cudaDeviceSynchronize()
-        !       call computeEddyViscosity<<<grid_size, block_size>>>(.False.)
-        !       istat = cudaDeviceSynchronize()
+        call computeEtotBlock<<<grid_size, block_size>>>(2_intType, bil, 2_intType, bjl, 2_intType, bkl, correctForK)
+        istat = cudaDeviceSynchronize()
+        call computeLamViscosity<<<grid_size, block_size>>>(.false.,correctForK)
+        istat = cudaDeviceSynchronize()
+        call computeEddyViscosity<<<grid_size, block_size>>>(.false.)
+        istat = cudaDeviceSynchronize()
 
         ! Exchange the pressure early if required (fine grid only, first halo).
         ! TODO: whalo1 device driver.
@@ -334,14 +334,6 @@ contains
 
         ! Apply all boundary conditions to all blocks on this level.
         !
-        ! WARNING / INTEGRATION TODO: the current cudaBCRoutines::applyAllBC_block calls
-        ! copyCudaBlockToDevice, which re-stages the HOST block w/p into the device mirror.
-        ! That would clobber the w/p this stage just computed ON the device. For an
-        ! on-device iterative smoother the device is the source of truth between stages, so
-        ! applyAllBC must NOT re-copy host->device here. This needs coordination with the BC
-        ! owner: either a device-resident applyAllBC variant that skips the host->device
-        ! copy, or copy the device w/p back to the host before this call. Left as a call so
-        ! the structure matches the CPU smoother; correctness depends on resolving this.
         call applyAllBC(secondHalo)
 
         ! Exchange the solution (whalo1 or whalo2).

@@ -16,7 +16,7 @@ module cudaAPI
         integer(kind=intType) :: ierr
         
         ! TODO: Reafactor for general purpose
-        ! call setPointers(1, 1, 1) ! harcoded to a single block for now
+        call setPointers(1, 1, 1) ! harcoded to a single block for now
         ! call applyAllBC_block(.True.) ! ensure halos are valid (well only for a single block)
         
         ! set the CUDA shared mem config
@@ -29,7 +29,7 @@ module cudaAPI
         call copyCudaBlockToDevice         ! block field values host->device
         call copyCudaBCDataToDevice         ! bc field values host->device
 
-        call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
+        ! call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
     
     end subroutine setupCudaAPI
 

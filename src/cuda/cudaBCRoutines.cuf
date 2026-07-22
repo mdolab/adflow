@@ -96,13 +96,6 @@ contains
         logical :: correctForK 
         integer(kind=intType) :: nn 
         integer(kind=intType) :: istat, dom, sps
-        
-        ! --- GPU SETUP ---
-        ! Allocate the device mirrors once (guarded), then copy block + BC data to device.
-        ! call allocateCudaBlock
-        ! call copyCudaBlockToDevice
-        ! call allocateCudaBCData
-        ! call copyCudaBCDataToDevice
 
         ibmax = 0
         jbmax = 0

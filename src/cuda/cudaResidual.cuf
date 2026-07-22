@@ -1492,6 +1492,396 @@ module cudaResidual
 
     end subroutine computeSpeedOfSoundSquared_v2
 
+
+    attributes(global) subroutine computeEtotBlock(iStart, iEnd, jStart, jEnd, kStart, kEnd, &
+                                correctForK)
+        !
+        !       ComputeEtot computes the total energy from the given density,
+        !       velocity and presssure. For a calorically and thermally
+        !       perfect gas the well-known expression is used;
+        !       Cp curve fit model is not implemented
+        !
+        use constants
+        ! use blockPointers, only: w, p
+        use cudaFlowVarRefState, only: RGas, Tref
+        use cudaInputPhysics, only: gammaConstant
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in), value :: iStart, iEnd, jStart, jEnd
+        integer(kind=intType), intent(in), value  :: kStart, kEnd
+        logical, intent(in), value  :: correctForK
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+        real(kind=realType) :: ovgm1, factK, scale
+        integer(kind=realType) :: nn, sps
+
+
+        nn = 1_intType
+        sps = 1_intType ! harcoded to single block for now
+
+        ! --- Initialize GPU thread indices ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kStart - 1 ! starts at 0 + kStart
+
+
+        ! Constant cp and thus constant gamma.
+        ! Abbreviate 1/(gamma -1) a bit easier.
+
+        ovgm1 = one / (gammaConstant - one)
+
+        ! Loop over the given range of the block and compute the first
+        ! step of the energy.
+
+        iSize = (iEnd - iStart) + 1
+        jSize = (jEnd - jStart) + 1
+        kSize = (kEnd - kStart) + 1
+        factK = ovgm1 * (five * third - gammaConstant)
+
+        if ((i - iStart) < isize .and. (j - jStart) < jsize .and. (k - kStart) < ksize) then
+
+        if (correctForK) then
+! #ifdef TAPENADE_REVERSE
+!             !$AD II-LOOP
+!             do ii = 0, iSize * jSize * kSize - 1
+!                 i = mod(ii, iSize) + iStart
+!                 j = mod(ii / (iSize), jSize) + jStart
+!                 k = ii / ((iSize * jSize)) + kStart
+! #else
+!                 do k = kStart, kEnd
+!                     do j = jStart, jEnd
+!                         do i = iStart, iEnd
+! #endif
+            
+            cudaDoms(nn,sps)%w(i, j, k, irhoE) = ovgm1 * cudaDoms(nn,sps)%p(i, j, k) &
+                                + half * cudaDoms(nn,sps)%w(i, j, k, irho) * (cudaDoms(nn,sps)%w(i, j, k, ivx)**2 &
+                                                                + cudaDoms(nn,sps)%w(i, j, k, ivy)**2 &
+                                                                + cudaDoms(nn,sps)%w(i, j, k, ivz)**2) - &
+                                factK * cudaDoms(nn,sps)%w(i, j, k, irho) * cudaDoms(nn,sps)%w(i, j, k, itu1)
+
+! #ifdef TAPENADE_REVERSE
+!                         end do
+! #else
+!                     end do
+!                 end do
+!             end do
+! #endif
+
+        else
+! #ifdef TAPENADE_REVERSE
+!             !$AD II-LOOP
+!             do ii = 0, iSize * jSize * kSize - 1
+!                 i = mod(ii, iSize) + iStart
+!                 j = mod(ii / (iSize), jSize) + jStart
+!                 k = ii / ((iSize * jSize)) + kStart
+! #else
+!                 do k = kStart, kEnd
+!                     do j = jStart, jEnd
+!                         do i = iStart, iEnd
+! #endif
+            cudaDoms(nn,sps)%w(i, j, k, irhoE) = ovgm1 * cudaDoms(nn,sps)%p(i, j, k) &
+                + half * cudaDoms(nn,sps)%w(i, j, k, irho) * (cudaDoms(nn,sps)%w(i, j, k, ivx)**2 &
+                                                + cudaDoms(nn,sps)%w(i, j, k, ivy)**2 &
+                                                + cudaDoms(nn,sps)%w(i, j, k, ivz)**2)
+! #ifdef TAPENADE_REVERSE
+!                         end do
+! #else
+!                     end do
+!                 end do
+!             end do
+! #endif
+        end if
+
+    end if
+
+
+    end subroutine computeEtotBlock
+
+
+    attributes(global) subroutine computeLamViscosity(includeHalos,correctForK)
+        !
+        !       computeLamViscosity computes the laminar viscosity ratio in
+        !       the owned cell centers of the given block. Sutherland's law is
+        !       used.
+        !
+        ! use blockPointers
+        use constants
+        use cudaFlowVarRefState
+        use cudaInputPhysics
+        use cudaIteration
+        ! use utils, only: getCorrectForK
+        implicit none
+
+        ! input variables
+        logical, intent(in), value  :: includeHalos, correctForK
+        !
+        !      Local parameter.
+        !
+        real(kind=realType), parameter :: twoThird = two * third
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k, ii
+        real(kind=realType) :: muSuth, TSuth, SSuth, T, pp
+        ! logical :: correctForK
+        integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
+        integer(kind=intType) :: nn, sps
+
+
+        nn = 1_intType
+        sps = 1_intType ! harcoded to single block for now
+
+
+        ! Return immediately if no laminar viscosity needs to be computed.
+
+        if (.not. viscous) return
+
+        ! Determine whether or not the pressure must be corrected
+        ! for the presence of the turbulent kinetic energy.
+
+        ! correctForK = getCorrectForK() ! Don't wanna do this on GPU
+
+        ! Compute the nonDimensional constants in sutherland's law.
+
+        muSuth = muSuthDim / muRef
+        TSuth = TSuthDim / Tref
+        SSuth = SSuthDim / Tref
+
+        if (includeHalos) then
+            iBeg = 1
+            jBeg = 1
+            kBeg = 1
+            iEnd = cudaDoms(nn,sps)%ie
+            jEnd = cudaDoms(nn,sps)%je
+            kEnd = cudaDoms(nn,sps)%ke
+        else
+            iBeg = 2
+            jBeg = 2
+            kBeg = 2
+            iEnd = cudaDoms(nn,sps)%il
+            jEnd = cudaDoms(nn,sps)%jl
+            kEnd = cudaDoms(nn,sps)%kl
+        end if
+
+        iSize = (iEnd - iBeg) + 1
+        jSize = (jEnd - jBeg) + 1
+        kSize = (kEnd - kBeg) + 1
+
+
+        ! --- Initialize GPU thread indices ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1 ! starts at 0 + jStart
+        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kBeg - 1 ! starts at 0 + kStart
+
+
+        if ((i - iBeg) < isize .and. (j - jBeg) < jsize .and. (k - kBeg) < ksize) then
+
+        ! Substract 2/3 rho k, which is a part of the normal turbulent
+        ! stresses, in case the pressure must be corrected.
+
+        if (correctForK) then
+! #ifdef TAPENADE_REVERSE
+!             iSize = (iEnd - iBeg) + 1
+!             jSize = (jEnd - jBeg) + 1
+!             kSize = (kEnd - kBeg) + 1
+
+!             !$AD II-LOOP
+!             do ii = 0, iSize * jSize * kSize - 1
+!                 i = mod(ii, iSize) + iBeg
+!                 j = mod(ii / (iSize), jSize) + jBeg
+!                 k = ii / ((iSize * jSize)) + kBeg
+! #else
+!                 do k = kBeg, kEnd
+!                     do j = jBeg, jEnd
+!                         do i = iBeg, iEnd
+! #endif
+                            pp = cudaDoms(nn,sps)%p(i, j, k) - twoThird * cudaDoms(nn,sps)%w(i, j, k, irho) * cudaDoms(nn,sps)%w(i, j, k, itu1)
+                            T = pp / (RGas * w(i, j, k, irho))
+                            cudaDoms(nn,sps)%rlv(i, j, k) = muSuth * ((TSuth + SSuth) / (T + SSuth)) &
+                                           * ((T / TSuth)**1.5_realType)
+! #ifdef TAPENADE_REVERSE
+!                         end do
+! #else
+!                     end do
+!                 end do
+!             end do
+! #endif
+        else
+            ! Loop over the owned cells *AND* first level halos of this
+            ! block and compute the laminar viscosity ratio.
+! #ifdef TAPENADE_REVERSE
+!             iSize = (iEnd - iBeg) + 1
+!             jSize = (jEnd - jBeg) + 1
+!             kSize = (kEnd - kBeg) + 1
+
+!             !$AD II-LOOP
+!             do ii = 0, iSize * jSize * kSize - 1
+!                 i = mod(ii, iSize) + iBeg
+!                 j = mod(ii / (iSize), jSize) + jBeg
+!                 k = ii / ((iSize * jSize)) + kBeg
+! #else
+!                 do k = kBeg, kEnd
+!                     do j = jBeg, jEnd
+!                         do i = iBeg, iEnd
+! #endif
+
+                            ! Compute the nonDimensional temperature and the
+                            ! nonDimensional laminar viscosity.
+                            T = cudaDoms(nn,sps)%p(i, j, k) / (RGas * cudaDoms(nn,sps)%w(i, j, k, irho))
+                            cudaDoms(nn,sps)%rlv(i, j, k) = muSuth * ((TSuth + SSuth) / (T + SSuth)) &
+                                           * ((T / TSuth)**1.5_realType)
+! #ifdef TAPENADE_REVERSE
+!                         end do
+! #else
+!                     end do
+!                 end do
+!             end do
+! #endif
+        end if
+        end if
+    end subroutine computeLamViscosity
+
+
+
+    attributes(global) subroutine computeEddyViscosity(includeHalos)
+        !
+        !       computeEddyViscosity computes the eddy viscosity in the
+        !       owned cell centers of the given block. 
+        !       Hardcoded to run the SA eddy viscosity routine saEddyViscosity
+        !
+        use constants
+        use cudaflowVarRefState
+        use cudainputPhysics
+        use cudaiteration
+        use cudaparamturb
+        ! use blockPointers
+        implicit none
+
+        ! Input Parameter
+        logical, intent(in), value  :: includeHalos
+
+        !
+        !      Local variables.
+        !
+        ! logical :: returnImmediately
+        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+        integer(kind=intType) :: nn, sps
+
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+        real(kind=realType) :: chi, chi3, fv1, rnuSA, cv13
+
+        nn = 1_intType
+        sps = 1_intType ! hard coded for now
+
+        ! Check if an immediate return can be made.
+
+        ! if (eddyModel) then
+        !     ! if ((currentLevel <= groundLevel)) then ! NO MG for NOW
+        !         returnImmediately = .false.
+        !     ! else
+        !         ! returnImmediately = .true.
+        !     ! end if
+        ! else
+        !     returnImmediately = .true.
+        ! end if
+
+        ! if (returnImmediately) return
+
+        ! Simplify the above routine for no mg case for gpu
+        if (.not. eddyModel) return
+
+        ! Determine the turbulence model and call the appropriate
+        ! routine to compute the eddy viscosity.
+        if (includeHalos) then
+            iBeg = 1
+            iEnd = cudaDoms(nn,sps)%ie
+            jBeg = 1
+            jEnd = cudaDoms(nn,sps)%je
+            kBeg = 1
+            kEnd = cudaDoms(nn,sps)%ke
+        else
+            iBeg = 2
+            iEnd = cudaDoms(nn,sps)%il
+            jBeg = 2
+            jEnd = cudaDoms(nn,sps)%jl
+            kBeg = 2
+            kEnd = cudaDoms(nn,sps)%kl
+        end if
+
+
+        iSize = (iEnd - iBeg) + 1
+        jSize = (jEnd - jBeg) + 1
+        kSize = (kEnd - kBeg) + 1
+
+
+        ! --- Initialize GPU thread indices ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1 ! starts at 0 + iBeg
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1 ! starts at 0 + jBeg
+        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kBeg - 1 ! starts at 0 + kBeg
+        
+        ! Just do what saEddyViscosity would do here
+
+        ! Store the cv1^3; cv1 is a constant of the Spalart-Allmaras model.
+
+        cv13 = rsaCv1**3
+
+        ! Loop over the cells of this block and compute the eddy viscosity.
+! #ifdef TAPENADE_REVERSE
+!         iSize = (iEnd - iBeg) + 1
+!         jSize = (jEnd - jBeg) + 1
+!         kSize = (kEnd - kBeg) + 1
+
+!         !$AD II-LOOP
+!         do ii = 0, iSize * jSize * kSize - 1
+!             i = mod(ii, iSize) + iBeg
+!             j = mod(ii / iSize, jSize) + jBeg
+!             k = ii / ((iSize * jSize)) + kBeg
+! #else
+!             do k = kBeg, kEnd
+!                 do j = jBeg, jEnd
+!                     do i = iBeg, iEnd
+! #endif
+            if ((i - iBeg) < isize .and. (j - jBeg) < jsize .and. (k - kBeg) < ksize) then
+                rnuSA = cudaDoms(nn,sps)%w(i, j, k, itu1) * cudaDoms(nn,sps)%w(i, j, k, irho)
+                chi = rnuSA / cudaDoms(nn,sps)%rlv(i, j, k)
+                chi3 = chi**3
+                fv1 = chi3 / (chi3 + cv13)
+                cudaDoms(nn,sps)%rev(i, j, k) = fv1 * rnuSA
+            end if
+! #ifdef TAPENADE_REVERSE
+!                     end do
+! #else
+!                 end do
+!             end do
+!         end do
+! #endif
+
+
+!         select case (turbModel)
+
+!         case (spalartAllmaras, spalartAllmarasEdwards)
+!             call saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+! #ifndef USE_TAPENADE
+
+!         case (v2f)
+!             call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+!         case (komegaWilcox, komegaModified)
+!             call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+!         case (menterSST)
+!             call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+!         case (ktau)
+!             call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+! #endif
+!         end select
+
+    end subroutine computeEddyViscosity
+
     !alex
     attributes(global) subroutine allNodalGradients_v2
         use constants, only: zero,one,fourth,ivx,ivy,ivz
@@ -6558,13 +6948,13 @@ module cudaResidual
       grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), ceiling(real(kbmax+1) / block_size%z))
 
       ! Print the computed block and grid size
-      print '(A)',            '--------------------------------------------------'
-      print '(A)',            ' CUDA kernel launch configuration'
-      print '(A)',            '--------------------------------------------------'
-      print '(A,I0,A,I0,A,I0)', ' Max block dims (i,j,k) : ', ibmax, ' x ', jbmax, ' x ', kbmax
-      print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_size%x, ' x ', block_size%y, ' x ', block_size%z
-      print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_size%x, ' x ', grid_size%y, ' x ', grid_size%z
-      print '(A)',            '--------------------------------------------------'
+    !   print '(A)',            '--------------------------------------------------'
+    !   print '(A)',            ' CUDA kernel launch configuration'
+    !   print '(A)',            '--------------------------------------------------'
+    !   print '(A,I0,A,I0,A,I0)', ' Max block dims (i,j,k) : ', ibmax, ' x ', jbmax, ' x ', kbmax
+    !   print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_size%x, ' x ', block_size%y, ' x ', block_size%z
+    !   print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_size%x, ' x ', grid_size%y, ' x ', grid_size%z
+    !   print '(A)',            '--------------------------------------------------'
 
 
 
@@ -6643,12 +7033,12 @@ module cudaResidual
 
 
       ! Print the computed block and grid size (I know it's after the fact)
-      print '(A)',            '--------------------------------------------------'
-      print '(A)',            ' CUDA inviscid central launch configuration'
-      print '(A)',            '--------------------------------------------------'
-      print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_inv%x, ' x ', block_inv%y, ' x ', block_inv%z
-      print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_inv%x, ' x ', grid_inv%y, ' x ', grid_inv%z
-      print '(A)',            '--------------------------------------------------'
+    !   print '(A)',            '--------------------------------------------------'
+    !   print '(A)',            ' CUDA inviscid central launch configuration'
+    !   print '(A)',            '--------------------------------------------------'
+    !   print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_inv%x, ' x ', block_inv%y, ' x ', block_inv%z
+    !   print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_inv%x, ' x ', grid_inv%y, ' x ', grid_inv%z
+    !   print '(A)',            '--------------------------------------------------'
 
 
       !
@@ -6695,12 +7085,12 @@ module cudaResidual
 
 
         ! Print the computed block and grid size
-        print '(A)',            '--------------------------------------------------'
-        print '(A)',            ' CUDA viscous launch configuration'
-        print '(A)',            '--------------------------------------------------'
-        print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_visc%x, ' x ', block_visc%y, ' x ', block_visc%z
-        print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_visc%x, ' x ', grid_visc%y, ' x ', grid_visc%z
-        print '(A)',            '--------------------------------------------------'
+        ! print '(A)',            '--------------------------------------------------'
+        ! print '(A)',            ' CUDA viscous launch configuration'
+        ! print '(A)',            '--------------------------------------------------'
+        ! print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_visc%x, ' x ', block_visc%y, ' x ', block_visc%z
+        ! print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_visc%x, ' x ', grid_visc%y, ' x ', grid_visc%z
+        ! print '(A)',            '--------------------------------------------------'
 
         call viscousFlux<<<grid_visc, block_visc>>>
         istat = cudaDeviceSynchronize()
@@ -6760,6 +7150,101 @@ module cudaResidual
         end do
 
     end subroutine getCudaResidual
+
+
+    subroutine getDeviceResSum(monsum)
+        !
+        !   get sum of residual norm from device
+        !
+        use constants, only: one, zero, intType, realType
+        use monitor, only: monLoc
+        use cudaFlowVarRefState, only: nwf, nt1, nt2
+        use cudainputiteration, only: turbResScale
+        implicit none
+
+        real(kind=realType), intent(out) :: monsum
+
+
+        integer(kind=intType) :: i, j, k, l, il, jl, kl
+        real(kind=realType) :: local_sum, l_partial, scale, ovv
+        integer(kind=intType) :: mm, nn, sps
+        integer(kind=intType) :: h_nwf, h_nt1, h_nt2
+        real(kind=realType), device, pointer :: dw(:, :, :, :), vol(:, :, :)
+
+        nn = 1
+        sps = 1 !Harcode for now
+
+        ! Alias the device data to a local pointer 
+        ! (this needs to be done for the cuf auto kernel to work)
+        dw => h_cudaDoms(nn, sps)%dw
+        vol => h_cudaDoms(nn, sps)%vol
+
+
+        ! Owned-cell loop bounds (host scalars).
+        il = h_cudaDoms(nn, sps)%il
+        jl = h_cudaDoms(nn, sps)%jl
+        kl = h_cudaDoms(nn, sps)%kl
+
+        ! nwf/nt1/nt2 are device `constant` variables and cannot be read on the
+        ! host (device data is not allowed in host I/O), so mirror them into host
+        ! scalars for use as host-side loop bounds.
+        h_nwf = nwf
+        h_nt1 = nt1
+        h_nt2 = nt2
+
+        local_sum = zero
+
+        ! Accumulate the squared, volume-scaled residual over the owned cells
+        ! (2..il, 2..jl, 2..kl) for every state variable.
+        !
+        ! The variable loop is run on the HOST, one cuf-kernel launch per state
+        ! variable, so that each launch is a clean do(3) sum-reduction with the
+        ! accumulation as the innermost statement. nvfortran only reliably
+        ! auto-detects the reduction in this canonical form; burying the
+        ! accumulation under a nested (device) do-l loop defeats the detector,
+        ! which silently privatizes the accumulator and discards it (yielding 0).
+        !
+        ! l_partial is reset per launch and added on the host, so the result is
+        ! correct regardless of whether the runtime seeds the device reduction
+        ! accumulator from the host value or from the additive identity.
+
+        ! Flow variables.
+        do l = 1, h_nwf
+            l_partial = zero
+            !$cuf kernel do(3) <<<*, *>>>
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
+                        l_partial = l_partial + (dw(i, j, k, l) / vol(i, j, k))**2
+                    end do
+                end do
+            end do
+            local_sum = local_sum + l_partial
+        end do
+
+        ! Turbulence variables (empty range for Euler/laminar). Commented out
+        ! until turbulent cases are exercised. turbResScale is a device
+        ! `constant`; copy the single element to a host scalar so it can be
+        ! folded into the launch as a constant factor.
+        ! do l = h_nt1, h_nt2
+        !     scale = turbResScale(l - h_nt1 + 1)
+        !     l_partial = zero
+        !     !$cuf kernel do(3) <<<*, *>>>
+        !     do k = 2, kl
+        !         do j = 2, jl
+        !             do i = 2, il
+        !                 l_partial = l_partial + (dw(i, j, k, l) / vol(i, j, k) * scale)**2
+        !             end do
+        !         end do
+        !     end do
+        !     local_sum = local_sum + l_partial
+        ! end do
+
+        ! Copy the reduced result into the intent(out) return value on the host.
+        monsum = local_sum
+        ! monLoc(mm) = monLoc(mm) + monsum
+
+    end subroutine getDeviceResSum 
 
 
 
