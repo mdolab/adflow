@@ -1,0 +1,888 @@
+! @File    :   cudaHaloExchange.cuf
+! @Desc    :   This module contains the CUDA Fortran version of the halo exchange routines in
+!              haloExchange.F90.
+module cudaHaloExchange
+
+    use cudafor
+    use precision, only: intType, realType
+    use cudaBlock, only: d_cudaDoms
+
+    implicit none
+    save
+
+    ! Device mirror of the finest-grid-level (level=1) internal 1-to-1 halo copy list --
+    ! communication::internalCell_1st(1) on the host. Populated once by
+    ! allocateCudaHaloComm1st, read directly by whalo1to1Kernel. ncopy1st is a plain host
+    ! integer (not device) -- it's used to size kernel launches on the host and gets passed
+    ! into the kernel as a `value` argument, so it never needs its own device copy.
+    integer(kind=intType), save :: ncopy1st = 0
+    integer(kind=intType), device, allocatable, dimension(:) :: donorBlock1st, haloBlock1st
+    integer(kind=intType), device, allocatable, dimension(:, :) :: donorIndices1st, haloIndices1st
+
+    ! Same idea as above, for the overset interpolation list -- communication::internalOverset(1,1)
+    ! on the host. donorInterpOverset holds the 8 trilinear weights per entry.
+    integer(kind=intType), save :: ncopyOverset = 0
+    integer(kind=intType), device, allocatable, dimension(:) :: donorBlockOverset, haloBlockOverset
+    integer(kind=intType), device, allocatable, dimension(:, :) :: donorIndicesOverset, haloIndicesOverset
+    real(kind=realType), device, allocatable, dimension(:, :) :: donorInterpOverset
+
+    ! Flattened across ALL blocks (blockPointers::nOrphans/orphans, one block at a time via
+    ! setPointers) so orphanAverageKernel needs a single launch instead of one per block.
+    integer(kind=intType), save :: nOrphansTotal = 0
+    integer(kind=intType), device, allocatable, dimension(:) :: orphanBlock
+    integer(kind=intType), device, allocatable, dimension(:, :) :: orphanIndices
+
+    ! Flattened across all periodic transforms in communication::internalCell_1st(1)%periodicData
+    ! -- one entry per halo cell, with that transform's 3x3 rotation matrix duplicated onto
+    ! every one of its halo cells (avoids a second level of indirection in the kernel).
+    integer(kind=intType), save :: nPeriodic1st = 0
+    integer(kind=intType), device, allocatable, dimension(:) :: periodicBlock1st
+    integer(kind=intType), device, allocatable, dimension(:, :) :: periodicIndices1st
+    real(kind=realType), device, allocatable, dimension(:, :, :) :: periodicRotMatrix1st
+
+contains
+
+    subroutine allocateCudaHaloComm1st
+        !
+        !       Mirrors communication::internalCell_1st(1) (the finest-grid-level internal
+        !       1-to-1 halo copy list) to the device. Runs once per process -- guarded by
+        !       the allocated() check below, so subsequent calls (e.g. every whalo1to1 call)
+        !       are a cheap no-op. Same lifecycle pattern as cudaBlock::allocateCudaBCData.
+        !
+        use communication, only: internalCell_1st
+        implicit none
+
+        if (allocated(donorBlock1st)) return
+
+        ncopy1st = internalCell_1st(1)%ncopy
+
+        allocate (donorBlock1st(ncopy1st), haloBlock1st(ncopy1st))
+        allocate (donorIndices1st(ncopy1st, 3), haloIndices1st(ncopy1st, 3))
+
+        donorBlock1st = internalCell_1st(1)%donorBlock(1:ncopy1st)
+        haloBlock1st = internalCell_1st(1)%haloBlock(1:ncopy1st)
+        donorIndices1st = internalCell_1st(1)%donorIndices(1:ncopy1st, :)
+        haloIndices1st = internalCell_1st(1)%haloIndices(1:ncopy1st, :)
+
+    end subroutine allocateCudaHaloComm1st
+
+    subroutine allocateCudaHaloCommOverset
+        !
+        !       Mirrors communication::internalOverset(1, 1) (the finest-grid-level,
+        !       single-spectral-mode overset interpolation list) to the device. Same
+        !       lifecycle as allocateCudaHaloComm1st.
+        !
+        use communication, only: internalOverset
+        implicit none
+
+        if (allocated(donorBlockOverset)) return
+
+        ncopyOverset = internalOverset(1, 1)%ncopy
+        if (ncopyOverset == 0) return
+
+        allocate (donorBlockOverset(ncopyOverset), haloBlockOverset(ncopyOverset))
+        allocate (donorIndicesOverset(ncopyOverset, 3), haloIndicesOverset(ncopyOverset, 3))
+        allocate (donorInterpOverset(ncopyOverset, 8))
+
+        donorBlockOverset = internalOverset(1, 1)%donorBlock(1:ncopyOverset)
+        haloBlockOverset = internalOverset(1, 1)%haloBlock(1:ncopyOverset)
+        donorIndicesOverset = internalOverset(1, 1)%donorIndices(1:ncopyOverset, :)
+        haloIndicesOverset = internalOverset(1, 1)%haloIndices(1:ncopyOverset, :)
+        donorInterpOverset = internalOverset(1, 1)%donorInterp(1:ncopyOverset, :)
+
+    end subroutine allocateCudaHaloCommOverset
+
+    subroutine allocateCudaHaloCommOrphans
+        !
+        !       Flattens the per-block orphan lists (blockPointers::nOrphans/orphans, read
+        !       one block at a time via setPointers, same as cudaBlock::allocateCudaBlock
+        !       does for other per-block metadata) into one flat device list across all
+        !       blocks. sps is fixed at 1 (single-spectral harness, see file header).
+        !
+        use blockPointers, only: nDom, bnOrphans => nOrphans, borphans => orphans
+        use utils, only: setPointers
+        implicit none
+
+        integer(kind=intType) :: nn, n, ii, total
+        integer(kind=intType), allocatable :: hOrphanBlock(:)
+        integer(kind=intType), allocatable :: hOrphanIndices(:, :)
+
+        if (allocated(orphanBlock)) return
+
+        total = 0
+        do nn = 1, nDom
+            call setPointers(nn, 1, 1)
+            total = total + bnOrphans
+        end do
+
+        nOrphansTotal = total
+        if (total == 0) return
+
+        allocate (hOrphanBlock(total), hOrphanIndices(total, 3))
+
+        ii = 0
+        do nn = 1, nDom
+            call setPointers(nn, 1, 1)
+            do n = 1, bnOrphans
+                ii = ii + 1
+                hOrphanBlock(ii) = nn
+                hOrphanIndices(ii, :) = borphans(:, n)
+            end do
+        end do
+
+        allocate (orphanBlock(total), orphanIndices(total, 3))
+        orphanBlock = hOrphanBlock
+        orphanIndices = hOrphanIndices
+
+        deallocate (hOrphanBlock, hOrphanIndices)
+
+    end subroutine allocateCudaHaloCommOrphans
+
+    subroutine allocateCudaHaloCommPeriodic1st
+        !
+        !       Flattens communication::internalCell_1st(1)%periodicData (one entry per
+        !       periodic transform, each covering nHalos cells) into one flat per-cell
+        !       device list, duplicating each transform's 3x3 rotation matrix onto every one
+        !       of its halo cells. Single-processor simplification: only
+        !       internalCell_1st's periodic list is mirrored -- commPatternCell_1st's
+        !       periodic list (the MPI-paired case) is skipped, per the "everything on one
+        !       processor" assumption (see file header).
+        !
+        use communication, only: internalCell_1st
+        implicit none
+
+        integer(kind=intType) :: nn, n, ii, total
+
+        integer(kind=intType), allocatable :: hBlock(:)
+        integer(kind=intType), allocatable :: hIndices(:, :)
+        real(kind=realType), allocatable :: hRotMatrix(:, :, :)
+
+        if (allocated(periodicBlock1st)) return
+
+        total = 0
+        do nn = 1, internalCell_1st(1)%nPeriodic
+            total = total + internalCell_1st(1)%periodicData(nn)%nHalos
+        end do
+
+        nPeriodic1st = total
+        if (total == 0) return
+
+        allocate (hBlock(total), hIndices(total, 3), hRotMatrix(total, 3, 3))
+
+        ii = 0
+        do nn = 1, internalCell_1st(1)%nPeriodic
+            do n = 1, internalCell_1st(1)%periodicData(nn)%nHalos
+                ii = ii + 1
+                hBlock(ii) = internalCell_1st(1)%periodicData(nn)%block(n)
+                hIndices(ii, :) = internalCell_1st(1)%periodicData(nn)%indices(n, :)
+                hRotMatrix(ii, :, :) = internalCell_1st(1)%periodicData(nn)%rotMatrix
+            end do
+        end do
+
+        allocate (periodicBlock1st(total), periodicIndices1st(total, 3), periodicRotMatrix1st(total, 3, 3))
+        periodicBlock1st = hBlock
+        periodicIndices1st = hIndices
+        periodicRotMatrix1st = hRotMatrix
+
+        deallocate (hBlock, hIndices, hRotMatrix)
+
+    end subroutine allocateCudaHaloCommPeriodic1st
+
+    pure function cudaCommVarCount(start, end, commPressure, commVarGamma, &
+                                   commLamVis, commEddyVis) result(nVar)
+        !
+        !       GPU counterpart of the nVar-counting half of haloExchange::setCommPointers.
+        !       (The other half -- pointing realCommVars at the arrays to communicate -- has
+        !       no device equivalent; kernels index d_cudaDoms directly instead.) Used to
+        !       mirror the CPU's early-return when there's nothing to exchange.
+        !
+        use constants, only: intType
+        implicit none
+
+        integer(kind=intType), intent(in) :: start, end
+        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
+        integer(kind=intType) :: nVar
+
+        nVar = end - start + 1
+        if (commPressure) nVar = nVar + 1
+        if (commVarGamma) nVar = nVar + 1
+        if (commLamVis) nVar = nVar + 1
+        if (commEddyVis) nVar = nVar + 1
+
+    end function cudaCommVarCount
+
+    subroutine whalo1(level, start, end, commPressure, commGamma, &
+                      commViscous)
+        !
+        !       whalo1 exchanges all the 1st level internal halo's for the
+        !       cell centered variables. GPU counterpart of haloExchange::whalo1.
+        !
+        use constants
+        use cudaFlowVarRefState, only: viscous, eddyModel
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level, start, end
+        logical, intent(in) :: commPressure, commGamma, commViscous
+        !
+        !      Local variables.
+        !
+        logical :: commLamVis, commEddyVis, commVarGamma
+
+        ! Set the logicals whether or not to communicate the viscosities.
+
+        commLamVis = .false.
+        if (viscous .and. commViscous) commLamVis = .true.
+
+        commEddyVis = .false.
+        if (eddyModel .and. commViscous) commEddyVis = .true.
+
+        commVarGamma = .false.
+        if (commGamma .and. (cpModel == cpTempCurveFits)) &
+            commVarGamma = .true.
+
+        ! Exchange the 1 to 1 matching 1st level cell halo's (local copy only, see file header).
+        call whalo1to1(level, start, end, commPressure, commVarGamma, &
+                       commLamVis, commEddyVis)
+
+        ! Exchange the overset cells.
+        call wOverset(level, start, end, commPressure, commVarGamma, &
+                     commLamVis, commEddyVis)
+
+        ! Average any overset orphans.
+        call orphanAverage(start, end, commPressure, commGamma, &
+                           commLamVis, commEddyVis)
+
+        ! TODO: haloExchange::whalo1's bothPAndE block only recomputes energy for
+        ! sliding-mesh-interface subfaces (BCType == slidingInterface), over that subface's
+        ! icBeg(mm):icEnd(mm) range. Not ported: it needs per-subface BCType/icBeg/icEnd data,
+        ! which cudaBlockType currently nulls out entirely (see cudaBlock::allocateCudaBlock's
+        ! "TEMP: Nullify these pointers" section) -- a separate, larger change. computeEtotBlock
+        ! itself is implemented and ready to use once that data exists; see whalo2 below for
+        ! the simpler "recompute over the whole block" version of this fix-up, which needs no
+        ! such per-subface data.
+
+    end subroutine whalo1
+
+    subroutine whalo2(level, start, end, commPressure, commGamma, &
+                      commViscous)
+        !
+        !       whalo2 exchanges all the 2nd level internal halo's for the
+        !       cell centered variables. GPU counterpart of haloExchange::whalo2.
+        !
+        use constants
+        use cudaFlowVarRefState, only: viscous, eddyModel
+        use blockPointers, only: nDom, bil => il, bjl => jl, bkl => kl
+        use utils, only: setPointers, getCorrectForK
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level, start, end
+        logical, intent(in) :: commPressure, commGamma, commViscous
+        !
+        !      Local variables.
+        !
+        logical :: commLamVis, commEddyVis, commVarGamma
+        logical :: correctForK
+        integer(kind=intType) :: dom
+
+        commLamVis = .false.
+        if (viscous .and. commViscous) commLamVis = .true.
+
+        commEddyVis = .false.
+        if (eddyModel .and. commViscous) commEddyVis = .true.
+
+        commVarGamma = .false.
+
+        ! TODO: whalo1to1 below currently only knows about the 1st-level internal copy list
+        ! (mirroring communication::internalCell_1st). A 2nd-level halo exchange needs the
+        ! device-side counterpart of internalCell_2nd / commPatternCell_2nd, and whalo1to1
+        ! (or a sibling routine) needs to accept whichever copy list applies.
+
+        call whalo1to1(level, start, end, commPressure, commVarGamma, &
+                       commLamVis, commEddyVis)
+
+        ! Exchange the overset cells.
+        call wOverset(level, start, end, commPressure, commVarGamma, &
+                     commLamVis, commEddyVis)
+
+        ! Average any overset orphans.
+        call orphanAverage(start, end, commPressure, commGamma, &
+                           commLamVis, commEddyVis)
+
+        ! If both the pressure and the total energy were communicated, recompute energy over
+        ! the whole block so the two stay consistent -- mirrors the `bothPAndE` block in
+        ! haloExchange::whalo2, which (unlike whalo1's) applies unconditionally to every block
+        ! rather than only sliding-mesh subfaces, so no per-subface BC data is needed here.
+        ! `il`/`jl`/`kl` are read from the host-side blockPointers (via setPointers) rather
+        ! than the device mirror, since they're the same for every grid level this codebase
+        ! currently mirrors to device (level is always 1 there -- see file header).
+        if (commPressure .and. start <= irhoE .and. end >= irhoE) then
+            correctForK = getCorrectForK()
+            do dom = 1, nDom
+                call setPointers(dom, 1, 1)
+                call computeEtotBlock(dom, 1, 2, bil, 2, bjl, 2, bkl, correctForK)
+            end do
+        end if
+
+    end subroutine whalo2
+
+    subroutine orphanAverage(wstart, wend, calcPressure, calcGamma, &
+                             calcLamVis, calcEddyVis)
+        !
+        !       GPU counterpart of haloExchange::orphanAverage. For each overset orphan cell
+        !       (a halo cell for which the chimera search found no valid donor), averages the
+        !       flow state from whichever of its 6 face-neighbors are valid, falling back to
+        !       freestream if none are.
+        !
+        use constants
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: wstart, wend
+        logical, intent(in) :: calcPressure, calcGamma, calcLamVis
+        logical, intent(in) :: calcEddyVis
+        !
+        !      Local variables.
+        !
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: istat
+
+        ! Flattened across all blocks, so this is a single launch rather than one per block
+        ! (unlike the CPU's nn/sps loop over setPointers + orphanAverage per block).
+        call allocateCudaHaloCommOrphans
+        if (nOrphansTotal == 0) return
+
+        block_size = dim3(256, 1, 1)
+        grid_size = dim3(ceiling(real(nOrphansTotal) / block_size%x), 1, 1)
+        call orphanAverageKernel<<<grid_size, block_size>>>(wstart, wend, calcPressure, calcGamma, &
+                                                            calcLamVis, calcEddyVis, nOrphansTotal)
+        istat = cudaDeviceSynchronize()
+
+    end subroutine orphanAverage
+
+    subroutine whalo1to1(level, start, end, commPressure, &
+                         commVarGamma, commLamVis, commEddyVis)
+        !
+        !       GPU counterpart of haloExchange::whalo1to1. Periodic correction only covers
+        !       internalCell_1st's periodic list (see allocateCudaHaloCommPeriodic1st) --
+        !       commPatternCell_1st's periodic list (the MPI-paired case) is skipped, per the
+        !       "everything on one processor" assumption (see file header).
+        !
+        use constants
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level, start, end
+        logical, intent(in) :: commPressure, commVarGamma
+        logical, intent(in) :: commLamVis, commEddyVis
+        !
+        !      Local variables.
+        !
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: nVar, istat
+        logical :: correctPeriodic
+
+        ! One-time device mirror of the copy list; a cheap no-op after the first call.
+        call allocateCudaHaloComm1st
+
+        nVar = cudaCommVarCount(start, end, commPressure, commVarGamma, commLamVis, commEddyVis)
+        if (nVar == 0) return
+        if (ncopy1st == 0) return
+
+        block_size = dim3(256, 1, 1)
+        grid_size = dim3(ceiling(real(ncopy1st) / block_size%x), 1, 1)
+        call whalo1to1Kernel<<<grid_size, block_size>>>(start, end, commPressure, &
+                                                        commVarGamma, commLamVis, commEddyVis, ncopy1st)
+        istat = cudaDeviceSynchronize()
+
+        ! Only a momentum variable in [start,end] needs the periodic velocity rotation.
+        correctPeriodic = (start <= ivx .and. end >= ivz)
+        if (correctPeriodic) call correctPeriodicVelocity(level, 1_intType)
+
+    end subroutine whalo1to1
+
+    subroutine correctPeriodicVelocity(level, sps)
+        !
+        !       GPU counterpart of haloExchange::correctPeriodicVelocity. Applies the periodic
+        !       rotation matrix to the velocity components (ivx:ivz) of halo cells that sit
+        !       across a periodic boundary. `level`/`sps` are kept in the signature for CPU
+        !       call-site compatibility but unused -- always operates on the flattened
+        !       internalCell_1st(1) periodic list (see allocateCudaHaloCommPeriodic1st) and
+        !       the sps=1 harness (see file header).
+        !
+        use constants
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level, sps
+        !
+        !      Local variables.
+        !
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: istat
+
+        call allocateCudaHaloCommPeriodic1st
+        if (nPeriodic1st == 0) return
+
+        block_size = dim3(256, 1, 1)
+        grid_size = dim3(ceiling(real(nPeriodic1st) / block_size%x), 1, 1)
+        call correctPeriodicVelocityKernel<<<grid_size, block_size>>>(nPeriodic1st)
+        istat = cudaDeviceSynchronize()
+
+    end subroutine correctPeriodicVelocity
+
+    subroutine wOverset(level, start, end, commPressure, &
+                        commVarGamma, commLamVis, commEddyVis)
+        !
+        !       GPU counterpart of haloExchange::wOverset. Interpolates cell-centered
+        !       variables from donor cells into overset halo cells using the trilinear
+        !       weights from the chimera preprocessing. Only the local (same-device)
+        !       interpolation is in scope -- see file header re: no MPI equivalent.
+        !
+        use constants
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level, start, end
+        logical, intent(in) :: commPressure, commVarGamma
+        logical, intent(in) :: commLamVis, commEddyVis
+        !
+        !      Local variables.
+        !
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: nVar, istat
+
+        call allocateCudaHaloCommOverset
+
+        nVar = cudaCommVarCount(start, end, commPressure, commVarGamma, commLamVis, commEddyVis)
+        if (nVar == 0) return
+        if (ncopyOverset == 0) return
+
+        block_size = dim3(256, 1, 1)
+        grid_size = dim3(ceiling(real(ncopyOverset) / block_size%x), 1, 1)
+        call wOversetKernel<<<grid_size, block_size>>>(start, end, commPressure, &
+                                                       commVarGamma, commLamVis, commEddyVis, ncopyOverset)
+        istat = cudaDeviceSynchronize()
+
+    end subroutine wOverset
+
+    subroutine computeEtotBlock(dom, sps, iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, correctForK)
+        !
+        !       GPU counterpart of flowUtils::computeEtotBlock. Recomputes total energy
+        !       (rhoE) from density, velocity, and pressure over the given cell range of
+        !       block `dom`/spectral mode `sps`. Needed after whalo1/whalo2 when both
+        !       pressure and rhoE were exchanged/interpolated independently, since the two
+        !       are related nonlinearly and can drift apart (see the `bothPAndE` block in
+        !       haloExchange::whalo1/whalo2). Only the cpModel == cpConstant path is ported
+        !       (same scope as cudaBCRoutines::computeEtot) -- cpTempCurveFits is out of scope
+        !       until commVarGamma (see whalo1) is ported.
+        !
+        use constants
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: dom, sps
+        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+        logical, intent(in) :: correctForK
+        !
+        !      Local variables.
+        !
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: istat
+
+        block_size = dim3(8, 8, 4)
+        grid_size = dim3(ceiling(real(iEnd - iBeg + 1) / block_size%x), &
+                         ceiling(real(jEnd - jBeg + 1) / block_size%y), &
+                         ceiling(real(kEnd - kBeg + 1) / block_size%z))
+        call computeEtotBlockKernel<<<grid_size, block_size>>>(dom, sps, iBeg, iEnd, jBeg, jEnd, &
+                                                               kBeg, kEnd, correctForK)
+        istat = cudaDeviceSynchronize()
+
+    end subroutine computeEtotBlock
+
+    ! ===================================================================
+    !   Actual implementation of each of the halo exchange routines
+    ! ===================================================================
+
+    attributes(global) subroutine whalo1to1Kernel(start, end, commPressure, &
+                                                   commVarGamma, commLamVis, commEddyVis, nCopy)
+        !
+        !       One thread per local copy entry: copies the donor cell's flow state into the
+        !       corresponding halo cell for cell-centered variables start:end (and optionally
+        !       pressure/gamma/laminar/eddy viscosity). Mirrors the `localCopy` loop inside
+        !       haloExchange::whalo1to1RealGeneric, reading from the module-level
+        !       donorBlock1st/donorIndices1st/haloBlock1st/haloIndices1st mirror (populated by
+        !       allocateCudaHaloComm1st) instead of internal(level)%... . `sps` is hardcoded
+        !       to 1 (single-spectral harness, see whalo1to1's header); `level` was dropped
+        !       from the argument list since it's unused here for the same reason.
+        !
+        use constants
+        use cudaBlock, only: d_cudaDoms
+        implicit none
+
+        integer(kind=intType), intent(in), value :: start, end, nCopy
+        logical, intent(in), value :: commPressure, commVarGamma, commLamVis, commEddyVis
+
+        integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
+        integer(kind=intType) :: ii
+        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+
+        ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+
+        if (ii <= nCopy) then
+
+            ! Indices are stored 0-based on the CPU side (see internalCommType) -- offset by
+            ! +1 here at read time, same as the CPU's `... indices(j, 1) + 1` convention.
+            d1 = donorBlock1st(ii)
+            i1 = donorIndices1st(ii, 1) + 1
+            j1 = donorIndices1st(ii, 2) + 1
+            k1 = donorIndices1st(ii, 3) + 1
+
+            d2 = haloBlock1st(ii)
+            i2 = haloIndices1st(ii, 1) + 1
+            j2 = haloIndices1st(ii, 2) + 1
+            k2 = haloIndices1st(ii, 3) + 1
+
+            d_cudaDoms(d2, sps)%w(i2, j2, k2, start:end) = d_cudaDoms(d1, sps)%w(i1, j1, k1, start:end)
+
+            if (commPressure) d_cudaDoms(d2, sps)%p(i2, j2, k2) = d_cudaDoms(d1, sps)%p(i1, j1, k1)
+            if (commVarGamma) d_cudaDoms(d2, sps)%gamma(i2, j2, k2) = d_cudaDoms(d1, sps)%gamma(i1, j1, k1)
+            if (commLamVis) d_cudaDoms(d2, sps)%rlv(i2, j2, k2) = d_cudaDoms(d1, sps)%rlv(i1, j1, k1)
+            if (commEddyVis) d_cudaDoms(d2, sps)%rev(i2, j2, k2) = d_cudaDoms(d1, sps)%rev(i1, j1, k1)
+
+        end if
+
+    end subroutine whalo1to1Kernel
+
+    attributes(global) subroutine correctPeriodicVelocityKernel(nPeriodic)
+        !
+        !       One thread per flattened periodic-halo entry: rotates (ivx, ivy, ivz) by that
+        !       entry's rotation matrix (duplicated per-cell by
+        !       allocateCudaHaloCommPeriodic1st, so no second level of indirection is needed
+        !       here). Mirrors the `ii` loop inside haloExchange::correctPeriodicVelocity.
+        !       `sps` is hardcoded to 1, same as whalo1to1Kernel.
+        !
+        use constants
+        use cudaBlock, only: d_cudaDoms
+        implicit none
+
+        integer(kind=intType), intent(in), value :: nPeriodic
+
+        integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
+        integer(kind=intType) :: ii, mm, i, j, k
+        real(kind=realType) :: vx, vy, vz
+
+        ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+
+        if (ii <= nPeriodic) then
+
+            mm = periodicBlock1st(ii)
+            i = periodicIndices1st(ii, 1)
+            j = periodicIndices1st(ii, 2)
+            k = periodicIndices1st(ii, 3)
+
+            vx = d_cudaDoms(mm, sps)%w(i, j, k, ivx)
+            vy = d_cudaDoms(mm, sps)%w(i, j, k, ivy)
+            vz = d_cudaDoms(mm, sps)%w(i, j, k, ivz)
+
+            d_cudaDoms(mm, sps)%w(i, j, k, ivx) = periodicRotMatrix1st(ii, 1, 1) * vx &
+                                                  + periodicRotMatrix1st(ii, 1, 2) * vy &
+                                                  + periodicRotMatrix1st(ii, 1, 3) * vz
+            d_cudaDoms(mm, sps)%w(i, j, k, ivy) = periodicRotMatrix1st(ii, 2, 1) * vx &
+                                                  + periodicRotMatrix1st(ii, 2, 2) * vy &
+                                                  + periodicRotMatrix1st(ii, 2, 3) * vz
+            d_cudaDoms(mm, sps)%w(i, j, k, ivz) = periodicRotMatrix1st(ii, 3, 1) * vx &
+                                                  + periodicRotMatrix1st(ii, 3, 2) * vy &
+                                                  + periodicRotMatrix1st(ii, 3, 3) * vz
+
+        end if
+
+    end subroutine correctPeriodicVelocityKernel
+
+    attributes(global) subroutine wOversetKernel(start, end, commPressure, &
+                                                 commVarGamma, commLamVis, commEddyVis, nOverset)
+        !
+        !       One thread per overset halo entry: trilinearly interpolates the donor cell's
+        !       8-corner stencil into the halo cell, for cell-centered variables start:end
+        !       (and optionally pressure/gamma/laminar/eddy viscosity). Mirrors the
+        !       `localInterp` loop inside haloExchange::wOversetGeneric. `sps` is hardcoded to
+        !       1, same as whalo1to1Kernel.
+        !
+        use constants
+        use cudaBlock, only: d_cudaDoms
+        implicit none
+
+        integer(kind=intType), intent(in), value :: start, end, nOverset
+        logical, intent(in), value :: commPressure, commVarGamma, commLamVis, commEddyVis
+
+        integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
+        integer(kind=intType) :: ii, v
+        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+        real(kind=realType) :: w1, w2, w3, w4, w5, w6, w7, w8
+
+        ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+
+        if (ii <= nOverset) then
+
+            d1 = donorBlockOverset(ii)
+            i1 = donorIndicesOverset(ii, 1) + 1
+            j1 = donorIndicesOverset(ii, 2) + 1
+            k1 = donorIndicesOverset(ii, 3) + 1
+
+            d2 = haloBlockOverset(ii)
+            i2 = haloIndicesOverset(ii, 1) + 1
+            j2 = haloIndicesOverset(ii, 2) + 1
+            k2 = haloIndicesOverset(ii, 3) + 1
+
+            w1 = donorInterpOverset(ii, 1)
+            w2 = donorInterpOverset(ii, 2)
+            w3 = donorInterpOverset(ii, 3)
+            w4 = donorInterpOverset(ii, 4)
+            w5 = donorInterpOverset(ii, 5)
+            w6 = donorInterpOverset(ii, 6)
+            w7 = donorInterpOverset(ii, 7)
+            w8 = donorInterpOverset(ii, 8)
+
+            do v = start, end
+                d_cudaDoms(d2, sps)%w(i2, j2, k2, v) = &
+                    w1 * d_cudaDoms(d1, sps)%w(i1, j1, k1, v) + &
+                    w2 * d_cudaDoms(d1, sps)%w(i1 + 1, j1, k1, v) + &
+                    w3 * d_cudaDoms(d1, sps)%w(i1, j1 + 1, k1, v) + &
+                    w4 * d_cudaDoms(d1, sps)%w(i1 + 1, j1 + 1, k1, v) + &
+                    w5 * d_cudaDoms(d1, sps)%w(i1, j1, k1 + 1, v) + &
+                    w6 * d_cudaDoms(d1, sps)%w(i1 + 1, j1, k1 + 1, v) + &
+                    w7 * d_cudaDoms(d1, sps)%w(i1, j1 + 1, k1 + 1, v) + &
+                    w8 * d_cudaDoms(d1, sps)%w(i1 + 1, j1 + 1, k1 + 1, v)
+            end do
+
+            if (commPressure) then
+                d_cudaDoms(d2, sps)%p(i2, j2, k2) = &
+                    w1 * d_cudaDoms(d1, sps)%p(i1, j1, k1) + &
+                    w2 * d_cudaDoms(d1, sps)%p(i1 + 1, j1, k1) + &
+                    w3 * d_cudaDoms(d1, sps)%p(i1, j1 + 1, k1) + &
+                    w4 * d_cudaDoms(d1, sps)%p(i1 + 1, j1 + 1, k1) + &
+                    w5 * d_cudaDoms(d1, sps)%p(i1, j1, k1 + 1) + &
+                    w6 * d_cudaDoms(d1, sps)%p(i1 + 1, j1, k1 + 1) + &
+                    w7 * d_cudaDoms(d1, sps)%p(i1, j1 + 1, k1 + 1) + &
+                    w8 * d_cudaDoms(d1, sps)%p(i1 + 1, j1 + 1, k1 + 1)
+            end if
+
+            if (commVarGamma) then
+                d_cudaDoms(d2, sps)%gamma(i2, j2, k2) = &
+                    w1 * d_cudaDoms(d1, sps)%gamma(i1, j1, k1) + &
+                    w2 * d_cudaDoms(d1, sps)%gamma(i1 + 1, j1, k1) + &
+                    w3 * d_cudaDoms(d1, sps)%gamma(i1, j1 + 1, k1) + &
+                    w4 * d_cudaDoms(d1, sps)%gamma(i1 + 1, j1 + 1, k1) + &
+                    w5 * d_cudaDoms(d1, sps)%gamma(i1, j1, k1 + 1) + &
+                    w6 * d_cudaDoms(d1, sps)%gamma(i1 + 1, j1, k1 + 1) + &
+                    w7 * d_cudaDoms(d1, sps)%gamma(i1, j1 + 1, k1 + 1) + &
+                    w8 * d_cudaDoms(d1, sps)%gamma(i1 + 1, j1 + 1, k1 + 1)
+            end if
+
+            if (commLamVis) then
+                d_cudaDoms(d2, sps)%rlv(i2, j2, k2) = &
+                    w1 * d_cudaDoms(d1, sps)%rlv(i1, j1, k1) + &
+                    w2 * d_cudaDoms(d1, sps)%rlv(i1 + 1, j1, k1) + &
+                    w3 * d_cudaDoms(d1, sps)%rlv(i1, j1 + 1, k1) + &
+                    w4 * d_cudaDoms(d1, sps)%rlv(i1 + 1, j1 + 1, k1) + &
+                    w5 * d_cudaDoms(d1, sps)%rlv(i1, j1, k1 + 1) + &
+                    w6 * d_cudaDoms(d1, sps)%rlv(i1 + 1, j1, k1 + 1) + &
+                    w7 * d_cudaDoms(d1, sps)%rlv(i1, j1 + 1, k1 + 1) + &
+                    w8 * d_cudaDoms(d1, sps)%rlv(i1 + 1, j1 + 1, k1 + 1)
+            end if
+
+            if (commEddyVis) then
+                d_cudaDoms(d2, sps)%rev(i2, j2, k2) = &
+                    w1 * d_cudaDoms(d1, sps)%rev(i1, j1, k1) + &
+                    w2 * d_cudaDoms(d1, sps)%rev(i1 + 1, j1, k1) + &
+                    w3 * d_cudaDoms(d1, sps)%rev(i1, j1 + 1, k1) + &
+                    w4 * d_cudaDoms(d1, sps)%rev(i1 + 1, j1 + 1, k1) + &
+                    w5 * d_cudaDoms(d1, sps)%rev(i1, j1, k1 + 1) + &
+                    w6 * d_cudaDoms(d1, sps)%rev(i1 + 1, j1, k1 + 1) + &
+                    w7 * d_cudaDoms(d1, sps)%rev(i1, j1 + 1, k1 + 1) + &
+                    w8 * d_cudaDoms(d1, sps)%rev(i1 + 1, j1 + 1, k1 + 1)
+            end if
+
+        end if
+
+    end subroutine wOversetKernel
+
+    attributes(global) subroutine orphanAverageKernel(wstart, wend, calcPressure, calcGamma, &
+                                                      calcLamVis, calcEddyVis, nOrphans)
+        !
+        !       One thread per orphan cell (flattened across all blocks -- see
+        !       allocateCudaHaloCommOrphans): averages the flow state of whichever of the 6
+        !       face-neighbors (+/-i, +/-j, +/-k) have iblank == 1, or falls back to
+        !       freestream if none do. Mirrors the `orphanLoop` inside
+        !       haloExchange::orphanAverage. `sps` is hardcoded to 1, same as whalo1to1Kernel.
+        !
+        !       Caveat: d_cudaDoms(...)%iblank is only allocated over the interior
+        !       (2:il,2:jl,2:kl) on the GPU (see cudaBlock.cuf's allocateCudaBlock) -- unlike
+        !       the CPU's iblank, which also covers halo cells. A neighbor that lands outside
+        !       that interior range is therefore always treated as unusable here (skipped),
+        !       rather than checked, which is a real (if narrow) behavior difference from the
+        !       CPU version.
+        !
+        use constants
+        use cudaBlock, only: d_cudaDoms
+        use cudaFlowVarRefState, only: wInf, pInfCorr, gammaInf, muInf, eddyVisInfRatio
+        implicit none
+
+        integer(kind=intType), intent(in), value :: wstart, wend, nOrphans
+        logical, intent(in), value :: calcPressure, calcGamma, calcLamVis, calcEddyVis
+
+        integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
+        integer(kind=intType) :: ii, dm
+        integer(kind=intType) :: oi, oj, ok, ni, nj, nk, l, m, dl
+        integer(kind=intType), dimension(3) :: del
+        integer(kind=intType) :: nAvg
+        real(kind=realType) :: nAvgReal
+        logical :: neighborValid
+
+        ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+
+        if (ii <= nOrphans) then
+
+            dm = orphanBlock(ii)
+            oi = orphanIndices(ii, 1)
+            oj = orphanIndices(ii, 2)
+            ok = orphanIndices(ii, 3)
+
+            nAvg = 0
+
+            do l = wstart, wend
+                d_cudaDoms(dm, sps)%w(oi, oj, ok, l) = zero
+            end do
+            if (calcPressure) d_cudaDoms(dm, sps)%p(oi, oj, ok) = zero
+            if (calcGamma) d_cudaDoms(dm, sps)%gamma(oi, oj, ok) = zero
+            if (calcLamVis) d_cudaDoms(dm, sps)%rlv(oi, oj, ok) = zero
+            if (calcEddyVis) d_cudaDoms(dm, sps)%rev(oi, oj, ok) = zero
+
+            do m = 1, 3
+                do dl = -1, 1, 2
+
+                    del = 0
+                    del(m) = dl
+
+                    ni = oi + del(1)
+                    nj = oj + del(2)
+                    nk = ok + del(3)
+
+                    neighborValid = .false.
+                    if (ni >= 0 .and. ni <= d_cudaDoms(dm, sps)%ib .and. &
+                        nj >= 0 .and. nj <= d_cudaDoms(dm, sps)%jb .and. &
+                        nk >= 0 .and. nk <= d_cudaDoms(dm, sps)%kb) then
+
+                        ! iblank only has backing memory on the interior -- see caveat above.
+                        if (ni >= 2 .and. ni <= d_cudaDoms(dm, sps)%il .and. &
+                            nj >= 2 .and. nj <= d_cudaDoms(dm, sps)%jl .and. &
+                            nk >= 2 .and. nk <= d_cudaDoms(dm, sps)%kl) then
+                            neighborValid = (d_cudaDoms(dm, sps)%iblank(ni, nj, nk) == 1)
+                        end if
+                    end if
+
+                    if (neighborValid) then
+
+                        nAvg = nAvg + 1
+
+                        do l = wstart, wend
+                            d_cudaDoms(dm, sps)%w(oi, oj, ok, l) = d_cudaDoms(dm, sps)%w(oi, oj, ok, l) &
+                                                                   + d_cudaDoms(dm, sps)%w(ni, nj, nk, l)
+                        end do
+
+                        if (calcPressure) d_cudaDoms(dm, sps)%p(oi, oj, ok) = d_cudaDoms(dm, sps)%p(oi, oj, ok) &
+                                                                              + d_cudaDoms(dm, sps)%p(ni, nj, nk)
+                        if (calcGamma) d_cudaDoms(dm, sps)%gamma(oi, oj, ok) = d_cudaDoms(dm, sps)%gamma(oi, oj, ok) &
+                                                                              + d_cudaDoms(dm, sps)%gamma(ni, nj, nk)
+                        if (calcLamVis) d_cudaDoms(dm, sps)%rlv(oi, oj, ok) = d_cudaDoms(dm, sps)%rlv(oi, oj, ok) &
+                                                                             + d_cudaDoms(dm, sps)%rlv(ni, nj, nk)
+                        if (calcEddyVis) d_cudaDoms(dm, sps)%rev(oi, oj, ok) = d_cudaDoms(dm, sps)%rev(oi, oj, ok) &
+                                                                              + d_cudaDoms(dm, sps)%rev(ni, nj, nk)
+                    end if
+
+                end do
+            end do
+
+            if (nAvg > 0) then
+                nAvgReal = real(nAvg, realType)
+
+                do l = wstart, wend
+                    d_cudaDoms(dm, sps)%w(oi, oj, ok, l) = d_cudaDoms(dm, sps)%w(oi, oj, ok, l) / nAvgReal
+                end do
+                if (calcPressure) d_cudaDoms(dm, sps)%p(oi, oj, ok) = d_cudaDoms(dm, sps)%p(oi, oj, ok) / nAvgReal
+                if (calcGamma) d_cudaDoms(dm, sps)%gamma(oi, oj, ok) = d_cudaDoms(dm, sps)%gamma(oi, oj, ok) / nAvgReal
+                if (calcLamVis) d_cudaDoms(dm, sps)%rlv(oi, oj, ok) = d_cudaDoms(dm, sps)%rlv(oi, oj, ok) / nAvgReal
+                if (calcEddyVis) d_cudaDoms(dm, sps)%rev(oi, oj, ok) = d_cudaDoms(dm, sps)%rev(oi, oj, ok) / nAvgReal
+            else
+                do l = wstart, wend
+                    d_cudaDoms(dm, sps)%w(oi, oj, ok, l) = wInf(l)
+                end do
+                if (calcPressure) d_cudaDoms(dm, sps)%p(oi, oj, ok) = pInfCorr
+                if (calcGamma) d_cudaDoms(dm, sps)%gamma(oi, oj, ok) = gammaInf
+                if (calcLamVis) d_cudaDoms(dm, sps)%rlv(oi, oj, ok) = muInf
+                if (calcEddyVis) d_cudaDoms(dm, sps)%rev(oi, oj, ok) = eddyVisInfRatio * muInf
+            end if
+
+        end if
+
+    end subroutine orphanAverageKernel
+
+    attributes(global) subroutine computeEtotBlockKernel(dom, sps, iBeg, iEnd, jBeg, jEnd, &
+                                                         kBeg, kEnd, correctForK)
+        !
+        !       One thread per (i,j,k) cell in the given range: recomputes rhoE from
+        !       rho/velocity/p (and, if correctForK, the turbulent kinetic energy). Ports
+        !       flowUtils::computeEtotBlock's cpConstant branch -- the same formula already
+        !       implemented for BC halo layers in cudaBCRoutines::computeEtot, generalized to
+        !       an explicit 3D (i,j,k) range instead of a boundary face layer. cpTempCurveFits
+        !       is out of scope, same as cudaBCRoutines::computeEtot.
+        !
+        use constants
+        use cudaInputPhysics, only: gammaConstant
+        use cudaBlock, only: d_cudaDoms
+        implicit none
+
+        integer(kind=intType), intent(in), value :: dom, sps
+        integer(kind=intType), intent(in), value :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+        logical, intent(in), value :: correctForK
+
+        integer(kind=intType) :: i, j, k
+        real(kind=realType) :: ovgm1, factK
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + iBeg - 1
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + jBeg - 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + kBeg - 1
+
+        if (i <= iEnd .and. j <= jEnd .and. k <= kEnd) then
+
+            ovgm1 = one / (gammaConstant - one)
+
+            if (.not. correctForK) then
+                d_cudaDoms(dom, sps)%w(i, j, k, irhoE) = ovgm1 * d_cudaDoms(dom, sps)%P(i, j, k) &
+                                    + half * d_cudaDoms(dom, sps)%w(i, j, k, irho) * ( &
+                                        d_cudaDoms(dom, sps)%w(i, j, k, ivx)**2 &
+                                        + d_cudaDoms(dom, sps)%w(i, j, k, ivy)**2 &
+                                        + d_cudaDoms(dom, sps)%w(i, j, k, ivz)**2)
+            else
+                factK = ovgm1 * (five * third - gammaConstant)
+                d_cudaDoms(dom, sps)%w(i, j, k, irhoE) = ovgm1 * d_cudaDoms(dom, sps)%P(i, j, k) &
+                                    + half * d_cudaDoms(dom, sps)%w(i, j, k, irho) * ( &
+                                        d_cudaDoms(dom, sps)%w(i, j, k, ivx)**2 &
+                                        + d_cudaDoms(dom, sps)%w(i, j, k, ivy)**2 &
+                                        + d_cudaDoms(dom, sps)%w(i, j, k, ivz)**2) &
+                                    - factK * d_cudaDoms(dom, sps)%w(i, j, k, irho) * d_cudaDoms(dom, sps)%w(i, j, k, itu1)
+            end if
+
+        end if
+
+    end subroutine computeEtotBlockKernel
+
+end module cudaHaloExchange
