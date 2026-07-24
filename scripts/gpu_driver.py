@@ -1,5 +1,5 @@
 """
-@File    :   cpu_driver.py
+@File    :   gpu_driver.py
 @Date    :   07/22/2026
 @Author  :   Safa Bakhshi
 @Description : run GPU ADflow on test grid and save the restart file
@@ -57,12 +57,12 @@ aeroOptions = {
     "equationType": "Euler",
     # "equationType": "laminar NS",
     # "equationType": "RANS",
-    "CFL": 0.1,
-    "CFLCoarse": 0.1,
+    "CFL": 1.7,
+    "CFLCoarse": 1.7,
     "MGCycle": MGCycle,
     "MGStartLevel": -1,
     "nCyclesCoarse": 250,
-    "nCycles": 10,
+    "nCycles": 900,
     "nsubiterturb": 5,
     "printIntro": False,
     "printAllOptions": False,
@@ -81,12 +81,14 @@ aeroOptions = {
     "useANKSolver":False,
     "useNKSolver":False,
     "smoother":"Runge-Kutta",
+    "resAveraging":"never",
+    "L2Convergence" : 1e-16,
 }
 
 ap = AeroProblem(
     name=name,
     alpha=alpha,
-    beta=0.0,
+    beta=45.0,
     mach=mach,
     altitude=altitude,
     areaRef=areaRef,
@@ -96,49 +98,59 @@ ap = AeroProblem(
 
 # Create solver
 CFDSolver = ADFLOW(options=aeroOptions, debug=True, comm=MPI.COMM_WORLD)
-resCPU1 = CFDSolver.getResidual(ap)
+# resCPU1 = CFDSolver.getResidual(ap)
+CFDSolver(ap)
+
+
+CFDSolver.resetFlow(ap)
 
 
 # Prepare CUDA API
-ndimw = len(resCPU1)
+# ndimw = len(resCPU1)
 nw = CFDSolver.adflow.flowvarrefstate.nw
-nIters = 4
+nIters = aeroOptions["nCycles"]
 
 # One-time GPU setup + host->device copy, paid ONCE outside the timed loop below.
 CFDSolver.adflow.cudaapi.setupcudaapi()
 
+
+# Start timing GPU
+timeGPU1 = time.time()
+
+
 # Timed region: the core GPU residual only (calculateCudaResidual). No host<->device
 # copies happen inside this loop, so profiling it measures kernel time, not transfers.
+CFDSolver.adflow.cudabcroutines.applyallbc(True)
 CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
 print(f"Iteration {0} - L2 Total Res {CFDSolver.adflow.cudaresidual.getdeviceressum():.5e}")
 for i in range(nIters):
     #
-    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
     CFDSolver.adflow.cudasmoothers.rungekuttasmoother()
+    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
     monres = CFDSolver.adflow.cudaresidual.getdeviceressum()
     print(f"Iteration {i+1} - L2 Total Res {monres:.5e}")
+
+timeGPU2 = time.time()
 
 
 # Copy back to host
 CFDSolver.adflow.cudablock.copycudablocktohost()
 
 
+CFDSolver.adflow.cudablock.copycudastatestohost()
+CFDSolver.adflow.cudablock.copycudaresidualtohost()
+
+
 # Debug
-CFDSolver.adflow.cudadebug.debugcomparecudadata()
-
-# CFDSolver.adflow.cudablock.copycudastatestohost()
-# CFDSolver.adflow.cudablock.copycudaresidualtohost()
-
+# CFDSolver.adflow.cudadebug.debugcomparecudadata()
 
 # Destroy CUDA Memory
-# CFDSolver.adflow.cudaapi.destroycudaapi()
+CFDSolver.adflow.cudaapi.destroycudaapi()
 
 
-# resCPU2 = CFDSolver.getResidual(ap)
+# resCPU2 = CFDSolver.getResidual()
+CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_GPU_sol")
 
 
-# CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_GPU_sol")
-
-
-
+print("GPU Total Solution Time", timeGPU2-timeGPU1)
 

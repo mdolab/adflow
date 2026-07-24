@@ -31,6 +31,7 @@ from matplotlib import ticker
 
 
 gridFile = "INPUT/test_mesh_nb1_nc32.cgns"
+# gridFile = "INPUT/test_mesh_nb1_nc32_all_far.cgns"
 
 
 
@@ -57,12 +58,12 @@ aeroOptions = {
     "equationType": "Euler",
     # "equationType": "laminar NS",
     # "equationType": "RANS",
-    "CFL": 1.5,
+    "CFL": 1.7,
     "CFLCoarse": 1.25,
     "MGCycle": MGCycle,
     "MGStartLevel": -1,
     "nCyclesCoarse": 250,
-    "nCycles": 100000,
+    "nCycles": 900,
     "nsubiterturb": 5,
     "printIntro": False,
     "printAllOptions": False,
@@ -78,15 +79,18 @@ aeroOptions = {
     # Write Restart File
     "writeSurfaceSolution" : False,
     "writeVolumeSolution" : True,
+    "volumeVariables":["resrho","resmom","resrhoe","mx","my","mz","rhoe"],
     "useANKSolver":False,
     "useNKSolver":False,
     "smoother":"Runge-Kutta",
+    "resAveraging":"never",
+    "L2Convergence" : 1e-16,
 }
 
 ap = AeroProblem(
     name=name,
     alpha=alpha,
-    beta=0.0,
+    beta=45.0,
     mach=mach,
     altitude=altitude,
     areaRef=areaRef,
@@ -96,11 +100,9 @@ ap = AeroProblem(
 
 # Create solver
 CFDSolver = ADFLOW(options=aeroOptions, debug=True, comm=MPI.COMM_WORLD)
-resCPU1 = CFDSolver.getResidual(ap)
-
 CFDSolver(ap)
 
-# CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_restart")
+# CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_all_far_restart")
 
 
 

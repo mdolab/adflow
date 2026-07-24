@@ -267,9 +267,9 @@ module cudaBlock
                     allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
                 end if
 
-                ! saved zeroth-stage RK state (same extents as w/p)
-                allocate(h_cudaDoms(nn,sps)%wn(0:bib, 0:bjb, 0:bkb, 1:nw))
-                allocate(h_cudaDoms(nn,sps)%pn(0:bib, 0:bjb, 0:bkb))
+                ! saved zeroth-stage RK state (only interior cells)
+                allocate(h_cudaDoms(nn,sps)%wn(2:bil, 2:bjl, 2:bkl, 1:nw))
+                allocate(h_cudaDoms(nn,sps)%pn(2:bil, 2:bjl, 2:bkl))
 
                 ! no halos (faces)
 
@@ -886,10 +886,8 @@ module cudaBlock
     end subroutine copyCudaResidualToHost
 
     subroutine copyCudaStatesToHost
-        ! Copy the GPU residual accumulator dw device->host into the CPU block dw (the normal
-        ! ADflow block storage that NKSolver::getRes reads). Called once after the residual
-        ! kernels. Assembling the flat, volume-scaled residual vector is done separately by
-        ! cudaResidual::getCudaResidual.
+        ! Copy the GPU state w device->host into the CPU block w (the normal
+        ! ADflow block storage that NKSolver::getStates reads).
         use blockPointers, only: nDom, bw => w, bib => ib, bjb => jb, bkb => kb
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nw

@@ -1526,7 +1526,7 @@ module cudaResidual
         ! --- Initialize GPU thread indices ---
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
-        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kStart - 1 ! starts at 0 + kStart
+        k = (blockIdx%z-1)*blockDim%z + threadIdx%z + kStart - 1 ! starts at 0 + kStart
 
 
         ! Constant cp and thus constant gamma.
@@ -1675,7 +1675,7 @@ module cudaResidual
         ! --- Initialize GPU thread indices ---
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1 ! starts at 0 + iStart
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1 ! starts at 0 + jStart
-        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kBeg - 1 ! starts at 0 + kStart
+        k = (blockIdx%z-1)*blockDim%z + threadIdx%z + kBeg - 1 ! starts at 0 + kStart
 
 
         if ((i - iBeg) < isize .and. (j - jBeg) < jsize .and. (k - kBeg) < ksize) then
@@ -1821,7 +1821,7 @@ module cudaResidual
         ! --- Initialize GPU thread indices ---
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iBeg - 1 ! starts at 0 + iBeg
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jBeg - 1 ! starts at 0 + jBeg
-        k = (blockIdx%y-1)*blockDim%y + threadIdx%z + kBeg - 1 ! starts at 0 + kBeg
+        k = (blockIdx%z-1)*blockDim%z + threadIdx%z + kBeg - 1 ! starts at 0 + kBeg
         
         ! Just do what saEddyViscosity would do here
 
@@ -6926,6 +6926,9 @@ module cudaResidual
       !     calculateCudaResidual is pure compute: zero accumulators + launch kernels.
 
 
+      call cudaInitRes(varStart,varEnd)
+
+
       ! 
       ! standard block size determination
       ! 
@@ -7060,7 +7063,7 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
       
       call CPU_TIME(finishInv)
-      print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
+    !   print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
 
       !
       ! viscous flux
@@ -7096,7 +7099,7 @@ module cudaResidual
         istat = cudaDeviceSynchronize()
 
         call CPU_TIME(finishVisc)
-        print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
+        ! print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
 
       end if
 
@@ -7108,7 +7111,7 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
       
       call CPU_TIME(finish)
-      print  '("CUDA Time = ",E22.16," seconds.")', finish-start
+    !   print  '("CUDA Time = ",E22.16," seconds.")', finish-start
       ! TODO: update residual?
 
     end subroutine calculateCudaResidual

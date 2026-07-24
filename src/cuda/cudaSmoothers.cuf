@@ -19,7 +19,7 @@ contains
         !  Store the zeroth Runge-Kutta stage state: wn = w (flow vars) and pn = p, over
         !  the owned cells. Replaces the CPU nn/sps store loops in RungeKuttaSmoother.
         !
-        use constants, only: irho
+        ! use constants, only: irho
         use cudaFlowVarRefState, only: nwf
         implicit none
 
@@ -38,7 +38,6 @@ contains
             do l = 1, nwf
                 cudaDoms(dom,sps)%wn(i, j, k, l) = cudaDoms(dom,sps)%w(i, j, k, l)
             end do
-            ! cudaDoms(dom,sps)%wn(i, j, k, 1:nwf) = cudaDoms(dom,sps)%w(i, j, k, 1:nwf)
             cudaDoms(dom,sps)%pn(i, j, k) = cudaDoms(dom,sps)%p(i, j, k)
 
         end if
@@ -198,6 +197,15 @@ contains
                           ceiling(real(bjl - 1) / block_size%y), &
                           ceiling(real(bkl - 1) / block_size%z))
 
+
+        ! print '(A)',            '--------------------------------------------------'
+        ! print '(A)',            ' CUDA kernel launch configuration'
+        ! print '(A)',            '--------------------------------------------------'
+        ! print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_size%x, ' x ', block_size%y, ' x ', block_size%z
+        ! print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_size%x, ' x ', grid_size%y, ' x ', grid_size%z
+        ! print '(A)',            '--------------------------------------------------'
+
+
         call rkStoreZerothStage<<<grid_size, block_size>>>()
         istat = cudaDeviceSynchronize()
 
@@ -253,34 +261,37 @@ contains
         ! call setPointers(1, 1, 1) ! Already done this
 
         ! Second halo only on the finest grid in the mg cycle.
-        if (currentLevel <= groundLevel) then
-            secondHalo = .true.
-        else
-            secondHalo = .false.
-        end if
+        ! if (currentLevel <= groundLevel) then
+        !     secondHalo = .true.
+        ! else
+        !     secondHalo = .false.
+        ! end if
+
+        secondHalo = .true.
 
         ! Current cfl number.
-        currentCfl = cflCoarse
-        if (currentLevel == 1) currentCfl = cfl
+        ! currentCfl = cflCoarse
+        ! if (currentLevel == 1) currentCfl = cfl
+        currentCfl = cfl
 
         ! Whether or not residual averaging must be applied.
-        if (resAveraging == noResAveraging) then
-            smoothResidual = .false.
-        else if (resAveraging == alwaysResAveraging) then
-            smoothResidual = .true.
-        else if (mod(rkStage, 2_intType) == 1) then
-            smoothResidual = .true.
-        else
-            smoothResidual = .false.
-        end if
+        ! if (resAveraging == noResAveraging) then
+        !     smoothResidual = .false.
+        ! else if (resAveraging == alwaysResAveraging) then
+        !     smoothResidual = .true.
+        ! else if (mod(rkStage, 2_intType) == 1) then
+        !     smoothResidual = .true.
+        ! else
+        !     smoothResidual = .false.
+        ! end if
 
         ! Whether or not the total energy must be corrected for the turbulent
         ! kinetic energy.
-        if (kPresent .and. (currentLevel <= groundLevel)) then
-            correctForK = .true.
-        else
+        ! if (kPresent .and. (currentLevel <= groundLevel)) then
+        !     correctForK = .true.
+        ! else
             correctForK = .false.
-        end if
+        ! end if
 
         ! cfl number times the RK coefficient. Fold the low-speed-preconditioner
         ! factor into the scale here (host knows the flag) so the dw kernel stays
@@ -289,6 +300,7 @@ contains
         select case (equationMode)
         case (steady, timeSpectral)
             dtScale = currentCfl * etaRk(rkStage)
+            ! print *, "On Stage: ", rkStage, "coef is ", etaRk(rkStage)
             if (lowSpeedPreconditioner) dtScale = 0.8_realType * dtScale
         case default
             call terminate("cudaSmoothers::executeRkStage", &

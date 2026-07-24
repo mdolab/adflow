@@ -31,6 +31,7 @@ subroutine debugCompareCudaData
                                 bwx => wx, bwy => wy, bwz => wz, &
                                 bqx => qx, bqy => qy, bqz => qz, &
                                 bdw => dw, bfw => fw, bw => w, &
+                                bpn => pn, bwn => wn, &
                                 bib => ib, bjb => jb, bkb => kb, &
                                 bsI => sI, bsJ => sJ, bsK => sK, &
                                 bvol => vol, baa => aa, bp => p, bgamma => gamma, &
@@ -59,9 +60,9 @@ subroutine debugCompareCudaData
 
     ! GPU-mirror values copied back to the host (device->host happens on assignment
     ! from h_cudaDoms(dom,sps)%<field>, see copyCudaBlockToHost).
-    real(kind=realType), dimension(:, :, :, :), allocatable :: g_w, g_x, g_sI, g_sJ, g_sK, g_dss
+    real(kind=realType), dimension(:, :, :, :), allocatable :: g_w, g_wn, g_x, g_sI, g_sJ, g_sK, g_dss
     real(kind=realType), dimension(:, :, :, :), allocatable :: g_dw, g_fw
-    real(kind=realType), dimension(:, :, :), allocatable :: g_p, g_gamma, g_ss
+    real(kind=realType), dimension(:, :, :), allocatable :: g_p, g_pn, g_gamma, g_ss
     real(kind=realType), dimension(:, :, :), allocatable :: g_vol, g_volRef, g_aa, g_rlv, g_rev
     real(kind=realType), dimension(:, :, :), allocatable :: g_radI, g_radJ, g_radK, g_dtl, g_d2wall
     real(kind=realType), dimension(:, :, :), allocatable :: g_sFaceI, g_sFaceJ, g_sFaceK
@@ -186,6 +187,17 @@ subroutine debugCompareCudaData
     g_dtl = h_cudaDoms(dom, sps)%dtl
     call reportR3('dtl', g_dtl, bdtl)
     deallocate (g_dtl)
+
+    call banner('FLOW STATE (RK 0th Stage)')
+    allocate (g_wn(0:bib, 0:bjb, 0:bkb, 1:nw))
+    g_wn = h_cudaDoms(dom, sps)%wn
+    call reportR4('wn', g_wn, bwn)
+    deallocate (g_wn)
+
+    allocate (g_pn(0:bib, 0:bjb, 0:bkb))
+    g_pn = h_cudaDoms(dom, sps)%pn
+    call reportR3('pn', g_pn, bpn)
+    deallocate (g_pn)
 
     call banner('FACE PROJECTED AREAS (sI, sJ, sK)')
     allocate (g_sI(0:bie, 1:bje, 1:bke, 3), g_sJ(1:bie, 0:bje, 1:bke, 3), g_sK(1:bie, 1:bje, 0:bke, 3))

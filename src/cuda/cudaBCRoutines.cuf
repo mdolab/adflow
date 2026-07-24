@@ -113,7 +113,7 @@ contains
         istat = cudaDeviceSynchronize()
 
         ! metrics
-        print *,ibmax,jbmax,kbmax
+        ! print *,ibmax,jbmax,kbmax
         block_size = dim3(8, 8, 1)
         grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), 1)
 
@@ -1096,8 +1096,8 @@ contains
         ! if (currentLevel > groundLevel) wallTreatment = constantPressure ! No MG on GPU rn
 
 
-       j = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
-       k = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+        j = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        k = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
        
 
         !  Determine the boundary condition treatment and compute the
