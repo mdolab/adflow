@@ -9,6 +9,7 @@ module cudaAPI
         use utils, only: setPointers
         use cudaBlock, only: allocateCudaBlock, allocateCudaBCData, copyCudaConstantsToDevice, copyCudaBlockToDevice, copyCudaBCDataToDevice
         use cudaBCRoutines, only: applyAllBC
+        use cudaPreprocess, only: cudaPreprocessing
         use BCRoutines, only: applyAllBC_block
 
         implicit none
@@ -30,6 +31,8 @@ module cudaAPI
         call copyCudaBCDataToDevice         ! bc field values host->device
 
         ! call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
+
+        call cudaPreprocessing
     
     end subroutine setupCudaAPI
 

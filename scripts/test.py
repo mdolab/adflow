@@ -93,7 +93,7 @@ CFDSolver.adflow.cudablock.setupcudaapi()
 # Timed region: the core GPU residual only (calculateCudaResidual). No host<->device
 # copies happen inside this loop, so profiling it measures kernel time, not transfers.
 for _ in range(nIters):
-    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
+    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True,True, 1, nw)
 
 # Read the residual back to the host once and check correctness.
 resGPU = CFDSolver.adflow.cudaresidual.getcudaresidual(ndimw)

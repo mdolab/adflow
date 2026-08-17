@@ -366,8 +366,11 @@ python module libadflow
        
 
        module cudaresidual
-        subroutine calculatecudaresidual(updateintermed,varstart,varend)
-           logical intent(in) :: updateintermed
+       real(kind=realtype) :: iaditime
+       real(kind=realtype) :: jaditime
+       real(kind=realtype) :: kaditime
+        subroutine calculatecudaresidual(updateintermed,updatespectral,varstart,varend)
+           logical intent(in) :: updateintermed,updatespectral
            integer(kind=inttype) intent(in) :: varstart
            integer(kind=inttype) intent(in) :: varend
         end subroutine calculatecudaresidual
@@ -441,9 +444,27 @@ python module libadflow
         end subroutine rungekuttasmoother
       end module cudasmoothers
 
+      module cudapreprocess
+        subroutine cudapreprocessing
+        end subroutine cudapreprocessing
+      end module cudapreprocess
+
       module cudadebug
         subroutine debugcomparecudadata
         end subroutine debugcomparecudadata
+
+        subroutine getres(res, ndimw, timestep, onlyradii)
+          real(kind=realtype) dimension(ndimw),intent(in,out) :: res
+          logical, intent(in) :: timestep
+          logical, intent(in) :: onlyradii
+          integer(kind=inttype) optional,intent(in),check(len(res)>=ndimw),depend(res) :: ndimw=len(res)
+        end subroutine getres
+
+        subroutine zerofwcpu
+        end subroutine zerofwcpu
+
+        subroutine zerofwgpu
+        end subroutine zerofwgpu
       end module cudadebug
 
        module nksolver
@@ -1369,6 +1390,15 @@ python module libadflow
          logical :: oversetdebugprint
          real(kind=realtype) :: selfzipcutoff
        end module inputoverset
+
+       module inputcudasolver
+         integer(kind=inttype) :: npcrstagesi, npcrstagesj, npcrstagesk, npcrthreadsi, npcrthreadsj, npcrthreadsk
+         integer(kind=inttype) :: maxpcrstages, minrowsperpcrthread, pcroccupancytarget
+         real(kind=realtype) :: pcrcostratiocoeffone, pcrcostratiocoefftwo, pcrcostratiocoeffthree, pcrcostratiocoefffour
+         real(kind=realtype) :: thomascostfloor
+         logical :: matchpcrthreadtoblocksize
+         logical :: verbosecudaprint, verbosecudaadiprint
+       end module inputcudasolver
 
        module inputunsteady ! in :test:inputParam.f90
          use accuracy

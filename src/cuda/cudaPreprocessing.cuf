@@ -1,0 +1,805 @@
+module cudaPreprocess
+    use constants
+    use cudafor
+    use cudaBlock, only: cudaDoms=>d_cudaDoms, h_cudaDoms
+
+
+    ! Store the device info globally here
+    integer(kind=intType) :: deviceCount, currentDevice, mypcrOccupancyTarget
+    type(cudaDeviceProp), dimension(:), allocatable :: cudaDeviceInfo
+    
+
+
+    type cudaBlockADIConfig
+        integer(kind=intType) :: nPCRStagesI
+        integer(kind=intType) :: nPCRStagesJ
+        integer(kind=intType) :: nPCRStagesK
+        integer(kind=intType) :: nPCRThreadsI
+        integer(kind=intType) :: nPCRThreadsJ
+        integer(kind=intType) :: nPCRThreadsK
+    end type cudaBlockADIConfig
+
+    ! Store the ADI/PCR config here
+    type(cudaBlockADIConfig), dimension(:,:), allocatable :: cudaADIPCRConfigs 
+
+
+
+    contains
+
+    subroutine cudaPreprocessing
+        use inputCUDASolver, only: verboseCudaPrint, verboseCudaADIPrint
+        implicit none
+
+        call preprocessingGetDeviceInfo
+        call printCUDADeviceInfo(verbose=verboseCudaPrint)
+        call preprocessingADI(verbose=verboseCudaADIPrint)
+
+    end subroutine cudaPreprocessing
+
+    subroutine preprocessingGetDeviceInfo
+        use constants
+        use communication, only: myID
+        use utils, only: terminate
+        implicit none
+
+        integer(kind=intType) :: i, istat
+
+        istat = cudaGetDeviceCount(deviceCount)
+
+        if (istat /= cudaSuccess) then
+            print *, "Error querying device count: ", cudaGetErrorString(istat)
+            call terminate("cudapreprocessing", &
+                           "Failed to query CUDA devices")
+        end if
+
+        ! Terminate if there are no CUDA devices
+
+        if (deviceCount == 0) then
+            print "(a)", "#"
+            print "(a),(I1)", "# ERROR: no CUDA capable devices were detected on rank: ", myID
+            print "(a)", "# A CUDA capable device must be available on all ranks to use the ADflow GPU solver"
+            print "(a)", "#"
+            call terminate("cudapreprocessing", &
+                           "No CUDA Devices found!")
+        end if
+
+        istat = cudaGetDevice(currentDevice)
+        if (istat /= cudaSuccess) then
+            print *, "Error querying current device: ", cudaGetErrorString(istat)
+            call terminate("cudapreprocessing", &
+                           "Failed to query current CUDA device")
+        end if
+
+        if (allocated(cudaDeviceInfo) ) then
+            deallocate(cudaDeviceInfo)
+        end if
+
+        allocate(cudaDeviceInfo(0:deviceCount - 1))
+
+        do i = 0, deviceCount - 1
+            istat = cudaGetDeviceProperties(cudaDeviceInfo(i), i)
+            if (istat /= cudaSuccess) then
+                print *, "Error getting properties for device ", i, ": ", cudaGetErrorString(istat)
+            end if 
+        end do
+
+    end subroutine preprocessingGetDeviceInfo
+
+    subroutine printCUDADeviceInfo(verbose)
+        !
+        !       printCUDADeviceInfo lists every CUDA device visible to this
+        !       process. With verbose set to .false. (the default) a one line
+        !       per device table is written, which is what you want in a
+        !       normal run. With verbose set to .true. everything that matters
+        !       for sizing kernels is dumped for each device: the compute
+        !       capability, the SM/thread/register/shared memory budgets, the
+        !       memory system and the feature flags.
+        !
+        !       Only the root processor prints, since every rank on a node
+        !       sees the same set of devices.
+        !
+        use constants
+        use communication, only: myID
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        logical, intent(in), optional :: verbose
+        !
+        !      Working variables.
+        !
+        integer(kind=intType) :: i, cores
+        integer :: istat, runtimeVersion, driverVersion
+        integer(kind=cuda_count_kind) :: freeMem, totalMem
+        real(kind=realType) :: bandWidth, gflops
+        logical :: printAll, haveFreeMem
+        character(len=32) :: deviceName
+        character(len=maxStringLen) :: computeModeName
+
+        ! Only the root processor prints the device information.
+
+        if (myID /= 0) return
+
+        ! Determine we want the verbose info dump
+
+        printAll = .false.
+        if (present(verbose)) printAll = verbose
+
+        ! Make sure the device information is actually available.
+
+        if (.not. allocated(cudaDeviceInfo)) then
+            print *, "Error printing device info. Hint: Call preprocessingsGetDeviceInfo first"
+            stop 
+        end if
+        
+
+        !
+        !      The concise summary. One line per device, plus a header with
+        !      the driver/runtime versions.
+        !
+
+        if (.not. printAll) then
+
+            print "(a)", "#"
+            print "(a,i0,a,i0)", "#--- CUDA devices detected: ", deviceCount, &
+                 ", this rank is using device ", currentDevice
+            print "(a)", "#  id name                              cc     SMs  &
+                 &  cores   mem[GB]   bw[GB/s]"
+
+            do i = 0, deviceCount - 1
+
+                deviceName = cudaDeviceInfo(i)%name
+                cores = coresPerSM(cudaDeviceInfo(i)%major, cudaDeviceInfo(i)%minor)
+                bandWidth = peakBandWidth(cudaDeviceInfo(i))
+
+                print "(a,i3,2x,a32,2x,i0,a,i0,3x,i4,3x,i6,3x,f7.2,3x,f8.1)", "# ", &
+                     i, deviceName, &
+                     cudaDeviceInfo(i)%major, ".", cudaDeviceInfo(i)%minor, &
+                     cudaDeviceInfo(i)%multiProcessorCount, &
+                     max(cores, 0_intType) * cudaDeviceInfo(i)%multiProcessorCount, &
+                     real(cudaDeviceInfo(i)%totalGlobalMem, realType) / 1024.0_realType**3, &
+                     bandWidth
+
+            end do
+
+            print "(a)", "#"
+
+            return
+
+        end if
+
+        !
+        !      The verbose dump.
+        !
+
+        istat = cudaRuntimeGetVersion(runtimeVersion)
+        if (istat /= cudaSuccess) runtimeVersion = 0
+
+        istat = cudaDriverGetVersion(driverVersion)
+        if (istat /= cudaSuccess) driverVersion = 0
+
+        print "(a)", "#"
+        print "(a)", "#----------------------------------------&
+             &------------------------------"
+        print "(a)", "#                          CUDA device information"
+        print "(a)", "#----------------------------------------&
+             &------------------------------"
+        print "(a,i0,a,i0)", "# CUDA driver version         : ", &
+             driverVersion / 1000, ".", mod(driverVersion, 1000) / 10
+        print "(a,i0,a,i0)", "# CUDA runtime version        : ", &
+             runtimeVersion / 1000, ".", mod(runtimeVersion, 1000) / 10
+        print "(a,i0)", "# Devices detected            : ", deviceCount
+        print "(a,i0)", "# Device in use by this rank  : ", currentDevice
+
+        deviceLoop: do i = 0, deviceCount - 1
+
+            ! Only the currently selected device can be asked for its free
+            ! memory without switching devices, which we do not want to do
+            ! behind the back of the caller.
+
+            haveFreeMem = .false.
+            freeMem = 0
+            totalMem = cudaDeviceInfo(i)%totalGlobalMem
+            if (i == currentDevice) then
+                istat = cudaMemGetInfo(freeMem, totalMem)
+                if (istat == cudaSuccess) then
+                    haveFreeMem = .true.
+                else
+                    totalMem = cudaDeviceInfo(i)%totalGlobalMem
+                end if
+            end if
+
+            cores = coresPerSM(cudaDeviceInfo(i)%major, cudaDeviceInfo(i)%minor)
+            bandWidth = peakBandWidth(cudaDeviceInfo(i))
+
+            ! Peak theoretical fp32 throughput. The clock rate is reported in
+            ! kHz and the factor two accounts for the fused multiply add.
+
+            gflops = two * real(max(cores, 0_intType) &
+                   * cudaDeviceInfo(i)%multiProcessorCount, realType) &
+                   * real(cudaDeviceInfo(i)%clockRate, realType) / 1.0e6_realType
+
+            select case (cudaDeviceInfo(i)%computeMode)
+            case (cudaComputeModeExclusive)
+                computeModeName = "exclusive thread"
+            case (cudaComputeModeProhibited)
+                computeModeName = "prohibited"
+            case (cudaComputeModeExclusiveProcess)
+                computeModeName = "exclusive process"
+            case default
+                computeModeName = "default"
+            end select
+
+            print "(a)", "#"
+            print "(a,i0,3a)", "#--- Device ", i, " : ", &
+                 trim(cudaDeviceInfo(i)%name), " ---"
+
+            if (i == currentDevice) then
+                print "(a)", "#     (this is the device currently in use)"
+            end if
+
+            print "(a,i0,a,i0)", "#   Compute capability         : ", &
+                 cudaDeviceInfo(i)%major, ".", cudaDeviceInfo(i)%minor
+            print "(a,i4.4,a,i2.2,a,i2.2,a)", "#   PCI location               : ", &
+                 cudaDeviceInfo(i)%pciDomainID, ":", cudaDeviceInfo(i)%pciBusID, ":", &
+                 cudaDeviceInfo(i)%pciDeviceID, ".0"
+
+            print "(a)", "#   -- Compute resources"
+            print "(a,i0)", "#   Multiprocessors (SMs)      : ", &
+                 cudaDeviceInfo(i)%multiProcessorCount
+            if (cores > 0) then
+                print "(a,i0,a,i0,a)", "#   CUDA cores                 : ", &
+                     cores * cudaDeviceInfo(i)%multiProcessorCount, " (", cores, " per SM)"
+                print "(a,f10.1)", "#   Peak fp32 [GFlop/s]        : ", gflops
+            else
+                print "(a)", "#   CUDA cores                 : unknown compute capability"
+            end if
+            print "(a,i0)", "#   GPU clock rate [MHz]       : ", &
+                 cudaDeviceInfo(i)%clockRate / 1000
+            print "(a,i0)", "#   Warp size                  : ", cudaDeviceInfo(i)%warpSize
+            print "(a,i0)", "#   Max threads per SM         : ", &
+                 cudaDeviceInfo(i)%maxThreadsPerMultiProcessor
+            print "(a,i0)", "#   Max threads per block      : ", &
+                 cudaDeviceInfo(i)%maxThreadsPerBlock
+            print "(a,i0,a,i0,a,i0)", "#   Max block dimensions       : ", &
+                 cudaDeviceInfo(i)%maxThreadsDim(1), " x ", &
+                 cudaDeviceInfo(i)%maxThreadsDim(2), " x ", &
+                 cudaDeviceInfo(i)%maxThreadsDim(3)
+            print "(a,i0,a,i0,a,i0)", "#   Max grid dimensions        : ", &
+                 cudaDeviceInfo(i)%maxGridSize(1), " x ", &
+                 cudaDeviceInfo(i)%maxGridSize(2), " x ", &
+                 cudaDeviceInfo(i)%maxGridSize(3)
+            print "(a,i0)", "#   Registers per SM           : ", &
+                 cudaDeviceInfo(i)%regsPerMultiprocessor
+            print "(a,i0)", "#   Registers per block        : ", &
+                 cudaDeviceInfo(i)%regsPerBlock
+
+            print "(a)", "#   -- Memory system"
+            print "(a,f8.2)", "#   Global memory total [GB]   : ", &
+                 real(totalMem, realType) / 1024.0_realType**3
+            if (haveFreeMem) then
+                print "(a,f8.2)", "#   Global memory free  [GB]   : ", &
+                     real(freeMem, realType) / 1024.0_realType**3
+            end if
+            print "(a,i0)", "#   Memory clock rate [MHz]    : ", &
+                 cudaDeviceInfo(i)%memoryClockRate / 1000
+            print "(a,i0)", "#   Memory bus width [bit]     : ", &
+                 cudaDeviceInfo(i)%memoryBusWidth
+            print "(a,f8.1)", "#   Peak bandwidth [GB/s]      : ", bandWidth
+            print "(a,f8.2)", "#   L2 cache [MB]              : ", &
+                 real(cudaDeviceInfo(i)%l2CacheSize, realType) / 1024.0_realType**2
+            print "(a,f8.1)", "#   Shared memory per SM [kB]  : ", &
+                 real(cudaDeviceInfo(i)%sharedMemPerMultiprocessor, realType) / 1024.0_realType
+            print "(a,f8.1)", "#   Shared memory per blk [kB] : ", &
+                 real(cudaDeviceInfo(i)%sharedMemPerBlock, realType) / 1024.0_realType
+            print "(a,f8.1)", "#   Shared mem opt-in max [kB] : ", &
+                 real(cudaDeviceInfo(i)%sharedMemPerBlockOptin, realType) / 1024.0_realType
+            print "(a,f8.1)", "#   Constant memory [kB]       : ", &
+                 real(cudaDeviceInfo(i)%totalConstMem, realType) / 1024.0_realType
+
+            print "(a)", "#   -- Features"
+            print "(2a)", "#   ECC enabled                : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%ECCEnabled))
+            print "(2a)", "#   Unified addressing         : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%unifiedAddressing))
+            print "(2a)", "#   Managed memory             : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%managedMemory))
+            print "(2a)", "#   Concurrent managed access  : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%concurrentManagedAccess))
+            print "(2a)", "#   Concurrent kernels         : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%concurrentKernels))
+            print "(2a)", "#   Cooperative launch         : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%cooperativeLaunch))
+            print "(2a)", "#   Can map host memory        : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%canMapHostMemory))
+            print "(2a)", "#   Integrated (not discrete)  : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%integrated))
+            print "(2a)", "#   Kernel exec timeout        : ", &
+                 trim(yesNo(cudaDeviceInfo(i)%kernelExecTimeoutEnabled))
+            print "(a,i0)", "#   Async copy engines         : ", &
+                 cudaDeviceInfo(i)%asyncEngineCount
+            print "(2a)", "#   Compute mode               : ", trim(computeModeName)
+
+        end do deviceLoop
+
+        print "(a)", "#----------------------------------------&
+             &------------------------------"
+        print "(a)", "#"
+
+    end subroutine printCUDADeviceInfo
+
+    pure function peakBandWidth(deviceInfo) result(bandWidth)
+        ! Peak theoretical device memory bandwidth in GB/s. The memory clock
+        ! is reported in kHz and the bus width in bits. The factor two
+        ! accounts for the double data rate of the device memory.
+        use constants
+        implicit none
+
+        type(cudaDeviceProp), intent(in) :: deviceInfo
+        real(kind=realType) :: bandWidth
+
+        bandWidth = two * real(deviceInfo%memoryClockRate, realType) &
+                  * real(deviceInfo%memoryBusWidth, realType) / eight / 1.0e6_realType
+
+    end function peakBandWidth
+
+    pure function yesNo(flag) result(answer)
+        ! Converts one of the integer valued cudaDeviceProp flags into
+        ! something a bit friendlier to read.
+        use constants
+        implicit none
+
+        integer, intent(in) :: flag
+        character(len=3) :: answer
+
+        if (flag /= 0) then
+            answer = "yes"
+        else
+            answer = "no"
+        end if
+
+    end function yesNo
+
+    pure function coresPerSM(major, minor) result(cores)
+        ! Returns the number of fp32 CUDA cores per SM for the given compute
+        ! capability. This is not queryable through the runtime API, so it
+        ! has to be tabulated. A negative value flags an architecture that is
+        ! newer/older than this table.
+        use constants
+        implicit none
+
+        integer, intent(in) :: major, minor
+        integer(kind=intType) :: cores
+
+        select case (major)
+        case (3)                  ! Kepler
+            cores = 192
+        case (5)                  ! Maxwell
+            cores = 128
+        case (6)                  ! Pascal
+            if (minor == 0) then
+                cores = 64
+            else
+                cores = 128
+            end if
+        case (7)                  ! Volta and Turing
+            cores = 64
+        case (8)                  ! Ampere and Ada
+            if (minor == 0) then
+                cores = 64
+            else
+                cores = 128
+            end if
+        case (9)                  ! Hopper
+            cores = 128
+        case (10, 12)             ! Blackwell
+            cores = 128
+        case default
+            cores = -1
+        end select
+
+    end function coresPerSM
+
+
+    subroutine preprocessingADI(verbose)
+        !
+        !       preprocessingADI determines the number of PCR stages and the
+        !       number of PCR threads per line used by the ADI smoother in
+        !       each of the three index directions. A negative value of the
+        !       corresponding input parameter means that the value is chosen
+        !       automatically here, otherwise the value given by the user is
+        !       simply copied into the block configuration.
+        !
+        !       With verbose set to .true. the resulting configuration is
+        !       printed for every block, together with the block size, the
+        !       number of lines that are solved and the number of rows each
+        !       PCR thread ends up with.
+        !
+        use constants
+        use cudaADI
+        use communication, only: myID
+        use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bie=>ie, bje=>je, bke=>ke, bnx=>nx, bny=>ny, bnz=>nz
+        use cudaFlowVarRefState, only: nwf
+        use cudaIteration, only: currentLevel
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputCUDASolver, only: nPCRStagesI, nPCRStagesJ, nPCRStagesK, nPCRThreadsI, nPCRThreadsJ, nPCRThreadsK, &
+                                   matchPCRThreadToBlockSize, pcrOccupancyTarget
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        logical, intent(in), optional :: verbose
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: dom, sps, nStages
+        logical :: printAll
+        logical :: autoStagesI, autoStagesJ, autoStagesK
+        logical :: autoThreadsI, autoThreadsJ, autoThreadsK
+
+        ! Determine whether the selected configuration must be printed.
+
+        printAll = .false.
+        if (present(verbose)) printAll = verbose
+
+        ! Check if we need to allocate the configs
+        if (allocated(cudaADIPCRConfigs)) then
+            deallocate(cudaADIPCRConfigs)
+        end if
+        allocate(cudaADIPCRConfigs(nDom,nTimeIntervalsSpectral))
+
+        ! Harcoded for now
+        dom = 1
+        sps = 1
+
+        !
+        ! First get the device occupancy target if requested
+        !
+        if (pcrOccupancyTarget .lt. 0) then
+            mypcrOccupancyTarget = cudaDeviceInfo(currentDevice)%multiProcessorCount* &
+            coresPerSM(cudaDeviceInfo(currentDevice)%major, cudaDeviceInfo(currentDevice)%minor)
+        else
+            mypcrOccupancyTarget = pcrOccupancyTarget
+        end if
+
+        !
+        ! Setup PCR Stages
+        !
+
+        ! 
+        ! Setup the I direction ADI
+        !
+
+        autoStagesI = nPCRStagesI .lt. 0
+        if (autoStagesI) then
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesI = optimizePCRStages(bnx,bny*bnz,.true.)
+        else
+            ! A prescribed value may ask for more stages than the number of
+            ! cells in this direction can support, so clamp it. The input
+            ! parameter itself is left alone, as it is shared by all blocks.
+            nStages = nPCRStagesI
+            call clampPCRStages(dom, sps, "i", bnx, nStages)
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesI = nStages
+        end if
+
+
+        !
+        ! Setup the J direction ADI
+        !
+
+        autoStagesJ = nPCRStagesJ .lt. 0
+        if (autoStagesJ) then
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesJ = optimizePCRStages(bny,bnx*bnz,.false.)
+        else
+            nStages = nPCRStagesJ
+            call clampPCRStages(dom, sps, "j", bny, nStages)
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesJ = nStages
+        end if
+
+
+        !
+        ! Setup the K direction ADI
+        !
+
+        autoStagesK = nPCRStagesK .lt. 0
+        if (autoStagesK) then
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesK = optimizePCRStages(bnz,bny*bnx,.false.)
+        else
+            nStages = nPCRStagesK
+            call clampPCRStages(dom, sps, "k", bnz, nStages)
+            cudaADIPCRConfigs(dom,sps)%nPCRStagesK = nStages
+        end if
+
+
+        !
+        ! Setup PCR Threads
+        !
+
+        ! 
+        ! Setup the I direction ADI
+        !
+
+        autoThreadsI = nPCRThreadsI .lt. 0
+        if (autoThreadsI) then
+
+            if (matchPCRThreadToBlockSize) then
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = bnx
+            else
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = 2**floor(log(real(bnx,realType))/log(2.0_realType))
+            end if
+
+        else
+            cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = nPCRThreadsI
+        end if
+
+
+        !
+        ! Setup the J direction ADI
+        !
+
+        autoThreadsJ = nPCRThreadsJ .lt. 0
+        if (autoThreadsJ) then
+
+            if (matchPCRThreadToBlockSize) then
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = bny
+            else
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = 2**floor(log(real(bny,realType))/log(2.0_realType))
+            end if
+
+        else
+            cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = nPCRThreadsJ
+        end if
+
+
+        !
+        ! Setup the K direction ADI
+        !
+
+        autoThreadsK = nPCRThreadsK .lt. 0
+        if (autoThreadsK) then
+
+            if (matchPCRThreadToBlockSize) then
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsK  = bnz
+            else
+                cudaADIPCRConfigs(dom,sps)%nPCRThreadsK  = 2**floor(log(real(bnz,realType))/log(2.0_realType))
+            end if
+
+        else
+            cudaADIPCRConfigs(dom,sps)%nPCRThreadsK = nPCRThreadsK
+        end if
+
+        !
+        ! Report the selected configuration if requested. The rows are
+        ! written here, where the block dimensions are still at hand, so
+        ! that this keeps working once the loop over the blocks replaces
+        ! the hardcoded block above.
+        !
+
+        if (printAll) then
+
+            call printADIConfigHeader
+
+            call printADIConfigRow(dom, sps, "i", bnx, bny*bnz, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRStagesI, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsI, &
+                 autoStagesI, autoThreadsI)
+
+            call printADIConfigRow(dom, sps, "j", bny, bnx*bnz, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRStagesJ, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ, &
+                 autoStagesJ, autoThreadsJ)
+
+            call printADIConfigRow(dom, sps, "k", bnz, bnx*bny, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRStagesK, &
+                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsK, &
+                 autoStagesK, autoThreadsK)
+
+            call printADIConfigFooter
+
+        end if
+
+    end subroutine preprocessingADI
+
+    subroutine clampPCRStages(dom, sps, direction, n, nStages)
+        !
+        !       clampPCRStages limits a prescribed number of PCR stages to the
+        !       largest value the given number of cells can support. Only the root
+        !       processor warns about a clamped value, as every rank uses the
+        !       same input parameters.
+        !
+        use constants
+        use communication, only: myID
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: dom, sps, n
+        integer(kind=intType), intent(inout) :: nStages
+        character(len=*), intent(in) :: direction
+        !
+        !      Working variables.
+        !
+        integer(kind=intType) :: maxStages
+
+        maxStages = floor(log(real(n, realType)) / log(two))
+
+        if (nStages <= maxStages) return
+
+        if (myID == 0) then
+            print "(a)", "#"
+            print "(a)", "#                      Warning"
+            print "(3a,i0,a,i0,a,i0,a)", "#* The prescribed number of PCR stages in the ", &
+                 direction, " direction of block ", dom, ", spectral instance ", sps, &
+                 ", is ", nStages, ","
+            print "(a,i0,a,i0,a)", "#* which exceeds the maximum of ", maxStages, &
+                 " allowed for a size of ", n, " cells."
+            print "(a,i0)", "#* Clamping the number of PCR stages to ", maxStages
+            print "(a)", "#"
+        end if
+
+        nStages = maxStages
+
+    end subroutine clampPCRStages
+
+    subroutine printADIConfigHeader
+        !
+        !       printADIConfigHeader writes the heading of the table with the
+        !       ADI configuration of every block.
+        !
+        use constants
+        use communication, only: myID
+        use inputCUDASolver, only: pcrOccupancyTarget, matchPCRThreadToBlockSize
+        implicit none
+
+        if (myID /= 0) return
+
+        print "(a)", "#"
+        print "(a,i0,a)", "#--- ADI / PCR configuration of the blocks on rank ", &
+             myID, " ---"
+        print "(a,i0)", "#   PCR occupancy target [threads] : ", mypcrOccupancyTarget
+        print "(2a)", "#   Threads matched to block size  : ", &
+             trim(yesNo(merge(1, 0, matchPCRThreadToBlockSize)))
+        print "(a)", "#  dom  sps   dir  size    lines   stages   threads &
+             &  rows/thread   source"
+
+    end subroutine printADIConfigHeader
+
+    subroutine printADIConfigRow(dom, sps, direction, n, nLines, nStages, nThreads, &
+                                 autoStages, autoThreads)
+        !
+        !       Writes a single line of the ADI configuration
+        !       table: the block and spectral instance, the index direction,
+        !       the number of cells along that direction, the number of lines
+        !       that are solved simultaneously, the selected number of PCR
+        !       stages and PCR threads per line and the resulting number of
+        !       rows each thread reduces with the Thomas algorithm.
+        !
+        !       The last column states whether the values were selected
+        !       automatically or were prescribed by the user, in which case
+        !       the stages and the threads are marked separately.
+        !
+        use constants
+        use communication, only: myID
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: dom, sps, n, nLines, nStages, nThreads
+        character(len=*), intent(in) :: direction
+        logical, intent(in) :: autoStages, autoThreads
+        !
+        !      Working variables.
+        !
+        integer(kind=intType) :: rowsPerThread
+        character(len=maxStringLen) :: source
+
+        if (myID /= 0) return
+
+        ! Each PCR stage halves the length of the systems a thread has to
+        ! sweep through with the Thomas algorithm.
+
+        rowsPerThread = n / (2**nStages)
+
+        if (autoStages .and. autoThreads) then
+            source = "auto"
+        else if (autoStages) then
+            source = "threads from input"
+        else if (autoThreads) then
+            source = "stages from input"
+        else
+            source = "input"
+        end if
+
+        print "(a,i4,i5,5x,a1,i6,i9,i9,i10,i14,3x,a)", "# ", &
+             dom, sps, direction, n, nLines, nStages, nThreads, rowsPerThread, &
+             trim(source)
+
+    end subroutine printADIConfigRow
+
+    subroutine printADIConfigFooter
+        !
+        !       printADIConfigFooter closes the ADI configuration table.
+        !
+        use constants
+        use communication, only: myID
+        implicit none
+
+        if (myID /= 0) return
+
+        print "(a)", "#"
+
+    end subroutine printADIConfigFooter
+
+
+    pure function optimizePCRStages(n,nLines,coalesceOnRow) result(sopt)
+        ! Executes a poor mans mixed integer optimization for optimal number of PCR stages
+        use constants
+        use inputCUDASolver, only: maxPCRStages, minRowsPerPCRThread, pcrOccupancyTarget, thomasCostFloor
+        implicit none
+
+        !
+        ! Subroutine arguments
+        ! 
+
+        integer(kind=intType), intent(in) :: n, nLines
+        logical, intent(in) :: coalesceOnRow
+
+        !
+        ! Working variables
+        ! 
+
+        real(kind=realType), dimension(:), allocatable :: stageTotalCost
+        integer(kind=intType) :: s, sopt, maxsallowed
+        real(kind=realType) :: pcrCost, occupancyGain, coalesceGain, thomasCost, rho
+
+        allocate(stageTotalCost(0:maxPCRStages))
+
+
+        do s=0,maxPCRStages 
+
+            if (coalesceOnRow) then
+                rho = computePCRCostFit(s)
+            else
+                rho = computePCRCostFit(s) ! same for now
+            end if
+
+            pcrCost = rho*s
+
+            occupancyGain = min(2**s,max(mypcrOccupancyTarget/nLines,1))
+            coalesceGain = merge(min(cudaDeviceInfo(currentDevice)%warpSize,2**s),1,coalesceOnRow) !  warp size is usually 32
+            thomasCost = max(real(n,realType) / (max(coalesceGain,occupancyGain)),thomasCostFloor) ! Thomas Cost floor (tuned from data) as you can't infinitely make it better
+
+            stageTotalCost(s) = (1_realType + pcrCost)*thomasCost
+
+        end do
+        
+        sopt = minloc(stageTotalCost,dim=1) - 1
+
+        ! check the constraint
+        do while ((n/(2**sopt) .lt. minRowsPerPCRThread) .and. (sopt .gt. 0))
+            sopt = sopt - 1
+        end do
+
+        ! Protect from exceeding max allowable s for this n in case it's less than maxPCRStages
+        maxsallowed = floor(log(real(n,realType))/log(2.0_realType))
+        if (sopt .gt. maxsallowed) then
+            sopt = maxsallowed
+        end if
+
+    end function optimizePCRStages
+
+    pure function computePCRCostFit(s) result(rho)
+        use inputCUDASolver, only: pcrCostRatioCoeffOne, pcrCostRatioCoeffTwo, pcrCostRatioCoeffThree, pcrCostRatioCoeffFour
+        implicit none
+
+        integer(kind=intType), intent(in) :: s
+        real(kind=realType) :: sreal
+        real(kind=realType) :: rho
+        
+        sreal = real(s,kind=realType)
+        rho = pcrCostRatioCoeffFour*sreal**3 + pcrCostRatioCoeffThree*sreal**2 + pcrCostRatioCoeffTwo*sreal + pcrCostRatioCoeffOne
+
+    end function computePCRCostFit
+
+
+end module cudaPreprocess

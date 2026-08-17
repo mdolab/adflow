@@ -898,3 +898,30 @@ module inputOverset
     logical :: recomputeOverlapMatrix
     logical :: oversetDebugPrint
 end module inputOverset
+
+module inputCUDASolver
+    use constants
+    implicit none
+    save
+    ! -1 is auto
+    ! nPCRStagesI, nPCRStagesJ, nPCRStagesK: Number of PCR stages to use in the I, J, K directions in the ADI solver
+    ! nPCRThreads: Number of threads on a single line for PCR
+
+    integer(kind=intType) :: nPCRStagesI = -1
+    integer(kind=intType) :: nPCRStagesJ = -1
+    integer(kind=intType) :: nPCRStagesK = -1
+    integer(kind=intType) :: nPCRThreadsI = -1
+    integer(kind=intType) :: nPCRThreadsJ = -1
+    integer(kind=intType) :: nPCRThreadsK = -1
+    integer(kind=intType) :: maxPCRStages = 6
+    integer(kind=intType) :: minRowsPerPCRThread = 8
+    integer(kind=intType) :: pcrOccupancyTarget = -1 ! from device
+    real(kind=realType) :: pcrCostRatioCoeffOne, pcrCostRatioCoeffTwo, pcrCostRatioCoeffThree, pcrCostRatioCoeffFour
+    real(kind=realType) :: thomasCostFloor = 44.0_realType
+    logical :: matchPCRThreadToBlockSize
+    logical :: verboseCudaPrint, verboseCudaADIPrint
+
+
+
+    
+end module inputCUDASolver

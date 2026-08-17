@@ -73,11 +73,24 @@ contains
 
             dt = dtScale * cudaDoms(dom,sps)%dtl(i, j, k) ! Remeber that dtl is dt/(CFL*vol) so CFL and vol are baked in!
 
+            ! if ((i .eq. 29) .and. (j .eq. 33) .and. (k .eq. 10)) then
+            !     print *, "dt CHECK GPU", cudaDoms(dom,sps)%dtl(i, j, k)
+            !     print *, "dtScale CHECK GPU", dtScale
+            ! end if
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !         print *, "GPU STATE UPdATE BEFORE Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
+
             cudaDoms(dom,sps)%dw(i, j, k, irho)  = cudaDoms(dom,sps)%dw(i, j, k, irho)  * dt
             cudaDoms(dom,sps)%dw(i, j, k, imx)   = cudaDoms(dom,sps)%dw(i, j, k, imx)   * dt
             cudaDoms(dom,sps)%dw(i, j, k, imy)   = cudaDoms(dom,sps)%dw(i, j, k, imy)   * dt
             cudaDoms(dom,sps)%dw(i, j, k, imz)   = cudaDoms(dom,sps)%dw(i, j, k, imz)   * dt
             cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) * dt
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !         print *, "GPU STATE UPdATE AFTER Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
 
         end if
 
@@ -125,6 +138,11 @@ contains
                  + cudaDoms(dom,sps)%w(i, j, k, ivy)**2 &
                  + cudaDoms(dom,sps)%w(i, j, k, ivz)**2
             if (correctForK) factK = gm53 * cudaDoms(dom,sps)%w(i, j, k, itu1)
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !     print *, "GPU STATE UPdATE", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
+
 
             dp = (ovr * cudaDoms(dom,sps)%p(i, j, k) + factK &
                   - gm1 * (ovr * cudaDoms(dom,sps)%w(i, j, k, irhoE) - v2)) &
@@ -184,10 +202,10 @@ contains
         use blockPointers, only: bil => il, bjl => jl, bkl => kl
         use utils, only: setPointers
         use cudaResidual, only: calculateCudaResidual
+        use iteration, only: rkStage
         implicit none
-
         type(dim3) :: grid_size, block_size
-        integer(kind=intType) :: istat, rkStage
+        integer(kind=intType) :: istat
 
         ! Store the variables of the zeroth runge kutta stage on the device.
         ! Single block (dom=sps=1), consistent with the residual kernels.
@@ -218,7 +236,7 @@ contains
             ! Compute the residuals for the next stage. calculateCudaResidual is the
             ! device analog of the CPU initres + sourceTerms + residual sequence.
             ! Do not update the time step mid stage
-            call calculateCudaResidual(.False., 1, nwf)
+            call calculateCudaResidual(.False.,.False., 1, nwf)
 
         end do
 
@@ -245,7 +263,7 @@ contains
         use utils, only: setPointers, terminate
         ! --- teammate-provided device drivers / kernels ---
         use cudaBCRoutines, only: applyAllBC
-        use cudaResidual, only: computeEtotBlock, computeLamViscosity, computeEddyViscosity
+        use cudaResidual, only: computeEtotBlock, computeLamViscosity, computeEddyViscosity, cudaResidualAveraging
         ! NOTE: whalo1 / whalo2 and the three post-update helper kernels
         !       (computeEtotBlock / computeLamViscosity / computeEddyViscosity) are
         !       provided elsewhere and pulled in when available (see TODOs below).
@@ -275,15 +293,15 @@ contains
         currentCfl = cfl
 
         ! Whether or not residual averaging must be applied.
-        ! if (resAveraging == noResAveraging) then
-        !     smoothResidual = .false.
-        ! else if (resAveraging == alwaysResAveraging) then
-        !     smoothResidual = .true.
-        ! else if (mod(rkStage, 2_intType) == 1) then
-        !     smoothResidual = .true.
-        ! else
-        !     smoothResidual = .false.
-        ! end if
+        if (resAveraging == noResAveraging) then
+            smoothResidual = .false.
+        else if (resAveraging == alwaysResAveraging) then
+            smoothResidual = .true.
+        else if (mod(rkStage, 2_intType) == 1) then
+            smoothResidual = .true.
+        else
+            smoothResidual = .false.
+        end if
 
         ! Whether or not the total energy must be corrected for the turbulent
         ! kinetic energy.
@@ -300,7 +318,6 @@ contains
         select case (equationMode)
         case (steady, timeSpectral)
             dtScale = currentCfl * etaRk(rkStage)
-            ! print *, "On Stage: ", rkStage, "coef is ", etaRk(rkStage)
             if (lowSpeedPreconditioner) dtScale = 0.8_realType * dtScale
         case default
             call terminate("cudaSmoothers::executeRkStage", &
@@ -319,13 +336,9 @@ contains
         istat = cudaDeviceSynchronize()
 
         ! Possibility to smooth the updates.
-        ! TODO: residual averaging on the device. resAveraging defaults to
-        !       noResAveraging, so smoothResidual is normally .false. When the device
-        !       residualAveraging kernel is available, launch it here under this guard.
-        ! if (smoothResidual) then
-            ! call residualAveraging<<<grid_size, block_size>>>
-            ! istat = cudaDeviceSynchronize()
-        ! end if
+        if (smoothResidual) then
+            call cudaResidualAveraging
+        end if
 
         ! Compute the new state vector.
         call rkStageUpdateState<<<grid_size, block_size>>>(correctForK)

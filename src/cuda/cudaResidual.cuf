@@ -77,6 +77,10 @@ module cudaResidual
     real(kind=realType), dimension(:,:,:),allocatable,device :: wx, wy, wz
     real(kind=realType), dimension(:,:,:),allocatable,device :: qx, qy, qz
 
+
+    ! DEBUG/PROF
+    real(kind=realType) :: iADITime, jADITime, kADITime
+
     contains
 
     subroutine copydata
@@ -4583,7 +4587,6 @@ module cudaResidual
       end if
       fis4 = rFil * vis4
       sfil = one - rFil
-
       ! Initialize the dissipative residual to a certain times,
       ! possibly zero, the previously stored value. Owned cells
       ! only, because the halo values do not matter.
@@ -4600,7 +4603,7 @@ module cudaResidual
 
     attributes(global) subroutine inviscidDissFluxScalar
 
-      use constants,           only: zero, two, half,EulerEquations
+      use constants,           only: zero, two, half, EulerEquations, normalFlux
       use precision,           only: intType, realType
       use cudaInputDiscretization, only: vis2, vis4
       use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
@@ -6858,7 +6861,521 @@ module cudaResidual
         end if
     end subroutine saEddyViscosity
 
+    subroutine cudaResidualAveraging
+        use constants
+        ! use blockPointers, only: nx, ny, nz, il, jl, kl, dw, p, iBlank
+        use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bie=>ie, bje=>je, bke=>ke, bnx=>nx, bny=>ny, bnz=>nz
+        use inputIteration, only: cfl, cflCoarse, cflLimit
+        use cudaFlowVarRefState, only: nwf
+        use cudaIteration, only: currentLevel
+        ! use inputCUDASolver, only: nPCRStagesI, nPCRStagesJ, nPCRStagesK, nPCRThreadsI, nPCRThreadsJ, nPCRThreadsK 
+        use cudaPreprocess, only: cudaADIPCRConfigs
+        use cudaADI, only: lhsTDDescriptor, rhsDescriptor, bTDForward, bTDBackSub, simplePCR, c_lhsDesc, c_rhsDesc, &
+                            aCur, bCur, cCur, dwCur, aNxt, bNxt, cNxt, dwNxt, dwTmp, executePCRStage
+        implicit none
 
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: istat, dom, sps, stage
+        integer(kind=intType) :: nPCRStagesI, nPCRStagesJ, nPCRStagesK, nPCRThreadsI, nPCRThreadsJ, nPCRThreadsK 
+        real(kind=realType) :: currentCfl, rfl0
+        type(dim3) :: block_size, grid_size
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        type(cudaEvent) :: startEvt, stopEvt
+        real(kind=4)    :: elapsedTime
+
+        dom = 1 ! Hardcoded for now
+        sps = 1
+
+        !
+        ! Prep the ADI/PCR input params for this block
+        ! 
+    
+        nPCRStagesI = cudaADIPCRConfigs(dom,sps)%nPCRStagesI
+        nPCRStagesJ = cudaADIPCRConfigs(dom,sps)%nPCRStagesJ
+        nPCRStagesK = cudaADIPCRConfigs(dom,sps)%nPCRStagesK
+
+        nPCRThreadsI = cudaADIPCRConfigs(dom,sps)%nPCRThreadsI
+        nPCRThreadsJ = cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ
+        nPCRThreadsK = cudaADIPCRConfigs(dom,sps)%nPCRThreadsK
+        
+
+        ! Initialize so a skipped/failed timing reads 0
+        elapsedTime = 0.0
+        iADITime = zero
+        jADITime = zero
+        kADITime = zero
+
+        ! Prepare to time
+        ! istat = cudaEventCreate(startEvt)
+        ! istat = cudaEventCreate(stopEvt)
+
+
+        
+        !
+        !      rfl0 is a measure of the ratio lambda/lambda*
+        !
+        currentCfl = cflCoarse
+        if (currentLevel == 1) then
+            currentCfl = cfl
+        end if
+
+        rfl0 = half * currentCfl / cflLimit
+
+
+        !
+        !       First compute the rfl field (JST pressure sensor)
+        !
+        block_size = dim3(8, 8, 8)
+        grid_size  = dim3(ceiling(real(bib+1) / block_size%x), ceiling(real(bjb+1) / block_size%y), ceiling(real(bkb+1) / block_size%z))
+        call rflField<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize() 
+
+        !
+        !   Setup the standard part of the RHS descriptor
+        !
+
+        rhsDesc%baseIJK = [2,2,2]
+        rhsDesc%nrhs = nwf
+        rhsDesc%nrhsBeg = 1
+        rhsDesc%nrhsEnd = nwf
+        rhsDesc%ni = bie ! Block Dims
+        rhsDesc%nj = bje
+        rhsDesc%nk = bke
+
+
+        !
+        !      i sweep
+        !
+
+        ! Only smooth if we have enough cells
+
+        if (bnx > 1) then
+         
+        ! Setup RHS descriptor for i
+        rhsDesc%rowStride = [1,0,0]
+        rhsDesc%fastStride = [0,1,0]
+        rhsDesc%slowStride = [0,0,1]
+        c_rhsDesc = rhsDesc
+
+        ! Setup the LHS descriptor for i
+        lhsDesc%n = bnx
+        lhsDesc%nsysFast = bny
+        lhsDesc%nsysSlow = bnz
+        lhsDesc%rowStride = 1
+        lhsDesc%fastStride = bnx
+        lhsDesc%slowStride = bnx*bny
+        lhsDesc%nSub = 2**nPCRStagesI
+        lhsDesc%nPCRThreads = nPCRThreadsI
+        ! lhsDesc%segLen = (lhsDesc%n + nPCRThreads - 1)/nPCRThreads
+        lhsDesc%nFloor = lhsDesc%n/lhsDesc%nSub
+        lhsDesc%nCeil = (lhsDesc%n + lhsDesc%nSub - 1)/lhsDesc%nSub
+        lhsDesc%raggedFloorSwitch = mod(lhsDesc%n,lhsDesc%nSub)
+        lhsDesc%coalesceOnRow = .true.
+        c_lhsDesc = lhsDesc
+
+        ! Start timing
+        ! istat = cudaEventRecord(startEvt, 0)
+
+        ! Execute the setup
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bny*bnz*nPCRThreadsI) / block_size%x), 1, 1)
+        call setupIRS<<<grid_size, block_size>>>(rfl0)
+        istat = cudaDeviceSynchronize() 
+
+        ! DO PCR if needed
+
+        ! set pointers
+        aCur=>h_cudaDoms(dom,sps)%aIRS
+        aNxt=>h_cudaDoms(dom,sps)%aIRSpcr
+        bCur=>h_cudaDoms(dom,sps)%bIRS
+        bNxt=>h_cudaDoms(dom,sps)%bIRSpcr
+        cCur=>h_cudaDoms(dom,sps)%cIRS
+        cNxt=>h_cudaDoms(dom,sps)%cIRSpcr
+        dwCur=>h_cudaDoms(dom,sps)%dw
+        dwNxt=>h_cudaDoms(dom,sps)%dwpcr
+
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bny*bnz*nPCRThreadsI) / block_size%x), 1, 1)
+
+        do stage=0,nPCRstagesI-1
+            call executePCRStage(stage,grid_size,block_size)
+        end do
+
+        ! Execute the forward sub
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bny*bnz*lhsDesc%nSub) / block_size%x), 1, 1)                                        
+        call bTDForward<<<grid_size, block_size>>>(aCur,bCur,&
+                                                    cCur,h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+
+        ! Execute the backsub
+        call bTDBackSub<<<grid_size, block_size>>>(h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+        ! make sure that dw has the correct data
+        if (.not. associated(dwCur, h_cudaDoms(dom,sps)%dw)) then
+            dwTmp => h_cudaDoms(dom,sps)%dw
+            h_cudaDoms(dom,sps)%dw    => h_cudaDoms(dom,sps)%dwpcr
+            h_cudaDoms(dom,sps)%dwpcr => dwTmp
+            cudaDoms(dom,sps) = h_cudaDoms(dom,sps)       ! re-push
+        end if
+
+        ! Stop timing
+        ! istat = cudaEventRecord(stopEvt, 0)
+        ! istat = cudaEventSynchronize(stopEvt)
+        ! istat = cudaEventElapsedTime(elapsedTime, startEvt, stopEvt)
+        ! iADITime = real(elapsedTime, realType) / 1000.0_realType
+
+        end if
+
+
+        !
+        !      j sweep
+        !
+
+        ! Only smooth if we have enough cells
+
+        if (bny > 1) then
+
+        ! Setup RHS descriptor for j
+        rhsDesc%rowStride = [0,1,0]
+        rhsDesc%fastStride = [1,0,0]
+        rhsDesc%slowStride = [0,0,1]
+        c_rhsDesc = rhsDesc
+
+        ! Setup the LHS descriptor for j
+        lhsDesc%n = bny
+        lhsDesc%nsysFast = bnx
+        lhsDesc%nsysSlow = bnz
+        lhsDesc%rowStride = bnx
+        lhsDesc%fastStride = 1
+        lhsDesc%slowStride = bnx*bny
+        lhsDesc%nSub = 2**nPCRStagesJ
+        lhsDesc%nPCRThreads = nPCRThreadsJ
+        ! lhsDesc%segLen = (lhsDesc%n + nPCRThreads - 1)/nPCRThreads
+        lhsDesc%nFloor = lhsDesc%n/lhsDesc%nSub
+        lhsDesc%nCeil = (lhsDesc%n + lhsDesc%nSub - 1)/lhsDesc%nSub
+        lhsDesc%raggedFloorSwitch = mod(lhsDesc%n,lhsDesc%nSub)
+        lhsDesc%coalesceOnRow = .false.
+        c_lhsDesc = lhsDesc
+
+        ! Start timing
+        ! istat = cudaEventRecord(startEvt, 0)
+
+        ! Execute the setup
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bnz*nPCRThreadsJ) / block_size%x), 1, 1)
+        call setupIRS<<<grid_size, block_size>>>(rfl0)
+        istat = cudaDeviceSynchronize() 
+
+        ! DO PCR if needed
+
+        ! set pointers
+        aCur=>h_cudaDoms(dom,sps)%aIRS
+        aNxt=>h_cudaDoms(dom,sps)%aIRSpcr
+        bCur=>h_cudaDoms(dom,sps)%bIRS
+        bNxt=>h_cudaDoms(dom,sps)%bIRSpcr
+        cCur=>h_cudaDoms(dom,sps)%cIRS
+        cNxt=>h_cudaDoms(dom,sps)%cIRSpcr
+        dwCur=>h_cudaDoms(dom,sps)%dw
+        dwNxt=>h_cudaDoms(dom,sps)%dwpcr
+
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bnz*nPCRThreadsJ) / block_size%x), 1, 1)
+
+        do stage = 0,nPCRStagesJ-1
+            call executePCRStage(stage,grid_size,block_size)
+        end do
+
+        ! Execute the forward sub
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bnz*lhsDesc%nSub) / block_size%x), 1, 1)   
+        call bTDForward<<<grid_size, block_size>>>(aCur,bCur,&
+                                                    cCur,h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+        ! Execute the backsub
+        call bTDBackSub<<<grid_size, block_size>>>(h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+        ! make sure that dw has the correct data
+        if (.not. associated(dwCur, h_cudaDoms(dom,sps)%dw)) then
+            dwTmp => h_cudaDoms(dom,sps)%dw
+            h_cudaDoms(dom,sps)%dw    => h_cudaDoms(dom,sps)%dwpcr
+            h_cudaDoms(dom,sps)%dwpcr => dwTmp
+            cudaDoms(dom,sps) = h_cudaDoms(dom,sps)       ! re-push
+        end if
+
+        ! Stop timing
+        ! istat = cudaEventRecord(stopEvt, 0)
+        ! istat = cudaEventSynchronize(stopEvt)
+        ! istat = cudaEventElapsedTime(elapsedTime, startEvt, stopEvt)
+        ! jADITime = real(elapsedTime, realType) / 1000.0_realType
+
+        end if
+
+        !
+        !      k sweep
+        !
+
+        ! Only smoother if we have enough cells
+
+        if (bnz > 1) then
+
+        ! Setup RHS descriptor for k
+        rhsDesc%rowStride = [0,0,1]
+        rhsDesc%fastStride = [1,0,0]
+        rhsDesc%slowStride = [0,1,0]
+        c_rhsDesc = rhsDesc
+
+        ! Setup the LHS descriptor for k
+        lhsDesc%n = bnz
+        lhsDesc%nsysFast = bnx
+        lhsDesc%nsysSlow = bny
+        lhsDesc%rowStride = bnx*bny
+        lhsDesc%fastStride = 1
+        lhsDesc%slowStride = bnx
+        lhsDesc%nSub = 2**nPCRStagesK
+        lhsDesc%nPCRThreads = nPCRThreadsK
+        ! lhsDesc%segLen = (lhsDesc%n + nPCRThreads - 1)/nPCRThreads
+        lhsDesc%nFloor = lhsDesc%n/lhsDesc%nSub
+        lhsDesc%nCeil = (lhsDesc%n + lhsDesc%nSub - 1)/lhsDesc%nSub
+        lhsDesc%raggedFloorSwitch = mod(lhsDesc%n,lhsDesc%nSub)
+        lhsDesc%coalesceOnRow = .false.
+        c_lhsDesc = lhsDesc
+
+        ! Start timing
+        ! istat = cudaEventRecord(startEvt, 0)
+
+        ! Execute the setup
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bny*nPCRThreadsK) / block_size%x), 1, 1)
+        call setupIRS<<<grid_size, block_size>>>(rfl0)
+        istat = cudaDeviceSynchronize() 
+
+
+        ! DO PCR if needed
+
+        ! set pointers
+        aCur=>h_cudaDoms(dom,sps)%aIRS
+        aNxt=>h_cudaDoms(dom,sps)%aIRSpcr
+        bCur=>h_cudaDoms(dom,sps)%bIRS
+        bNxt=>h_cudaDoms(dom,sps)%bIRSpcr
+        cCur=>h_cudaDoms(dom,sps)%cIRS
+        cNxt=>h_cudaDoms(dom,sps)%cIRSpcr
+        dwCur=>h_cudaDoms(dom,sps)%dw
+        dwNxt=>h_cudaDoms(dom,sps)%dwpcr
+
+
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bny*nPCRThreadsK) / block_size%x), 1, 1)
+
+        do stage = 0,nPCRStagesK-1
+            call executePCRStage(stage,grid_size,block_size)
+        end do
+
+        ! Execute the forward sub
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(bnx*bny*lhsDesc%nSub) / block_size%x), 1, 1)   
+        call bTDForward<<<grid_size, block_size>>>(aCur,bCur,&
+                                                    cCur,h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+
+        ! Execute the backsub
+        call bTDBackSub<<<grid_size, block_size>>>(h_cudaDoms(dom,sps)%workIRS,dwCur)
+        istat = cudaDeviceSynchronize() 
+
+
+        ! make sure that dw has the correct data
+        if (.not. associated(dwCur, h_cudaDoms(dom,sps)%dw)) then
+            dwTmp => h_cudaDoms(dom,sps)%dw
+            h_cudaDoms(dom,sps)%dw    => h_cudaDoms(dom,sps)%dwpcr
+            h_cudaDoms(dom,sps)%dwpcr => dwTmp
+            cudaDoms(dom,sps) = h_cudaDoms(dom,sps)       ! re-push
+        end if
+
+        ! Stop timing
+        istat = cudaEventRecord(stopEvt, 0)
+        istat = cudaEventSynchronize(stopEvt)
+        istat = cudaEventElapsedTime(elapsedTime, startEvt, stopEvt)
+        kADITime = real(elapsedTime, realType) / 1000.0_realType
+
+        end if
+
+        ! Clean up the timing events
+        ! istat = cudaEventDestroy(startEvt)
+        ! istat = cudaEventDestroy(stopEvt)
+
+    end subroutine cudaResidualAveraging
+
+
+    attributes(global) subroutine rflField
+        ! Computes the rlf switch field on all owned cells as a 3D array in global memory
+        use constants,       only: zero, one, two
+        use cudaFlowVarRefState, only: pInfCorr
+        implicit none
+
+        integer(kind=intType) :: i, j, k, idx, dom, sps
+        real(kind=realType)   :: plim, twoPresCell, presM1, presP1, dpi, dpj, dpk
+        real(kind=realType), parameter :: bSwitch = 2.0_realType
+
+        plim = 0.001_realType * pInfCorr
+
+        dom = 1
+        sps = 1 ! Hardcoded for now
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
+            .and. k <= cudaDoms(dom,sps)%kl) then
+
+            twoPresCell = two * cudaDoms(dom,sps)%p(i, j, k) ! Store twice the pressure in the central cell
+
+            !
+            ! dp in the i direction
+            !
+
+            presM1 = cudaDoms(dom,sps)%p(i-1, j, k) ! i - 1
+            presP1 = cudaDoms(dom,sps)%p(i+1, j, k) ! i + 1
+
+            dpi = abs(presP1- twoPresCell + presM1) &
+                              / (presP1+ twoPresCell + presM1 + plim)
+
+
+            !
+            ! dp in the j direction
+            !
+
+            presM1 = cudaDoms(dom,sps)%p(i, j-1, k) ! j - 1
+            presP1 = cudaDoms(dom,sps)%p(i, j+1, k) ! j + 1 
+
+            dpj = abs(presP1 - twoPresCell + presM1) &
+                    / (presP1 + twoPresCell + presM1 + plim)
+
+
+            !
+            ! dp in the k direction
+            !
+
+            presM1 = cudaDoms(dom,sps)%p(i, j, k-1) ! k - 1
+            presP1 = cudaDoms(dom,sps)%p(i, j, k+1) ! k + 1 
+
+            dpk = abs(presP1 - twoPresCell + presM1) &
+                    / (presP1 + twoPresCell + presM1 + plim)
+
+
+            !
+            ! Compute the switch field (at the faces!)
+            ! 
+            ! rfl index starts at 1!
+
+            idx = (i-1) + (j-2)*cudaDoms(dom,sps)%nx + (k-2)*cudaDoms(dom,sps)%nx*cudaDoms(dom,sps)%ny
+
+            cudaDoms(dom,sps)%rfl(idx) = one / (one + bSwitch * (dpi + dpj + dpk))
+
+            ! 
+            ! Compute the iblank that we will need later
+            !
+            ! NO overset support right now
+            ! cudaDoms(dom,sps)%iblankFlat(idx) = max(real(cudaDoms(dom,sps)%iblank(i, j, k), realType), zero)
+
+        end if    
+        
+    end subroutine rflField
+
+    
+
+
+    attributes(global) subroutine setupIRS(rfl0)
+        ! Computes the coefficeint arrays for the res averaging ADI solve
+        use constants,       only: one, two, fourth
+        use cudaFlowVarRefState, only: pInfCorr
+        use cudaInputIteration, only: smoop
+        use cudaADI, only: lhsTDDescriptor, c_lhsDesc
+        implicit none
+
+        integer(kind=intType) :: u, v, m, nbeg, nend, tRow, psys, sys, nsysFast, idx, dom, sps, seg
+        real(kind=realType) :: epzL, epzR, r
+
+        real(kind=realType), intent(in), value :: rfl0
+        ! type(lhsTDDescriptor), intent(in), value :: lhsDesc
+
+
+        dom = 1
+        sps = 1 ! Hardcoded for now
+
+
+        ! This is in case we use multiple blocks per line; nominally it'll be 1 thread per line
+        ! seg = (blockIdx%y-1)*blockDim%y + threadIdx%y
+        ! nbeg = (seg-1)*c_lhsDesc%segLen + 1
+        ! nend = min(seg*c_lhsDesc%segLen,c_lhsDesc%n) ! max row in system this block handles
+
+
+        nsysFast = c_lhsDesc%nsysFast ! number of systems along fast axis
+        sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x
+        ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
+        ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
+
+        if (c_lhsDesc%coalesceOnRow) then
+            ! Make the row the fastest axis. threadIdx%x walks the ROW
+            tRow = mod(sys-1,c_lhsDesc%nPCRThreads) + 1 ! the row thread index (make it 1 based)
+            psys = (sys - 1)/c_lhsDesc%nPCRThreads ! the parent system flat index (leave it 0 based)
+            v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u   = mod(sys-1,nsysFast) + 1 ! fast system idx (make it 1 based)
+            psys = (sys-1)/nsysFast
+            tRow = mod(psys,c_lhsDesc%nPCRThreads) + 1 ! the row thread (make it 1 based)
+            v   = (psys / c_lhsDesc%nPCRThreads) + 1 ! slow system idx (make it 1 based)
+        end if 
+
+        if (tRow > c_lhsDesc%n) then
+            return
+        end if
+
+        ! Check if system out of bounds
+        if (v>c_lhsDesc%nsysSlow) then
+            return
+        end if
+
+
+        do m=tRow,c_lhsDesc%n,c_lhsDesc%nPCRThreads
+
+            idx = 1 + (m-1)*c_lhsDesc%rowStride + (u-1)*c_lhsDesc%fastStride + (v-1)*c_lhsDesc%slowStride
+
+            if (m .lt. 2) then
+                epzL = 0.0_realType
+            else
+                r = rfl0 * (cudaDoms(dom,sps)%rfl(idx) + cudaDoms(dom,sps)%rfl(idx-c_lhsDesc%rowStride))
+                epzL = fourth * smoop * max(r*r-1.0_realType,0.0_realType) !* cudaDoms(dom,sps)%iblankFlat(idx-c_lhsDesc%rowStride)
+            end if
+
+
+            if (m .eq. c_lhsDesc%n) then
+                epzR = 0.0_realType
+            else
+                r = rfl0 * (cudaDoms(dom,sps)%rfl(idx) + cudaDoms(dom,sps)%rfl(idx+c_lhsDesc%rowStride))
+                epzR = fourth * smoop * max(r*r-1.0_realType,0.0_realType) !* cudaDoms(dom,sps)%iblankFlat(idx)
+            end if
+
+            ! Populate the tridiagonal arrays
+            ! The zeros for the ends of the upper and lower diagonals are added here automatically
+            cudaDoms(dom,sps)%aIRS(idx) = -epzL
+            cudaDoms(dom,sps)%bIRS(idx) = 1+epzL+epzR
+            cudaDoms(dom,sps)%cIRS(idx) = -epzR
+
+        end do
+
+        
+    end subroutine setupIRS
 
     subroutine cudaInitRes(varStart, varEnd)
         ! This routines zeros the residuals and nodal gradients
@@ -6874,7 +7391,7 @@ module cudaResidual
 
         do dom = 1,nDom
             do sps = 1, ntimeIntervalsSpectral
-                h_cudaDoms(dom,sps)%fw                           = zero
+                ! h_cudaDoms(dom,sps)%fw                           = zero
                 h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
                 h_cudaDoms(dom,sps)%ux                           = zero
                 h_cudaDoms(dom,sps)%uy                           = zero
@@ -6897,9 +7414,8 @@ module cudaResidual
         
     end subroutine cudaInitRes
 
-
-    subroutine calculateCudaResidual(updateIntermed, varStart, varEnd)
-      use constants, only: zero, spalartAllmaras
+    subroutine calculateCudaResidual(updateIntermed, updateSpectral, varStart, varEnd)
+      use constants, only: zero, one, spalartAllmaras, RungeKutta
       use cudafor,   only: dim3
       use precision, only: intType
       use inputPhysics, only: equationMode, equations, turbModel
@@ -6908,11 +7424,14 @@ module cudaResidual
       use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie, bil=>il,bjl=>jl, bkl=>kl
       use inputTimeSpectral, only: nTimeIntervalsSpectral
       use utils, only: setPointers
+      use inputIteration, only: smoother, cdisRK
+      use iteration, only: rkStage
+      use cudaIteration, only: rFil
 
 
       implicit none
 
-      logical, intent(in)               :: updateIntermed
+      logical, intent(in)               :: updateIntermed, updateSpectral
       integer(kind=intType), intent(in) :: varStart, varEnd
       type(dim3)                        :: grid_size, block_size, grid_inv, block_inv, grid_visc, block_visc
       integer(kind=intType) :: istat
@@ -6928,6 +7447,18 @@ module cudaResidual
 
       call cudaInitRes(varStart,varEnd)
 
+
+    ! Set the value of rFil, which controls the fraction of the old
+    ! dissipation residual to be used. This is only for the runge-kutta
+    ! schemes; for other smoothers rFil is simply set to 1.0.
+    ! Note the index rkStage+1 for cdisRK. The reason is that the
+    ! residual computation is performed before rkStage is incremented.
+
+    if (smoother == RungeKutta) then
+        rFil = cdisRK(rkStage + 1)
+    else
+        rFil = one
+    end if
 
       ! 
       ! standard block size determination
@@ -6996,8 +7527,10 @@ module cudaResidual
       !
       !  time step and spectral radius routine
       !
-      call timeStep<<<grid_size, block_size>>>(updateIntermed)
-      istat = cudaDeviceSynchronize()
+      if (updateSpectral) then
+        call timeStep<<<grid_size, block_size>>>(updateIntermed)
+        istat = cudaDeviceSynchronize()
+      end if
 
       ! inviscid central flux
 
@@ -7045,7 +7578,7 @@ module cudaResidual
 
 
       !
-      ! inviscid diss flux scalar 
+      ! inviscid diss flux scalar
       !
 
       ! NOTE: JST Scalar broken up into four kernels
@@ -7061,7 +7594,7 @@ module cudaResidual
 
       call inviscidDissFluxScalar<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-      
+
       call CPU_TIME(finishInv)
     !   print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
 

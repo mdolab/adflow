@@ -450,7 +450,7 @@ contains
     subroutine reportR4(name, g, c)
         character(len=*), intent(in) :: name
         real(kind=realType), dimension(:, :, :, :), intent(in) :: g, c
-        real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff
+        real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff, maxGPU
         integer(kind=intType) :: loc(4)
 
         if (any(shape(g) /= shape(c))) then
@@ -461,12 +461,13 @@ contains
         maxDiff = maxval(abs(g - c))
         sumDiff = sum(abs(g - c))
         maxCPU = maxval(abs(c))
+        maxGPU = maxval(abs(g))
         relDiff = maxDiff / max(maxCPU, 1.0e-30_realType)
         loc = maxloc(abs(g - c))
 
         print '(2X,A,T26,"maxDiff=",ES13.6,2X,"sumDiff=",ES13.6,2X,"max|cpu|=",ES13.6,&
-            &2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,",",I0,",",I0,")")', &
-            trim(name), maxDiff, sumDiff, maxCPU, relDiff, loc(1), loc(2), loc(3), loc(4)
+            &2X,"max|gpu|=",ES13.6,2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,",",I0,",",I0,")")', &
+            trim(name), maxDiff, sumDiff, maxCPU, maxGPU, relDiff, loc(1), loc(2), loc(3), loc(4)
     end subroutine reportR4
 
     subroutine reportI3(name, g, c)
@@ -535,7 +536,27 @@ contains
 
 end subroutine debugCompareCudaData
 
+subroutine reportR4Pub(name, g, c)
+    character(len=*), intent(in) :: name
+    real(kind=realType), dimension(:, :, :, :), intent(in) :: g, c
+    real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff
+    integer(kind=intType) :: loc(4)
 
+    if (any(shape(g) /= shape(c))) then
+        print '(2X,A,T26,"SHAPE MISMATCH: gpu=",4(I0,1X)," cpu=",4(I0,1X))', trim(name), shape(g), shape(c)
+        return
+    end if
+
+    maxDiff = maxval(abs(g - c))
+    sumDiff = sum(abs(g - c))
+    maxCPU = maxval(abs(c))
+    relDiff = maxDiff / max(maxCPU, 1.0e-30_realType)
+    loc = maxloc(abs(g - c))
+
+    print '(2X,A,T26,"maxDiff=",ES13.6,2X,"sumDiff=",ES13.6,2X,"max|cpu|=",ES13.6,&
+        &2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,",",I0,",",I0,")")', &
+        trim(name), maxDiff, sumDiff, maxCPU, relDiff, loc(1), loc(2), loc(3), loc(4)
+end subroutine reportR4Pub
 
 subroutine computeRefShockSensorDebug
 
@@ -584,5 +605,92 @@ subroutine computeRefShockSensorDebug
     !     end do
     ! end do
 end subroutine computeRefShockSensorDebug
+
+
+subroutine getRes(res, ndimw, calctimeStep, onlyRadii)
+
+    ! Compute the residual and return result to Python
+    use constants
+    use blockPointers, only: il, jl, kl, nDom, dw, volRef,w
+    use inputTimeSpectral, only: nTimeIntervalsSpectral
+    use flowvarrefstate, only: nw, nwf
+    use utils, only: setPointers
+
+
+    use residuals, only: residual, initRes, sourceTerms
+    use solverUtils, only: timeStep
+
+    implicit none
+
+    integer(kind=intType), intent(in) :: ndimw
+    logical, intent(in) ::calctimeStep, onlyRadii
+    real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
+
+    ! Local Variables
+    integer(kind=intType) :: nn, i, j, k, l, counter, sps
+    real(kind=realType) :: ovv
+    real(kind=8) :: start, finish
+    real(kind=realType) :: totalTime
+    
+    call CPU_TIME(start)
+
+    ! print *, "CPU state before res", w(19,27,3, 5)
+
+    ! call computeResidualNK(useUpdateIntermed=.True.)
+    if (calctimeStep) then
+    call timeStep(onlyRadii)
+    end if
+    call initres(1_intType, nwf)
+    call residual
+
+
+    call CPU_TIME(finish)
+    print '("CPU Time NEW = ",E22.16," seconds.")', finish-start
+
+
+    counter = 0
+    do nn = 1, nDom
+        do sps = 1, nTimeIntervalsSpectral
+            call setPointers(nn, 1, sps)
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
+                        ovv = one / volRef(i, j, k)
+                        do l = 1, nw
+                            counter = counter + 1
+                            res(counter) = dw(i, j, k, l) * ovv
+                        end do
+                    end do
+                end do
+            end do
+        end do
+    end do
+
+end subroutine getRes
+
+subroutine zeroFWCPU
+    use constants, only: zero
+    use blockPointers
+    use utils, only: setPointers
+    implicit none
+
+    call setPointers(1,1,1)
+
+    fw = zero
+
+    
+end subroutine zeroFWCPU
+
+    subroutine zeroFWGPU
+    use constants, only: zero
+    implicit none
+
+
+    h_cudaDoms(1,1)%fw = zero
+
+    
+end subroutine zeroFWGPU
+
+
 
 end module cudaDebug

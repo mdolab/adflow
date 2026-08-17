@@ -87,8 +87,8 @@ module cudaBlock
         ! Single halos GPU/Double halos CPU
         ! These variables are allocated as double halo on the CPU side but we allocated them as single halo on the GPU side
         ! to save memory. Care must be taken when copying to and from them.
-        real(kind=realType), dimension(:,:,:, :),pointer,device :: fw
-        real(kind=realType), dimension(:,:,:, :),pointer,device :: dw
+        real(kind=realType), dimension(:,:,:,:),pointer,device :: fw
+        real(kind=realType), dimension(:,:,:,:),pointer,device :: dw
         real(kind=realType), dimension(:,:,:),device,pointer :: rlv, rev, vol, aa
 
         ! No halos
@@ -125,6 +125,11 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:),pointer,device :: vx, vy, vz
         real(kind=realType), dimension(:,:,:),pointer,device :: wx, wy, wz
         real(kind=realType), dimension(:,:,:),pointer,device :: qx, qy, qz
+
+        ! Residual Averaging IRS (ADI)
+        real(kind=realType), dimension(:),pointer,device :: rfl, aIRS, bIRS, cIRS, workIRS
+        real(kind=realType), dimension(:),pointer,device :: aIRSpcr, bIRSpcr, cIRSpcr
+        real(kind=realType), dimension(:,:,:,:),pointer,device :: dwpcr
 
         ! --- BCData ---
         integer(kind=intType) :: nSubface, n1to1, nBocos, nViscBocos
@@ -267,10 +272,6 @@ module cudaBlock
                     allocate(h_cudaDoms(nn, sps)%bvtk1(1:bie, 1:bje), h_cudaDoms(nn, sps)%bvtk2(1:bie, 1:bje)) ! RHS vector used for the implicit boundary condition treatment of the turbulence equations at the kMin, kMax boundaries.
                 end if
 
-                ! saved zeroth-stage RK state (only interior cells)
-                allocate(h_cudaDoms(nn,sps)%wn(2:bil, 2:bjl, 2:bkl, 1:nw))
-                allocate(h_cudaDoms(nn,sps)%pn(2:bil, 2:bjl, 2:bkl))
-
                 ! no halos (faces)
 
                 ! face porosities
@@ -304,6 +305,21 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%qy(1:bil, 1:bjl, 1:bkl))
                 allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
 
+
+                ! RK smoother
+
+                ! saved zeroth-stage RK state (only interior cells)
+                allocate(h_cudaDoms(nn,sps)%wn(2:bil, 2:bjl, 2:bkl, 1:nw))
+                allocate(h_cudaDoms(nn,sps)%pn(2:bil, 2:bjl, 2:bkl))
+
+                ! Residual Smoothing
+                allocate(h_cudaDoms(nn,sps)%aIRS(bnx*bny*bnz),h_cudaDoms(nn,sps)%aIRSpcr(bnx*bny*bnz))
+                allocate(h_cudaDoms(nn,sps)%bIRS(bnx*bny*bnz),h_cudaDoms(nn,sps)%bIRSpcr(bnx*bny*bnz))
+                allocate(h_cudaDoms(nn,sps)%cIRS(bnx*bny*bnz),h_cudaDoms(nn,sps)%cIRSpcr(bnx*bny*bnz))
+                allocate(h_cudaDoms(nn, sps)%dwpcr(1:bie, 1:bje, 1:bke, 1:nw)) ! residual pcr buffer
+                allocate(h_cudaDoms(nn,sps)%workIRS(bnx*bny*bnz+1)) ! pad by one for the overwrite
+                allocate(h_cudaDoms(nn,sps)%rfl(bnx*bny*bnz)) ! per cell quantity
+               
                 ! BC Data
                 h_cudaDoms(nn, sps)%nSubface = bnSubface
                 h_cudaDoms(nn, sps)%n1to1 = bn1to1
@@ -626,6 +642,17 @@ module cudaBlock
                 if (associated(h_cudaDoms(nn,sps)%qx))     deallocate(h_cudaDoms(nn,sps)%qx)
                 if (associated(h_cudaDoms(nn,sps)%qy))     deallocate(h_cudaDoms(nn,sps)%qy)
                 if (associated(h_cudaDoms(nn,sps)%qz))     deallocate(h_cudaDoms(nn,sps)%qz)
+
+                ! IRS
+                if (associated(h_cudaDoms(nn,sps)%rfl))    deallocate(h_cudaDoms(nn,sps)%rfl)
+                if (associated(h_cudaDoms(nn,sps)%aIRS))    deallocate(h_cudaDoms(nn,sps)%aIRS)
+                if (associated(h_cudaDoms(nn,sps)%bIRS))    deallocate(h_cudaDoms(nn,sps)%bIRS)
+                if (associated(h_cudaDoms(nn,sps)%cIRS))    deallocate(h_cudaDoms(nn,sps)%cIRS)
+                if (associated(h_cudaDoms(nn,sps)%workIRS))    deallocate(h_cudaDoms(nn,sps)%workIRS)
+                if (associated(h_cudaDoms(nn,sps)%aIRSpcr))    deallocate(h_cudaDoms(nn,sps)%aIRSpcr)
+                if (associated(h_cudaDoms(nn,sps)%bIRSpcr))    deallocate(h_cudaDoms(nn,sps)%bIRSpcr)
+                if (associated(h_cudaDoms(nn,sps)%cIRSpcr))    deallocate(h_cudaDoms(nn,sps)%cIRSpcr)
+                if (associated(h_cudaDoms(nn,sps)%dwpcr))    deallocate(h_cudaDoms(nn,sps)%dwpcr)
 
                 ! BC Data
                 if (associated(h_cudaDoms(nn,sps)%BCType))      deallocate(h_cudaDoms(nn,sps)%BCType)

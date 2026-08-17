@@ -196,5 +196,7 @@ cudaFiles = cuda/cudaConstants.cuf\
         cuda/cudaBCRoutines.cuf\
 		cuda/cudaTurbulence.cuf\
 		cuda/cudaSmoothers.cuf\
+		cuda/cudaPreprocessing.cuf\
+		cuda/cudaADI.cuf\
 		cuda/cudaAPI.cuf\
 		cuda/cudaDebug.cuf\

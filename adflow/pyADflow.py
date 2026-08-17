@@ -5728,6 +5728,7 @@ class ADFLOW(AeroSolver):
             "CFLCoarse": [float, 1.0],
             "MGCycle": [str, "sg"],
             "MGStartLevel": [int, -1],
+            "nRKStages": [int, 5],
             "resAveraging": [str, ["alternate", "never", "always"]],
             "smoothParameter": [float, 1.5],
             "CFLLimit": [float, 1.5],
@@ -5934,6 +5935,24 @@ class ADFLOW(AeroSolver):
             "cavSensorSharpness": [float, 10.0],
             "cavExponent": [int, 0],
             "computeCavitation": [bool, False],
+            # CUDA parameters
+            "npcrstagesi": [int, -1],
+            "npcrstagesj": [int, -1],
+            "npcrstagesk": [int, -1],
+            "npcrthreadsi": [int, -1],
+            "npcrthreadsj": [int, -1],
+            "npcrthreadsk": [int, -1],
+            "maxpcrstages": [int, 6],
+            "minrowsperpcrthread": [int, 8],
+            "pcroccupancytarget": [int, -1],
+            "pcrcostratiocoeffone": [float, -0.01348485],
+            "pcrcostratiocoefftwo": [float, 0.22761905],
+            "pcrcostratiocoeffthree": [float, -0.04027056],
+            "pcrcostratiocoefffour": [float, 0.00269697],
+            "thomascostfloor": [float, 44.0],
+            "matchpcrthreadtoblocksize": [bool,False],
+            "verbosecudaprint": [bool,False],
+            "verbosecudaadiprint": [bool,False],
         }
 
         return defOpts
@@ -5991,6 +6010,7 @@ class ADFLOW(AeroSolver):
             "ts": self.adflow.inputtimespectral,
             "overset": self.adflow.inputoverset,
             "monitor": self.adflow.monitor,
+            "cuda": self.adflow.inputcudasolver,
         }
 
         # In the option map, we first list the "module" defined in
@@ -6140,6 +6160,7 @@ class ADFLOW(AeroSolver):
             "cflcoarse": ["iter", "cflcoarse"],
             "mgcycle": ["iter", "mgdescription"],
             "mgstartlevel": ["iter", "mgstartlevel"],
+            "nrkstages":["iter","nrkstages"],
             "resaveraging": {
                 "never": self.adflow.constants.noresaveraging,
                 "always": self.adflow.constants.alwaysresaveraging,
@@ -6382,6 +6403,25 @@ class ADFLOW(AeroSolver):
             "writesolutioneachiter": ["monitor", "writesoleachiter"],
             "writesurfacesolution": ["monitor", "writesurface"],
             "writevolumesolution": ["monitor", "writevolume"],
+            # Parameters for CUDA Solver
+            "npcrstagesi": ["cuda","npcrstagesi"],
+            "npcrstagesj": ["cuda","npcrstagesj"],
+            "npcrstagesk": ["cuda","npcrstagesk"],
+            "npcrthreadsi": ["cuda","npcrthreadsi"],
+            "npcrthreadsj": ["cuda","npcrthreadsj"],
+            "npcrthreadsk": ["cuda","npcrthreadsk"],
+            "maxpcrstages": ["cuda","maxpcrstages"],
+            "minrowsperpcrthread": ["cuda","minrowsperpcrthread"],
+            "pcroccupancytarget": ["cuda","pcroccupancytarget"],
+            "pcrcostratiocoeffone": ["cuda","pcrcostratiocoeffone"],
+            "pcrcostratiocoefftwo": ["cuda","pcrcostratiocoefftwo"],
+            "pcrcostratiocoeffthree": ["cuda","pcrcostratiocoeffthree"],
+            "pcrcostratiocoefffour": ["cuda","pcrcostratiocoefffour"],
+            "thomascostfloor": ["cuda","thomascostfloor"],
+            "matchpcrthreadtoblocksize": ["cuda","matchpcrthreadtoblocksize"],
+            "verbosecudaprint": ["cuda","verbosecudaprint"],
+            "verbosecudaadiprint": ["cuda","verbosecudaadiprint"],
+
         }
         return optionMap, moduleMap
 

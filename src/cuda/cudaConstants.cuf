@@ -800,6 +800,7 @@ module cudaIteration
     ! currentLevel: MG level at which the compution currently resides.
 
     integer(kind=intType),device :: groundLevel, currentLevel
+    ! integer(kind=intType),device :: rkStage, Subit ! Not needed on device for now
     !rFil : coefficient to control the fraction of the dissipation
     !        residual of the previous runge-kutta stage.
     real(kind=realType), device :: rFil
@@ -832,4 +833,3 @@ module cudaTurbMod
         secondOrd = h_secondOrd
     end subroutine cudaCopyTurbMod
 end module cudaTurbMod
-

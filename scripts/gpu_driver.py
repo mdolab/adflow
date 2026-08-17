@@ -31,7 +31,8 @@ from matplotlib import ticker
 
 
 gridFile = "INPUT/test_mesh_nb1_nc32.cgns"
-
+# gridFile = "INPUT/test_mesh_nb1_nc32_perturbed_restart.cgns"
+# gridFile = "INPUT/test_mesh_nb1_nc32_nzc114_visc.cgns"
 
 
 alpha = 0
@@ -58,11 +59,12 @@ aeroOptions = {
     # "equationType": "laminar NS",
     # "equationType": "RANS",
     "CFL": 1.7,
-    "CFLCoarse": 1.7,
+    "CFLCoarse": 1.25,
     "MGCycle": MGCycle,
     "MGStartLevel": -1,
+    "nRKStages":5,
     "nCyclesCoarse": 250,
-    "nCycles": 900,
+    "nCycles": 20,
     "nsubiterturb": 5,
     "printIntro": False,
     "printAllOptions": False,
@@ -74,15 +76,18 @@ aeroOptions = {
     # "usetestwithbcs":updatebcs,
     # Debug viscous flux
     "useQCR":False,
-    # "eulerWallTreatment":"linear pressure extrapolation",
+    "eulerWallTreatment":"linear pressure extrapolation",
+    # "eulerWallTreatment":"constant pressure extrapolation",
     # Write Restart File
     "writeSurfaceSolution" : False,
     "writeVolumeSolution" : True,
+    "volumeVariables":["resrho","resmom","resrhoe","mx","my","mz","rhoe"],
     "useANKSolver":False,
     "useNKSolver":False,
     "smoother":"Runge-Kutta",
-    "resAveraging":"never",
+    "resAveraging":"always",
     "L2Convergence" : 1e-16,
+    "useDissContinuation" :False,
 }
 
 ap = AeroProblem(
@@ -91,6 +96,9 @@ ap = AeroProblem(
     beta=45.0,
     mach=mach,
     altitude=altitude,
+    # reynolds=1e3,
+    # reynoldsLength=1.0,
+    # T=293,
     areaRef=areaRef,
     chordRef=chordRef,
     evalFuncs=["cl", "cd"],
@@ -100,6 +108,7 @@ ap = AeroProblem(
 CFDSolver = ADFLOW(options=aeroOptions, debug=True, comm=MPI.COMM_WORLD)
 # resCPU1 = CFDSolver.getResidual(ap)
 CFDSolver(ap)
+
 
 
 CFDSolver.resetFlow(ap)
@@ -113,24 +122,27 @@ nIters = aeroOptions["nCycles"]
 # One-time GPU setup + host->device copy, paid ONCE outside the timed loop below.
 CFDSolver.adflow.cudaapi.setupcudaapi()
 
-
 # Start timing GPU
 timeGPU1 = time.time()
 
-
 # Timed region: the core GPU residual only (calculateCudaResidual). No host<->device
 # copies happen inside this loop, so profiling it measures kernel time, not transfers.
+CFDSolver.adflow.iteration.rkstage = 0
 CFDSolver.adflow.cudabcroutines.applyallbc(True)
-CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
+CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, True, 1, nw)
 print(f"Iteration {0} - L2 Total Res {CFDSolver.adflow.cudaresidual.getdeviceressum():.5e}")
 for i in range(nIters):
     #
     CFDSolver.adflow.cudasmoothers.rungekuttasmoother()
-    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, 1, nw)
+    CFDSolver.adflow.iteration.rkstage = 0
+    CFDSolver.adflow.cudaresidual.calculatecudaresidual(True, True, 1, nw)
     monres = CFDSolver.adflow.cudaresidual.getdeviceressum()
     print(f"Iteration {i+1} - L2 Total Res {monres:.5e}")
 
+
 timeGPU2 = time.time()
+
+print("GPU Total Solution Time", timeGPU2-timeGPU1)
 
 
 # Copy back to host
@@ -148,9 +160,15 @@ CFDSolver.adflow.cudablock.copycudaresidualtohost()
 CFDSolver.adflow.cudaapi.destroycudaapi()
 
 
+
+
+
 # resCPU2 = CFDSolver.getResidual()
 CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_GPU_sol")
+# CFDSolver.writeSolution(outputDir="./INPUT/",baseName="test_mesh_nb1_nc32_nzc114_visc_GPU_sol")
 
 
-print("GPU Total Solution Time", timeGPU2-timeGPU1)
+
+
+
 
