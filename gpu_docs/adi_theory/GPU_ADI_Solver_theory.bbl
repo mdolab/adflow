@@ -1,0 +1,79 @@
+\begin{thebibliography}{11}
+\newcommand{\enquote}[1]{``#1''}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{\discretionary{}{}{}https://doi.org/#1}\else
+  \providecommand{\doi}[1]{\discretionary{}{}{}\urlstyle{rm}\url{https://doi.org/#1}}\fi
+
+\bibitem[{Thomas(1949)}]{Thomas1949}
+Thomas, L.~H., \enquote{Elliptic Problems in Linear Difference Equations over a
+  Network,} Tech. rep., Watson Scientific Computing Laboratory, Columbia
+  University, New York, NY, 1949.
+
+\bibitem[{Zhang et~al.(2010)Zhang, Cohen, and Owens}]{Zhang2010}
+Zhang, Y., Cohen, J., and Owens, J.~D., \enquote{Fast tridiagonal solvers on
+  the {GPU},} \emph{Proceedings of the 15th {ACM} {SIGPLAN} Symposium on
+  Principles and Practice of Parallel Programming ({PPoPP} '10)}, Bangalore,
+  India, 2010, pp. 127--136.
+\newblock \doi{10.1145/1837853.1693472}.
+
+\bibitem[{Kim et~al.(2011)Kim, Wu, Chang, and Hwu}]{Kim2011}
+Kim, H.-S., Wu, S., Chang, L.-W., and Hwu, W.~W., \enquote{A scalable
+  tridiagonal solver for {GPUs},} \emph{2011 International Conference on
+  Parallel Processing ({ICPP})}, Taipei, Taiwan, 2011, pp. 444--453.
+\newblock \doi{10.1109/ICPP.2011.41}.
+
+\bibitem[{Hockney and Jesshope(1981)}]{Hockney1981}
+Hockney, R.~W., and Jesshope, C.~R., \emph{Parallel Computers: Architecture,
+  Programming and Algorithms}, Adam Hilger, Bristol, UK, 1981.
+
+\bibitem[{Jameson and Baker(1984)}]{Jameson1984}
+Jameson, A., and Baker, T.~J., \enquote{Multigrid solution of the {E}uler
+  equations for aircraft configurations,} \emph{22nd Aerospace Sciences
+  Meeting, Reno, NV}, 1984.
+\newblock \doi{10.2514/6.1984-93}.
+
+\bibitem[{Jameson et~al.(1981)Jameson, Schmidt, and Turkel}]{Jameson1981a}
+Jameson, A., Schmidt, W., and Turkel, E., \enquote{Numerical Solution of the
+  {E}uler Equations by Finite Volume Methods Using {R}unge--{K}utta Time
+  Stepping Schemes,} \emph{14th Fluid and Plasma Dynamics Conference}, 1981.
+\newblock \doi{10.2514/6.1981-1259}.
+
+\bibitem[{Pulliam and Chaussee(1981)}]{Pulliam1981}
+Pulliam, T.~H., and Chaussee, D.~S., \enquote{A diagonal form of an implicit
+  approximate-factorization algorithm,} \emph{Journal of Computational
+  Physics}, Vol.~39, No.~2, 1981, pp. 347--363.
+\newblock \doi{10.1016/0021-9991(81)90156-X}.
+
+\bibitem[{Bardina and Lombard(1987)}]{Bardina1987}
+Bardina, J., and Lombard, C.~K., \enquote{Three dimensional hypersonic flow
+  simulations with the {CSCM} implicit upwind {N}avier--{S}tokes method,}
+  \emph{8th Computational Fluid Dynamics Conference, Honolulu, HI}, 1987.
+\newblock \doi{10.2514/6.1987-1114}.
+
+\bibitem[{Klopfer et~al.(1998)Klopfer, Hung, Van~der Wijngaart, and
+  Onufer}]{Klopfer1998}
+Klopfer, G., Hung, C., Van~der Wijngaart, R., and Onufer, J., \enquote{A
+  diagonalized diagonal dominant alternating direction implicit ({D3ADI})
+  scheme and subiteration correction,} \emph{29th AIAA, Fluid Dynamics
+  Conference, Albuquerque, NM}, 1998.
+\newblock \doi{10.2514/6.1998-2824}.
+
+\bibitem[{Mader et~al.(2020)Mader, Kenway, Yildirim, and Martins}]{Mader2020a}
+Mader, C.~A., Kenway, G. K.~W., Yildirim, A., and Martins, J. R. R.~A.,
+  \enquote{{ADflow}: An open-source computational fluid dynamics solver for
+  aerodynamic and multidisciplinary optimization,} \emph{Journal of Aerospace
+  Information Systems}, Vol.~17, No.~9, 2020, pp. 508--527.
+\newblock \doi{10.2514/1.I010796}.
+
+\bibitem[{Yildirim et~al.(2019)Yildirim, Kenway, Mader, and
+  Martins}]{Yildirim2019b}
+Yildirim, A., Kenway, G. K.~W., Mader, C.~A., and Martins, J. R. R.~A.,
+  \enquote{A {Jacobian}-free approximate {Newton}--{Krylov} startup strategy
+  for {RANS} simulations,} \emph{Journal of Computational Physics}, Vol. 397,
+  2019, p. 108741.
+\newblock \doi{10.1016/j.jcp.2019.06.018}.
+
+\end{thebibliography}
