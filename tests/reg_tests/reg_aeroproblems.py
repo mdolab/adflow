@@ -292,3 +292,19 @@ ap_naca0012_separation = AeroProblem(
     chordRef=1.0,
     evalFuncs=["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
 )
+
+ap_naca0012_periodic = AeroProblem(
+    name="0012periodic",
+    alpha=1.8,
+    mach=0.70,
+    P=20000.0,
+    T=220.0,
+    areaRef=45.5,
+    chordRef=3.25,
+    beta=0.0,
+    R=287.87,
+    xRef=0.0,
+    yRef=0.0,
+    zRef=0.0,
+    evalFuncs=defaultFuncList,
+)
