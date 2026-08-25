@@ -479,13 +479,8 @@ contains
                                  zipper%indices - 1, PETSC_COPY_VALUES, IS1, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-#if PETSC_VERSION_GE(3,8,0)
             call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
                                   zipper%localVal, PETSC_NULL_IS, zipper%scatter, ierr)
-#else
-            call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
-                                  zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)
-#endif
             call EChk(ierr, __FILE__, __LINE__)
 
             call ISDestroy(IS1, ierr)

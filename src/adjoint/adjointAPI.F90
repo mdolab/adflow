@@ -279,7 +279,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
         real(kind=realType) :: val
@@ -298,9 +298,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -362,7 +361,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
 
@@ -380,9 +379,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -774,9 +772,8 @@ contains
         L2Rel = min(L2Rel, 0.9)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user. -1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the tolerances
@@ -1031,15 +1028,15 @@ contains
         real(kind=realType), pointer :: wb_pointer(:)
 
 #ifndef USE_COMPLEX
-        call VecGetArrayReadF90(vecX, dwb_pointer, ierr)
+        call VecGetArrayRead(vecX, dwb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, wb_pointer, ierr)
+        call VecGetArray(VecY, wb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
-        call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
+        call VecRestoreArray(vecX, dwb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -1086,10 +1083,10 @@ contains
 
 #ifndef USE_COMPLEX
 
-        call VecGetArrayReadF90(vecX, wd_pointer, ierr)
+        call VecGetArrayRead(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, dwd_pointer, ierr)
+        call VecGetArray(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (.not. derivVarsAllocated) then
@@ -1117,10 +1114,10 @@ contains
 
         deallocate (xvDot, Fdot)
 
-        call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
+        call VecRestoreArrayRead(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(VecY, dwd_pointer, ierr)
+        call VecRestoreArray(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0

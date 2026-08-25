@@ -418,7 +418,7 @@ contains
             ! scatter.
             dimLoop: do iDim = 1, 3
 
-                call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call vecGetArray(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! The local Pointer is just the localRandSurface we've set
@@ -428,7 +428,7 @@ contains
                 end do
 
                 ! Restore the pointer
-                call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Now scatter this to the zipper
@@ -441,7 +441,7 @@ contains
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! The values we need are precisely what is in zipper%localVal
-                call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+                call vecGetArray(zipper%localVal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Just copy the received seeds into the random aray

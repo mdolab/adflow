@@ -4202,28 +4202,28 @@ contains
 
         ! Two w-like vectors.
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, w_like1, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, w_like1, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, w_like2, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, w_like2, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         ! Two psi-like vectors.
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nState, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like1, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, psi_like1, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like2, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, psi_like2, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nstate, ndimPsi, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, psi_like3, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, psi_like3, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, 3, ndimX, PETSC_DECIDE, &
-                                   PETSC_NULL_SCALAR, x_like, PETScIerr)
+                                   PETSC_NULL_SCALAR_ARRAY, x_like, PETScIerr)
         call EChk(PETScIerr, __FILE__, __LINE__)
 
         adjointPETScPreProcVarsAllocated = .True.

@@ -3131,7 +3131,7 @@ contains
         ! properties. There is no need to use the cellToNodeScatter stuff
         ! here like for the forces.
         varLoop: do iVar = 1, nZIppFlowComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3188,7 +3188,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
@@ -3252,7 +3252,7 @@ contains
         ! properties. There is no need to use the cellToNodeScatter stuff
         ! here like for the forces.
         varLoop: do iVar = 1, nZIppFlowComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3305,7 +3305,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
@@ -3391,7 +3391,7 @@ contains
             ! Now finish the scatting back to the acutual BCs pointers (and
             ! thus the state variables).
 
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3458,7 +3458,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end do varLoop
@@ -3499,7 +3499,7 @@ contains
         call computeNodalTractions(sps)
 
         varLoop: do iVar = 1, nZippWallComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3536,7 +3536,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, vars(:, iVar), ierr)
@@ -3593,7 +3593,7 @@ contains
         exch => BCFamExchange(iBCGroupWalls, sps)
 
         varLoop: do iVar = 1, nZippWallComm
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3630,7 +3630,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecPlaceArray(zipper%localVal, varsd(:, iVar), ierr)
@@ -3709,7 +3709,7 @@ contains
             ! Now finish the scatting back to the acutual BCs pointers (and
             ! thus the state variables).
 
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = 0
@@ -3746,7 +3746,7 @@ contains
             end do domainLoop
 
             ! Return pointer to nodeValLocal
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end do varLoop

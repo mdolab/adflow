@@ -680,7 +680,7 @@ contains
         print *, 'calling pcmatmult'
         call setPCVec(vecX)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Now we can compute the acutal matrix vector product.
@@ -719,7 +719,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -748,12 +748,12 @@ contains
         ! into the preconditioned vector.
         call vecCopy(vecX, vecY, ierr)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Do something useful here....
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine myShellPCApply

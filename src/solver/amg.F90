@@ -243,7 +243,7 @@ contains
             n = 0
             ii = 0
 
-            call VecGetArrayF90(indexVec, indPtr, ierr)
+            call VecGetArray(indexVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             do nn = 1, nDom
@@ -281,7 +281,7 @@ contains
                     end do
                 end do
             end do
-            call VecRestoreArrayF90(indexVec, indPtr, ierr)
+            call VecRestoreArray(indexVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             allocate (indicesToGet(8 * ii))
@@ -327,7 +327,7 @@ contains
             call VecScatterEnd(scat, indexVec, recvVec, INSERT_VALUES, SCATTER_FORWARD, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecGetArrayF90(recvVec, indPtr, ierr)
+            call VecGetArray(recvVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Loop back over at set the coarse indices
@@ -352,7 +352,7 @@ contains
                 end do
             end do
 
-            call VecRestoreArrayF90(recvVec, indPtr, ierr)
+            call VecRestoreArray(recvVec, indPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecScatterDestroy(scat, ierr)
@@ -527,7 +527,7 @@ contains
 
         ! Working
         PC globalPC, subpc
-        KSP subksp
+        KSP, pointer :: subksp(:) => null()
         integer(kind=intType) :: lvl
         integer(kind=intType) :: nlocal, first
 
@@ -580,25 +580,25 @@ contains
             ! with only 1 iteration, only use it when we need to do more than 1 iteration.
             if (amgLocalPreConIts > 1) then
                 ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
-                call KSPSetType(subksp, 'richardson', ierr)
+                call KSPSetType(subksp(1), 'richardson', ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-                call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+                call KSPSetTolerances(subksp(1), PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
                                       amgLocalPreConIts, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! normtype is NONE because we don't want to check error
-                call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+                call kspsetnormtype(subksp(1), KSP_NORM_NONE, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             else
                 ! Set the subksp object to preonly because we are only doing one iteration
-                call KSPSetType(subksp, 'preonly', ierr)
+                call KSPSetType(subksp(1), 'preonly', ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
 
             ! Extract the preconditioner for subksp object
-            call KSPGetPC(subksp, subpc, ierr)
+            call KSPGetPC(subksp(1), subpc, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the subpc type to ILU
@@ -639,10 +639,10 @@ contains
         integer(kind=intType) :: ierr, n, i, j
 
         ! Restrict x -> y
-        call VecGetArrayF90(x, xPtr, ierr)
+        call VecGetArray(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(y, yPtr, ierr)
+        call VecGetArray(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Number of block nodes
@@ -661,10 +661,10 @@ contains
             yPtrBlk(:, j) = yPtrBlk(:, j) + xPtrBlk(:, i)
         end do
 
-        call VecRestoreArrayF90(x, xPtr, ierr)
+        call VecRestoreArray(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(y, yPtr, ierr)
+        call VecRestoreArray(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine restrictVec
@@ -682,10 +682,10 @@ contains
 
         ! Prolong vector x -> y
 
-        call VecGetArrayF90(x, xPtr, ierr)
+        call VecGetArray(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(y, yPtr, ierr)
+        call VecGetArray(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Number of block nodes
@@ -701,10 +701,10 @@ contains
             yPtrBlk(:, i) = xPtrBlk(:, j)
         end do
 
-        call VecRestoreArrayF90(x, xPtr, ierr)
+        call VecRestoreArray(x, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(y, yPtr, ierr)
+        call VecRestoreArray(y, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine prolongVec
