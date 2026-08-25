@@ -11,9 +11,9 @@ contains
         !       these values is not computed.
         !
         use constants
-        use blockPointers, only: w, p, wn, pn, il, jl, kl, nDom
+        use blockPointers, only: w, p, wn, pn, il, jl, kl, nDom, dw ! RK BUG
         use flowVarRefState, only: nwf
-        use inputIteration, only: nRKStages
+        use inputIteration, only: nRKStages, cdisRK
         use inputTimeSpectral, only: ntimeIntervalsSpectral
         use iteration, only: currentLevel, rkStage
         use utils, only: setPointers
@@ -64,6 +64,15 @@ contains
 
         do rkStage = 1, (nRKStages - 1)
 
+            ! RK BUG: Print the rho residual in a cell
+            print *, "RK Stage:", rkStage
+            print *, "rFil:", cdisRK(rkStage)
+            print *, "rho res:", dw(10,5,7,1)
+            print *, "mx res:", dw(10,5,7,2)
+            print *, "my res:", dw(10,5,7,3)
+            print *, "mz res:", dw(10,5,7,4)
+            print *, "rhoE res:", dw(10,5,7,5)
+
             ! Execute a Runge Kutta stage and exchange the externals.
 
             call executeRkStage
@@ -80,6 +89,15 @@ contains
         ! clarity; after the previous loop rkStage == nRKStages.
 
         rkStage = nRKStages
+
+        ! RK BUG: Print the rho residual in a cell
+        print *, "RK Stage:", rkStage
+        print *, "rFil:", cdisRK(rkStage)
+        print *, "rho res:", dw(10,5,7,1)
+        print *, "mx res:", dw(10,5,7,2)
+        print *, "my res:", dw(10,5,7,3)
+        print *, "mz res:", dw(10,5,7,4)
+        print *, "rhoE res:", dw(10,5,7,5)
 
         call executeRkStage
 

@@ -328,7 +328,7 @@ contains
         ! This is not needed for euler and shouldn't be needed for
         ! viscous equations either, but becuase of an issue else where it is.
         ! see https://github.com/mdolab/adflow/pull/46 for the discussion.
-        call computeResidualNK(useUpdateIntermed=.True.)
+        call computeResidualNK(useUpdateIntermed=.True.) ! RK BUG: One of the extra lines
 
     end subroutine getFreeStreamResidual
 

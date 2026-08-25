@@ -3885,7 +3885,7 @@ contains
         nSaveSurface = 1
 
         smoother = none
-        nRKStages = 5
+        nRKStages = 4
         nSubiterations = 1
 
         !resAveraging =  noResAveraging ! No residual averaging.

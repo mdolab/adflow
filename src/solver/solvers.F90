@@ -1011,11 +1011,16 @@ contains
         ordersConverged = 16.0_realType
 
         ! Evaluate the initial residual
-        call computeResidualNK
+        call computeResidualNK ! RK BUG: One of the extra 
 
         ! Need to run the time step here since the RK/DADI is expecting
         ! the rad{i,j,k} to be computed.
         call timeStep(.False.)
+
+        ! RK BUG: Alternative initial residual
+        ! call initres(1_intType, nwf)
+        ! call sourceTerms()
+        ! call residual
 
         ! Extract the rhoResStart and totalRStart
         call getCurrentResidual(rhoResStart, totalRStart)
