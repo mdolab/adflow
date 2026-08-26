@@ -664,7 +664,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        ! PetSC has its own PCMat that we have to redirect here
+        use petsc, PetScPCMat => PCMat 
         implicit none
 
         ! PETSc Arguments

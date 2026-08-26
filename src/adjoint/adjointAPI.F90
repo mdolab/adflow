@@ -272,6 +272,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petsc
         implicit none
 
         ! Input Variables
@@ -354,6 +356,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petsc
         implicit none
 
         ! Input Variables

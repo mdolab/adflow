@@ -526,6 +526,7 @@ contains
         real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
         logical :: flag
         real(kind=alwaysRealType) :: resHist(NK_subspace + 1)
+        PetscCount :: resHistLen
 
         if (firstCall) then
             call setupNKSolver()
@@ -616,7 +617,8 @@ contains
                               real(atol), real(NK_divTol), maxIt, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(NK_KSP, resHist, maxIt + 1, PETSC_TRUE, ierr)
+        resHistLen = maxIt + 1
+        call KSPSetResidualHistory(NK_KSP, resHist, resHistLen, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! set the BaseVector of the matrix-free matrix
@@ -3361,6 +3363,7 @@ contains
         real(kind=alwaysRealType) :: linResMonitorTurb, totalRTurb
         logical :: correctForK, LSFailed
         KSPConvergedReason reason
+        PetscCount :: resHistLen
 
         ! Calculate the residuals and set rVecTurb before the first iteration
         call blocketteRes(useFlowRes=.False., useStoreWall=.False.)
@@ -3446,7 +3449,8 @@ contains
                                   real(atol), real(ANK_divTol), ank_maxIter, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPSetResidualHistory(ANK_KSPTurb, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+            resHistLen = ank_maxIter + 1
+            call KSPSetResidualHistory(ANK_KSPTurb, resHist, resHistLen, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the BaseVector of the matrix-free matrix:
@@ -3659,6 +3663,7 @@ contains
         real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old, rel_pcUpdateTol
         logical :: correctForK, LSFailed
         KSPConvergedReason reason
+        PetscCount :: resHistLen
 
         ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
         if (firstCall .or. &
@@ -3895,7 +3900,8 @@ contains
                               real(atol), real(ANK_divTol), ank_maxIter, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+        resHistLen = ank_maxIter + 1
+        call KSPSetResidualHistory(ANK_KSP, resHist, resHistLen, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the BaseVector of the matrix-free matrix:
