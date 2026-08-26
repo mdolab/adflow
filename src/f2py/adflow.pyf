@@ -438,6 +438,17 @@ python module libadflow
         end subroutine applyallbc
       end module cudabcroutines
 
+      module cudahaloexchange
+        subroutine whalo1(level, start, end, commpressure, commgamma, commviscous)
+          logical, intent(in) :: commpressure, commgamma, commviscous
+          integer(kind=inttype), intent(in) :: level, start, end
+        end subroutine whalo1
+        subroutine whalo2(level, start, end, commpressure, commgamma, commviscous)
+          logical, intent(in) :: commpressure, commgamma, commviscous
+          integer(kind=inttype), intent(in) :: level, start, end
+        end subroutine whalo2
+      end module cudahaloexchange
+
 
       module cudasmoothers
         subroutine rungekuttasmoother

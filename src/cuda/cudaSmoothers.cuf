@@ -261,8 +261,8 @@ contains
         use iteration, only: currentLevel, groundLevel, exchangePressureEarly
         use blockPointers, only: bil => il, bjl => jl, bkl => kl
         use utils, only: setPointers, terminate
-        ! --- teammate-provided device drivers / kernels ---
         use cudaBCRoutines, only: applyAllBC
+        use cudaHaloExchange, only: whalo1, whalo2
         use cudaResidual, only: computeEtotBlock, computeLamViscosity, computeEddyViscosity, cudaResidualAveraging
         ! NOTE: whalo1 / whalo2 and the three post-update helper kernels
         !       (computeEtotBlock / computeLamViscosity / computeEddyViscosity) are
@@ -353,21 +353,19 @@ contains
         istat = cudaDeviceSynchronize()
 
         ! Exchange the pressure early if required (fine grid only, first halo).
-        ! TODO: whalo1 device driver.
-        ! if (exchangePressureEarly .and. currentLevel <= groundLevel) &
-        !     call whalo1(currentLevel, 1_intType, 0_intType, .true., .false., .false.)
+        if (exchangePressureEarly .and. currentLevel <= groundLevel) &
+            call whalo1(currentLevel, 1_intType, 0_intType, .true., .false., .false.)
 
         ! Apply all boundary conditions to all blocks on this level.
         !
         call applyAllBC(secondHalo)
 
         ! Exchange the solution (whalo1 or whalo2).
-        ! TODO: whalo device drivers.
-        ! if (secondHalo) then
-        !     call whalo2(currentLevel, 1_intType, nwf, .true., .true., .true.)
-        ! else
-        !     call whalo1(currentLevel, 1_intType, nwf, .true., .true., .true.)
-        ! end if
+        if (secondHalo) then
+            call whalo2(currentLevel, 1_intType, nwf, .true., .true., .true.)
+        else
+            call whalo1(currentLevel, 1_intType, nwf, .true., .true., .true.)
+        end if
 
     end subroutine executeRkStage
 
