@@ -8,7 +8,7 @@ module amg
     use constants
     use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     ! Structure used for storing the interpolation indices

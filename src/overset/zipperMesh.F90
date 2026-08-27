@@ -40,7 +40,7 @@ contains
         use wallSearches, only: wallSearch
 
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input Parameters

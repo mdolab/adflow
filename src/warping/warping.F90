@@ -308,7 +308,7 @@ contains
         use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
         use surfaceFamilies, only: BCFamGroups, familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input Parameters

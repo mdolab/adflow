@@ -17,7 +17,8 @@ contains
         use surfaceFamilies, only: BCFamGroups
         use su_cgns
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscdmda
+        use petscao
         implicit none
 
         ! Input Params
@@ -877,7 +878,8 @@ contains
     subroutine writeCartMesh(blankVec, cellDims, xMin, h)
 
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscdmda
+        use petscao
         implicit none
 
         ! Input

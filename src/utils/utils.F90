@@ -1,4 +1,6 @@
 module utils
+    ! Avoid ADflow variable name collision since PETSc now also has its own TSALPHA and PCMAT
+    use petscvec
     implicit none
 
 contains

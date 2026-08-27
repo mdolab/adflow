@@ -665,7 +665,7 @@ contains
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
         ! PetSC has its own PCMat that we have to redirect here
-        use petsc, PetScPCMat => PCMat 
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments
@@ -735,7 +735,7 @@ contains
         use flowvarrefstate
         use communication
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments
@@ -768,7 +768,7 @@ contains
         use flowVarRefState
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments

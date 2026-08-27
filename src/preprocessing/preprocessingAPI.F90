@@ -1684,6 +1684,7 @@ contains
         ! 2. Lift distributions/slices also requires node-based tractions
         ! 3. Node-based output for tecplot files.
         use constants
+        use petscvec
         use communication, only: adflow_comm_world, myid, nProc
         use surfaceFamilies, only: familyExchange, IS1, IS2!, PETSC_COPY_VALUES, PETSC_DETERMINE
         use utils, only: pointReduce, eChk
@@ -4177,7 +4178,7 @@ contains
                                 psi_like1, psi_like2, x_like, psi_like3, adjointPETScPreProcVarsAllocated
         use utils, only: setPointers, EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         !     Local variables.

@@ -273,7 +273,7 @@ contains
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Variables
@@ -357,7 +357,7 @@ contains
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Variables
@@ -435,7 +435,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -462,7 +462,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -489,7 +489,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -681,7 +681,7 @@ contains
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Parameters
@@ -873,7 +873,7 @@ contains
         use communication
         use amg, only: setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         !     Local variables.
@@ -942,7 +942,7 @@ contains
         use communication
         use utils, only: setPointers, EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -1020,7 +1020,7 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Arguments
@@ -1069,7 +1069,7 @@ contains
         use masterRoutines, only: master_d
 #endif
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Arguments
@@ -1145,7 +1145,7 @@ contains
         use adjointUtils, only: myMatCreate, destroyPETScVars, statePreAllocation
         use amg, only: setupAMG
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         !     Local variables.

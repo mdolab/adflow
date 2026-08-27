@@ -3,7 +3,7 @@ module surfaceFamilies
     use constants
 #ifndef USE_TAPENADE
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
     type familyExchange

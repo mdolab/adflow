@@ -44,7 +44,7 @@ contains
         use masterRoutines, only: block_res_state_d
 #endif
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Matrix Variable
@@ -721,6 +721,7 @@ contains
     subroutine allocDerivativeValues(level)
 
         use constants
+        use petscvec
         use block, only: flowDoms, flowDomsd
         use blockPointers, only: nDom, il, jl, kl, ie, je, ke, ib, jb, kb, BCData, &
                                  nBOcos, nViscBocos
@@ -1306,7 +1307,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         Mat matrix
@@ -1409,7 +1410,7 @@ contains
         use utils, only: ECHk
         use inputADjoint, only: GMRESOrthogType
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Params
@@ -1577,7 +1578,7 @@ contains
                        setupShellPC, destroyShellPC, applyShellPC, &
                        amgFillLevelFine, amgFillLevelCoarse, amgLocalPreConItsFine, amgLocalPreConItsCoarse
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Inputs
@@ -1729,7 +1730,7 @@ contains
         use utils, only: setPointers, EChk
         use sorting, only: unique
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Subroutine Arguments

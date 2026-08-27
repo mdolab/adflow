@@ -756,7 +756,7 @@ contains
         use oversetData, only: zipperMesh, zipperMeshes
         use surfaceUtils
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input Params
@@ -1322,7 +1322,7 @@ contains
         use sorting, only: famInList
         use oversetData, only: zipperMesh
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
         ! Input Param
         type(familyExchange) :: exch

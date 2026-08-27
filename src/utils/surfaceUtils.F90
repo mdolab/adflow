@@ -379,7 +379,7 @@ contains
         use sorting, only: famInList
         use utils, only: setPointers, EChk, setBCPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         !

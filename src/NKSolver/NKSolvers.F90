@@ -4,7 +4,7 @@ module NKSolver
 
     ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     ! PETSc Matrices:
@@ -1641,7 +1641,7 @@ module ANKSolver
 
     use constants
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     Mat dRdw, dRdwPre, timeStepMat

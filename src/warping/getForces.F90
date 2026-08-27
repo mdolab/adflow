@@ -10,7 +10,7 @@ subroutine getForces(forces, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(inout) :: forces(3, npts)
@@ -136,7 +136,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(out), dimension(3, npts) :: forces, forcesd
@@ -249,7 +249,7 @@ subroutine getForces_b(forcesd, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(inout) :: forcesd(3, npts)
@@ -362,7 +362,7 @@ subroutine surfaceCellCenterToNode(exch)
     use utils, only: setPointers, EChk
     use sorting, only: famInList
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
     type(familyExchange) :: exch
@@ -474,7 +474,7 @@ subroutine computeWeighting(exch)
     use utils, only: setPointers, EChk
     use sorting, only: famInList
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     type(familyExchange) :: exch
     integer(kind=intType) :: sps
@@ -620,7 +620,7 @@ subroutine computeNodalTractions_d(sps)
     use surfaceFamilies, only: BCFamExchange, familyExchange
     use utils, only: setPointers, setPointers_d, EChk
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: sps
     integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
@@ -899,7 +899,7 @@ subroutine computeNodalTractions_b(sps)
     use communication
     use utils, only: EChk, setPointers, setPointers_d
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
     integer(kind=intType), intent(in) :: sps

@@ -40,6 +40,8 @@ contains
         use actuatorRegionData, only: nActuatorRegions, actuatorRegions
         use wallDistanceData, only: xSurfVec, xSurf
         use actuatorRegion, only: computeActuatorRegionVolume
+#include <petsc/finclude/petscvec.h>
+        use petscvec
 
         implicit none
 
@@ -301,7 +303,7 @@ contains
         use actuatorRegionData, only: nActuatorRegions, actuatorRegionsd
         use actuatorregion_d, only: computeactuatorregionvolume_d
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input Arguments:
@@ -667,7 +669,7 @@ contains
         use section, only: sections, nSections ! used in time-declaration
 
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input variables:

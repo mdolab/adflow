@@ -2,6 +2,7 @@ module wallDistance
 
     use constants, only: intType, realType
     use wallDistanceData
+    use petscvec
     implicit none
     save
 

@@ -2397,7 +2397,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setPointers, EChk, terminate
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input/Output

@@ -3103,7 +3103,7 @@ contains
         use utils, only: setPointers, setBCPointers, EChk
 
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input variables
@@ -3221,7 +3221,7 @@ contains
         use surfaceFamilies, only: familyExchange, BCFamExchange
         use utils, only: setPointers_d, setBCPointers_d, EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
         ! Input variables
         logical, intent(in) :: isInflow
@@ -3338,7 +3338,7 @@ contains
         use surfaceFamilies, only: familyExchange, BCFamExchange
         use utils, only: setPointers_b, setBCPointers_d, EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input variables
@@ -3479,7 +3479,7 @@ contains
         use surfaceFamilies, only: familyExchange, BCFamExchange
         use utils, only: setPointers, setBCPointers, EChk, isWallType
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
         ! Input variables
         real(kind=realType), dimension(:, :) :: vars
@@ -3569,7 +3569,7 @@ contains
         use surfaceFamilies, only: familyExchange, BCFamExchange
         use utils, only: setPointers_d, setBCPointers_d, EChk, isWallType
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input variables
@@ -3663,7 +3663,7 @@ contains
         use surfaceFamilies, only: familyExchange, BCFamExchange
         use utils, only: setPointers_b, setBCPointers_d, EChk, isWallType
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input variables
