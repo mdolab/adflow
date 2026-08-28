@@ -618,7 +618,8 @@ contains
             use genericISNAN, only: myisnan
             implicit none
             real(kind=realType), target, dimension(nState, nState) :: blk
-            real(kind=realType), pointer :: blkPetScPtr(:) => null() 
+            ! Required since PetSC can no longer take blk as a dummy argument
+            real(kind=realType), pointer :: blkPetScPtr(:) => null()
 
             ! local variables
             integer(kind=intType) :: i, j, tmp, iRowSet, iColSet
