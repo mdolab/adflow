@@ -926,7 +926,7 @@ contains
         ! Setup monitor if necessary:
         if (setMonitor) then
             ! PETSC_NULL_CONTEXT doesn't exit...
-            call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
+            call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
                                PETSC_NULL_FUNCTION, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -1199,7 +1199,7 @@ contains
         else
             ! Setup matrix-free dRdwT
             call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
-                                PETSC_DETERMINE, matfreectx, dRdwT, ierr)
+                                PETSC_DETERMINE, matfreectx(1), dRdwT, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the shell operation for doing matrix vector multiplies

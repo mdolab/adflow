@@ -168,12 +168,12 @@ contains
                                PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
+            call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx(1), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Setup a matrix free matrix for drdw
             call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
-                                PETSC_DETERMINE, ctx, dRdwPseudo, ierr)
+                                PETSC_DETERMINE, ctx(1), dRdwPseudo, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the shell operation for doing matrix vector multiplies
@@ -202,7 +202,7 @@ contains
 
             if (useLinResMonitor) then
                 ! This could be wrong. There is no petsc_null_context???
-                call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_FUNCTION, &
+                call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_OBJECT, &
                                    PETSC_NULL_FUNCTION, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
@@ -1831,7 +1831,7 @@ contains
 
             if (useLinResMonitor) then
                 ! This is probably wrong. NO petsc_null_context
-                call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_FUNCTION, &
+                call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_OBJECT, &
                                    PETSC_NULL_FUNCTION, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
