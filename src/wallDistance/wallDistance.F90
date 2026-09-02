@@ -1,7 +1,8 @@
 module wallDistance
 
     use constants, only: intType, realType
-    use wallDistanceData
+    use wallDistanceData, only: xVolume, xSurf, xVolumeVec, xSurfVec, wallScatter, IS1, IS2, &
+                                 wallDistanceDataAllocated, updateLevelWallAssociation
     use petscvec
     implicit none
     save
