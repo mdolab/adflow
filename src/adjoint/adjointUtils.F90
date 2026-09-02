@@ -1871,7 +1871,7 @@ contains
                                         else
                                             ! The offproc values need to be sent to
                                             ! the other processors and summed.
-                                            call VecSetValue(offProcVec, gc, cmplx(1.0_realType, 0.0_realType), ADD_VALUES, ierr)
+                                            call VecSetValue(offProcVec, gc, one, ADD_VALUES, ierr)
                                             call EChk(ierr, __FILE__, __LINE__)
                                         end if
                                     end do
