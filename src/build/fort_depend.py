@@ -142,9 +142,11 @@ def get_depends(fob=[], m2f=[]):
                 if m2f[j.lower()] != i.file_name:
                     tmp.append(m2f[j.lower()])
             except Exception:
-                if j in ["petsc", "mpi", "iso_fortran_env", "cgns"]:
+                if j.lower().startswith("petsc") or j in ["mpi", "iso_fortran_env", "cgns"]:
                     # these dependence will be resolved through the included libraries
                     # there is no need to scare the user with the error message
+                    # (PETSc provides petsc, petscvec, petscksp, petscdmda, petscao, ... as
+                    # pre-built modules, so none of them are defined in the ADflow sources)
                     continue
                 elif j[-2:] == "_b" or j[-2:] == "_d":
                     # these are AD routines
