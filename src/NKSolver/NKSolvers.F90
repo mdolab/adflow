@@ -1169,8 +1169,7 @@ contains
         ! preconditioner for a global Aero-Structural Krylov Method
 
         use constants
-        use ADjointPETSc, only: adjointKSP, KSP_NORM_NONE, PETSC_DEFAULT_REAL, &
-                                psi_like1, psi_like2
+        use ADjointPETSc, only: adjointKSP, psi_like1, psi_like2
         use inputAdjoint, only: applyAdjointPCSubSpaceSize
         use utils, only: EChk
         implicit none

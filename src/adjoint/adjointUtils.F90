@@ -1685,7 +1685,7 @@ contains
 
         ! Call the C-version of the petsc initialize routine
 
-        use ADjointPETSc, only: petsc_comm_world
+        use petscsys, only: PETSC_COMM_WORLD
         use communication, only: adflow_comm_world
         implicit none
 
