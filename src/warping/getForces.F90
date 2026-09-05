@@ -115,7 +115,7 @@ subroutine getForces(forces, npts, sps)
             forces(iDim, ii + 1:ii + size(localPtr)) = localPtr
         end if
 
-        call vecGetArray(zipper%localVal, localPtr, ierr)
+        call vecRestoreArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
     end do dimLoop
 
@@ -228,7 +228,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
             forcesd(iDim, ii + 1:ii + size(localPtr)) = localPtr
         end if
 
-        call vecGetArray(zipper%localVal, localPtr, ierr)
+        call vecRestoreArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
     end do dimLoop
 
@@ -289,7 +289,7 @@ subroutine getForces_b(forcesd, npts, sps)
                 end do
             end if
 
-            call vecGetArray(zipper%localVal, localPtr, ierr)
+            call vecRestoreArray(zipper%localVal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Zero the vector we are scatting into:
@@ -728,7 +728,7 @@ subroutine computeNodalTractions_d(sps)
     localPtrd = -(localPtrd / localPtr**2)
     localPtr = one / localPtr
 
-    call vecGetArray(exch%sumGlobal, localPtr, ierr)
+    call vecRestoreArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     call vecRestoreArray(sumGlobald, localPtrd, ierr)

@@ -1040,7 +1040,10 @@ contains
 
         call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
-        call VecRestoreArray(vecX, dwb_pointer, ierr)
+        call VecRestoreArrayRead(vecX, dwb_pointer, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call VecRestoreArray(VecY, wb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0

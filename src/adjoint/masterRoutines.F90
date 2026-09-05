@@ -900,11 +900,11 @@ contains
             end do domainLoop2
 
             ! Restore the petsc pointers.
-            call VecGetArray(xSurfVec(1, sps), xSurf, ierr)
+            call VecRestoreArray(xSurfVec(1, sps), xSurf, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! And it's derivative
-            call VecGetArray(xSurfVecd(sps), xSurfd, ierr)
+            call VecRestoreArray(xSurfVecd(sps), xSurfd, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Now accumulate the xsurfd accumulation by using the wall scatter
