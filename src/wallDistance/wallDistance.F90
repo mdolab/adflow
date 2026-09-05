@@ -3,7 +3,6 @@ module wallDistance
     use constants, only: intType, realType
     use wallDistanceData, only: xVolume, xSurf, xVolumeVec, xSurfVec, wallScatter, IS1, IS2, &
                                  wallDistanceDataAllocated, updateLevelWallAssociation
-    use petscvec
     implicit none
     save
 
@@ -146,6 +145,7 @@ contains
         use oversetData, only: oversetPresent
         use utils, only: setPointers, EChk, terminate, &
                          deallocateTempMemory, allocateTempMemory
+        use petscvec
         implicit none
         !
         !      Subroutine arguments.
@@ -1683,6 +1683,7 @@ contains
         use surfaceFamilies, only: BCFamGroups
         use utils, only: setPointers, EChk
         use sorting, only: unique
+        use petscvec
         implicit none
 
         ! Input Variables
@@ -2008,6 +2009,7 @@ contains
         use blockPointers
         use inputTimeSpectral
         use utils, only: EChk, setPointers
+        use petscvec
         implicit none
 
         ! Input Parameters
@@ -2076,6 +2078,7 @@ contains
         use utils, onlY: EChk
         use block, only: flowDoms
 
+        use petscvec
         implicit none
 
         ! Input Parameters

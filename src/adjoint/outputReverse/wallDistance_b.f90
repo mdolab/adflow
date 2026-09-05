@@ -6,7 +6,6 @@ module walldistance_b
   use walldistancedata, only : xvolume, xsurf, xsurfd, xvolumevec, &
 & xsurfvec, wallscatter, is1, is2, walldistancedataallocated, &
 & updatelevelwallassociation
-  use petscvec
   implicit none
   save 
 
