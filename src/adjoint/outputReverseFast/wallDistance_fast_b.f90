@@ -3,7 +3,10 @@
 !
 module walldistance_fast_b
   use constants, only : inttype, realtype
-  use walldistancedata
+  use walldistancedata, only : xvolume, xsurf, xvolumevec, xsurfvec, &
+& wallscatter, is1, is2, walldistancedataallocated, &
+& updatelevelwallassociation
+  use petscvec
   implicit none
   save 
 

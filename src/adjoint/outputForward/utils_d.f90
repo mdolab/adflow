@@ -2,6 +2,8 @@
 !  tapenade 3.16 (develop) - 22 aug 2023 15:51
 !
 module utils_d
+! avoid adflow variable name collision since petsc now also has its own tsalpha and pcmat
+  use petscvec
   implicit none
 
 contains
