@@ -6,7 +6,9 @@ module constants
     use precision
 #ifndef USE_TAPENADE
 #include <petsc/finclude/petsc.h>
-    use petsc
+#if PETSC_VERSION_LT(3,23,0)
+#error "ADflow requires PETSc 3.23 or newer"
+#endif
 #endif
     implicit none
     save

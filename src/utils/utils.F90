@@ -4603,6 +4603,9 @@ contains
         use inputPhysics, only: wallDistanceNeeded
         use adjointVars, only: derivVarsAllocated
         use BCPointers_b
+        ! petscvec rather than the full petsc module: petsc also exports TSALPHA and PCMAT,
+        ! which collide with the ADflow variables of the same name.
+        use petscvec
 
         implicit none
 

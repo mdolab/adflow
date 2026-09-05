@@ -4,7 +4,7 @@ module NKSolver
 
     ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     ! PETSc Matrices:
@@ -168,12 +168,12 @@ contains
                                PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
+            call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx(1), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Setup a matrix free matrix for drdw
             call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
-                                PETSC_DETERMINE, ctx, dRdwPseudo, ierr)
+                                PETSC_DETERMINE, ctx(1), dRdwPseudo, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the shell operation for doing matrix vector multiplies
@@ -201,14 +201,9 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (useLinResMonitor) then
-#if PETSC_VERSION_GE(3,8,0)
                 ! This could be wrong. There is no petsc_null_context???
-                call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_FUNCTION, &
-                                   PETSC_NULL_FUNCTION, ierr)
-#else
                 call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_OBJECT, &
                                    PETSC_NULL_FUNCTION, ierr)
-#endif
                 call EChk(ierr, __FILE__, __LINE__)
             end if
 
@@ -261,18 +256,18 @@ contains
         ! Frist run the underlying matrix-free mult
         call matMult(dRdw, vecX, vecY, ierr)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayReadF90(vecX, xPtr, ierr)
+        call VecGetArrayRead(vecX, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         yPtr = yPtr + one / NK_CFL * xPtr
 
-        call VecRestorearrayF90(vecY, yPtr, ierr)
+        call VecRestorearray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestorearrayReadF90(vecX, xPtr, ierr)
+        call VecRestorearrayRead(vecX, xPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine NKMatMult
@@ -531,6 +526,7 @@ contains
         real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
         logical :: flag
         real(kind=alwaysRealType) :: resHist(NK_subspace + 1)
+        PetscCount :: resHistLen
 
         if (firstCall) then
             call setupNKSolver()
@@ -621,7 +617,8 @@ contains
                               real(atol), real(NK_divTol), maxIt, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(NK_KSP, resHist, maxIt + 1, PETSC_TRUE, ierr)
+        resHistLen = maxIt + 1
+        call KSPSetResidualHistory(NK_KSP, resHist, resHistLen, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! set the BaseVector of the matrix-free matrix
@@ -1172,8 +1169,7 @@ contains
         ! preconditioner for a global Aero-Structural Krylov Method
 
         use constants
-        use ADjointPETSc, only: adjointKSP, KSP_NORM_NONE, PETSC_DEFAULT_REAL, &
-                                psi_like1, psi_like2
+        use ADjointPETSc, only: adjointKSP, psi_like1, psi_like2
         use inputAdjoint, only: applyAdjointPCSubSpaceSize
         use utils, only: EChk
         implicit none
@@ -1234,7 +1230,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 1
         do nn = 1, nDom
@@ -1254,7 +1250,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWVec
@@ -1281,7 +1277,7 @@ contains
         flowResLocal = zero
         turbResLocal = zero
 
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 1
 
@@ -1311,7 +1307,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (present(flowRes) .and. present(turbRes) .and. present(totalRes)) then
@@ -1342,7 +1338,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 1
@@ -1370,7 +1366,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setW
@@ -1644,7 +1640,7 @@ module ANKSolver
 
     use constants
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     Mat dRdw, dRdwPre, timeStepMat
@@ -1833,16 +1829,9 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (useLinResMonitor) then
-
-#if PETSC_VERSION_GE(3,8,0)
                 ! This is probably wrong. NO petsc_null_context
-                call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_FUNCTION, &
-                                   PETSC_NULL_FUNCTION, ierr)
-#else
                 call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_OBJECT, &
                                    PETSC_NULL_FUNCTION, ierr)
-
-#endif
                 call EChk(ierr, __FILE__, __LINE__)
             end if
 
@@ -2058,7 +2047,9 @@ contains
         integer(kind=intType) :: ierr
         integer(kind=intType) :: i, j, k, irow, nn, sps, lvl
         integer(kind=intType), dimension(2:10) :: coarseRows
-        real(kind=realType), dimension(nState, nState) :: timeStepBlock
+        real(kind=realType), target, dimension(nState, nState) :: timeStepBlock
+        ! Required since PetSC can no longer take blk as a dummy argument
+        real(kind=realType), pointer :: timeStepBlockPetSCPtr(:) => null()
         logical :: useCoarseMats
 
         if (ANK_precondType == 'mg') then
@@ -2080,12 +2071,13 @@ contains
 
                             ! Compute the block for this cell
                             call computeTimeStepBlock(i, j, k, timeStepBlock)
+                            timeStepBlockPetSCPtr(1:size(timeStepBlock)) => timeStepBlock
 
                             ! Get the global cell index
                             irow = globalCell(i, j, k)
 
                             ! Add the contribution to the PETSc matrix
-                            call MatSetValuesBlocked(timeStepMat, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
+                            call MatSetValuesBlocked(timeStepMat, 1, [irow], 1, [irow], timeStepBlockPetSCPtr, ADD_VALUES, ierr)
                             call EChk(ierr, __FILE__, __LINE__)
 
                             ! Extension for setting coarse grids
@@ -2093,8 +2085,8 @@ contains
                             if (useCoarseMats .and. usePC) then
                                 do lvl = 2, ANK_AMGLevels
                                     coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
-                                    call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
-                                                             timeStepBlock, ADD_VALUES, ierr)
+                                    call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseRows(lvl)], &
+                                                             timeStepBlockPetSCPtr, ADD_VALUES, ierr)
                                     call EChk(ierr, __FILE__, __LINE__)
                                 end do
                             end if
@@ -2349,7 +2341,7 @@ contains
         logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
         real(kind=realType) :: dtinv, rho
         integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
-        real(kind=realType), dimension(:, :), allocatable :: blk
+        real(kind=realType), target, dimension(:, :), allocatable :: blk
 
         ! Assemble the approximate PC (fine level, level 1)
         useAD = ANK_ADPC
@@ -2457,8 +2449,11 @@ contains
             ! for the Jacobians in ANK. It is only used to set diagonal blocks
 
             implicit none
+            ! Required since PetSC can no longer take blk as a dummy argument
+            real(kind=realType), pointer :: blkPetScPtr(:)
+            blkPetScPtr(1:size(blk)) => blk
 
-            call MatSetValuesBlocked(dRdwPreTurb, 1, irow, 1, irow, blk, &
+            call MatSetValuesBlocked(dRdwPreTurb, 1, [irow], 1, [irow], blkPetScPtr, &
                                      ADD_VALUES, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -2508,28 +2503,28 @@ contains
         end if
 
         ! rVec contains the full steady residual vector
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! inVec contains the perturbed state vector
-        call VecGetArrayReadF90(inVec, invec_pointer, ierr)
+        call VecGetArrayRead(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Also read the wVec to access the un-perturbed state vector.
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Multiply the perturbed state by the time step terms and add it to the residual
         call MatMultAdd(timeStepMat, inVec, rVec, rVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(inVec, invec_pointer, ierr)
+        call VecRestoreArrayRead(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2568,11 +2563,11 @@ contains
 
         ! Add the contribution from the time stepping term
 
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! inVec contains the perturbed state vector
-        call VecGetArrayReadF90(inVec, invec_pointer, ierr)
+        call VecGetArrayRead(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Include time step for turbulence
@@ -2600,10 +2595,10 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(inVec, invec_pointer, ierr)
+        call VecRestoreArrayRead(inVec, invec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2663,11 +2658,11 @@ contains
         call setRVecANK(rVec)
 
         ! rVec contains the full steady residual vector
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full state update vector
-        call VecGetArrayReadF90(deltaW, dvec_pointer, ierr)
+        call VecGetArrayRead(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! TODO AY: check if this routine is fine with complex mode...
@@ -2685,10 +2680,10 @@ contains
         call VecDestroy(unsteadyVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(deltaW, dvec_pointer, ierr)
+        call VecRestoreArrayRead(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2743,11 +2738,11 @@ contains
 
         ! Add the contribution from the time stepping term
 
-        call VecGetArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecGetArray(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update to the state
-        call VecGetArrayReadF90(deltaWTurb, dvec_pointer, ierr)
+        call VecGetArrayRead(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Include time step for turbulence
@@ -2774,10 +2769,10 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecRestoreArray(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayReadF90(deltaWTurb, dvec_pointer, ierr)
+        call VecRestoreArrayRead(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! We don't check an error here, so just pass back zero
@@ -2867,7 +2862,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
 
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2887,7 +2882,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWVecANK
@@ -2906,7 +2901,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: rvec_pointer(:)
         real(Kind=realType) :: ovv
-        call VecGetArrayF90(rVec, rvec_pointer, ierr)
+        call VecGetArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2927,7 +2922,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+        call VecRestoreArray(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setRVecANK
@@ -2946,7 +2941,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: rvec_pointer(:)
         real(Kind=realType) :: ovv
-        call VecGetArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecGetArray(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ii = 0
         do nn = 1, nDom
@@ -2967,7 +2962,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(rVecTurb, rvec_pointer, ierr)
+        call VecRestoreArray(rVecTurb, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setRVecANKTurb
@@ -2985,7 +2980,7 @@ contains
         integer(kind=intType), intent(in) :: lStart, lEnd
         integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
         real(kind=realType), pointer :: wvec_pointer(:)
-        call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecGetArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -3005,7 +3000,7 @@ contains
                 end do
             end do
         end do
-        call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArrayRead(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setWANK
@@ -3046,11 +3041,11 @@ contains
         ! operations.
 
         ! wVec contains the state vector
-        call VecGetArrayF90(wVec, wvec_pointer, ierr)
+        call VecGetArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update
-        call VecGetArrayF90(deltaW, dvec_pointer, ierr)
+        call VecGetArray(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! in decoupled, we just have the flow variables
@@ -3182,10 +3177,10 @@ contains
 
         ! Restore the pointers to PETSc vectors
 
-        call VecRestoreArrayF90(wVec, wvec_pointer, ierr)
+        call VecRestoreArray(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(deltaW, dvec_pointer, ierr)
+        call VecRestoreArray(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Make sure that we did not get any NaN's in the process
@@ -3245,11 +3240,11 @@ contains
         ! operations.
 
         ! wVec contains the state vector
-        call VecGetArrayF90(wVecTurb, wvec_pointer, ierr)
+        call VecGetArray(wVecTurb, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! deltaW contains the full update
-        call VecGetArrayF90(deltaWTurb, dvec_pointer, ierr)
+        call VecGetArray(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 1
@@ -3307,10 +3302,10 @@ contains
 
         ! Restore the pointers to PETSc vectors
 
-        call VecRestoreArrayF90(wVecTurb, wvec_pointer, ierr)
+        call VecRestoreArray(wVecTurb, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(deltaWTurb, dvec_pointer, ierr)
+        call VecRestoreArray(deltaWTurb, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Make sure that we did not get any NaN's in the process
@@ -3358,7 +3353,7 @@ contains
         implicit none
 
         ! Working Variables
-        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
+        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, nHist, iter, feval, orderturbsave
         integer(kind=intType) :: i, j, k, n
         real(kind=realType) :: atol, val, v2, factK, gm1
         real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
@@ -3366,6 +3361,8 @@ contains
         real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
         real(kind=alwaysRealType) :: linResMonitorTurb, totalRTurb
         logical :: correctForK, LSFailed
+        KSPConvergedReason reason
+        PetscCount :: resHistLen
 
         ! Calculate the residuals and set rVecTurb before the first iteration
         call blocketteRes(useFlowRes=.False., useStoreWall=.False.)
@@ -3451,7 +3448,8 @@ contains
                                   real(atol), real(ANK_divTol), ank_maxIter, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPSetResidualHistory(ANK_KSPTurb, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+            resHistLen = ank_maxIter + 1
+            call KSPSetResidualHistory(ANK_KSPTurb, resHist, resHistLen, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the BaseVector of the matrix-free matrix:
@@ -3656,13 +3654,15 @@ contains
         logical, intent(in) :: firstCall
 
         ! Working Variables
-        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
+        integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, nHist, iter, feval, orderturbsave
         integer(kind=intType) :: i, j, k
         real(kind=realType) :: atol, val, v2, factK, gm1
         real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
         real(kind=alwaysRealType) :: resHist(ANK_maxIter + 1)
         real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old, rel_pcUpdateTol
         logical :: correctForK, LSFailed
+        KSPConvergedReason reason
+        PetscCount :: resHistLen
 
         ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
         if (firstCall .or. &
@@ -3899,7 +3899,8 @@ contains
                               real(atol), real(ANK_divTol), ank_maxIter, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter + 1, PETSC_TRUE, ierr)
+        resHistLen = ank_maxIter + 1
+        call KSPSetResidualHistory(ANK_KSP, resHist, resHistLen, PETSC_TRUE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the BaseVector of the matrix-free matrix:
