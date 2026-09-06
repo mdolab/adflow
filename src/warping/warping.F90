@@ -424,7 +424,7 @@ contains
                 ! The local Pointer is just the localRandSurface we've set
                 ! above.
                 do j = 1, size(localPtr)
-                    localPtr(i) = randSurface(3 * (j - 1) + iDim)
+                    localPtr(j) = randSurface(3 * (j - 1) + iDim)
                 end do
 
                 ! Restore the pointer
