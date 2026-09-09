@@ -308,7 +308,7 @@ contains
         use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
         use surfaceFamilies, only: BCFamGroups, familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input Parameters
@@ -320,7 +320,7 @@ contains
 
         ! Working parameters
         integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
-        integer(kind=intType) :: ii, jj, indI, indJ, indK, jjInd, iBCGroup
+        integer(kind=intType) :: ii, jj, indI, indJ, indK, jjInd, iBCGroup, nZipperLocal
         type(zipperMesh), pointer :: zipper
         type(familyexchange), pointer :: exch
         logical :: BCGroupNeeded
@@ -418,17 +418,17 @@ contains
             ! scatter.
             dimLoop: do iDim = 1, 3
 
-                call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call vecGetArray(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! The local Pointer is just the localRandSurface we've set
                 ! above.
                 do j = 1, size(localPtr)
-                    localPtr(i) = randSurface(3 * (j - 1) + iDim)
+                    localPtr(j) = randSurface(3 * (j - 1) + iDim)
                 end do
 
                 ! Restore the pointer
-                call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+                call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Now scatter this to the zipper
@@ -441,7 +441,7 @@ contains
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! The values we need are precisely what is in zipper%localVal
-                call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+                call vecGetArray(zipper%localVal, localPtr, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 ! Just copy the received seeds into the random aray
@@ -450,10 +450,18 @@ contains
                     randSurface(3 * ii + 3 * (j - 1) + iDim) = localPtr(j)
                 end do
 
+                ! Record how many zipper nodes are local to this proc before
+                ! handing the pointer back, we need it to advance ii below.
+                nZipperLocal = size(localPtr)
+
+                ! Restore the pointer
+                call vecRestoreArray(zipper%localVal, localPtr, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
             end do dimLoop
 
             ! Increcment the running ii counter.
-            ii = ii + size(localPtr)
+            ii = ii + nZipperLocal
         end do
     end subroutine getSurfacePerturbation
 

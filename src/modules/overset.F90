@@ -6,7 +6,7 @@ module oversetData
     use kdtree2_module, only: kdtree2
 #ifndef USE_TAPENADE
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
 #endif

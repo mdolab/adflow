@@ -44,7 +44,7 @@ contains
         use masterRoutines, only: block_res_state_d
 #endif
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Matrix Variable
@@ -617,7 +617,9 @@ contains
 
             use genericISNAN, only: myisnan
             implicit none
-            real(kind=realType), dimension(nState, nState) :: blk
+            real(kind=realType), target, dimension(nState, nState) :: blk
+            ! Required since PetSC can no longer take blk as a dummy argument
+            real(kind=realType), pointer :: blkPetScPtr(:) => null()
 
             ! local variables
             integer(kind=intType) :: i, j, tmp, iRowSet, iColSet
@@ -646,25 +648,27 @@ contains
                 call EChk(1, __FILE__, __LINE__)
             end if
 #endif
-
+            blkPetScPtr(1:size(blk)) => blk
             if (.not. zeroFlag) then
                 if (nCol == 1) then
                     if (useTranspose) then
                         blk = transpose(blk)
-                        call MatSetValuesBlocked(matrix, 1, cols(1), 1, irow, blk, &
+                        blkPetScPtr(1:size(blk)) => blk
+                        call MatSetValuesBlocked(matrix, 1, [cols(1)], 1, [irow], blkPetScPtr, &
                                                  ADD_VALUES, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
                     else
-                        call MatSetValuesBlocked(matrix, 1, irow, 1, cols(1), blk, &
+                        call MatSetValuesBlocked(matrix, 1, [irow], 1, [cols(1)], blkPetScPtr, &
                                                  ADD_VALUES, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
                     end if
                 else
                     if (useTranspose) then
                         blk = transpose(blk)
+                        blkPetScPtr(1:size(blk)) => blk
                         do m = 1, ncol
                             if (cols(m) >= 0) then
-                                call MatSetValuesBlocked(matrix, 1, cols(m), 1, irow, blk * weights(m), &
+                                call MatSetValuesBlocked(matrix, 1, [cols(m)], 1, [irow], blkPetScPtr * weights(m), &
                                                          ADD_VALUES, ierr)
                                 call EChk(ierr, __FILE__, __LINE__)
                             end if
@@ -672,7 +676,7 @@ contains
                     else
                         do m = 1, ncol
                             if (cols(m) >= 0) then
-                                call MatSetValuesBlocked(matrix, 1, irow, 1, cols(m), blk * weights(m), &
+                                call MatSetValuesBlocked(matrix, 1, [irow], 1, [cols(m)], blkPetScPtr * weights(m), &
                                                          ADD_VALUES, ierr)
                                 call EChk(ierr, __FILE__, __LINE__)
                             end if
@@ -686,11 +690,11 @@ contains
                         do lvl = 2, amgLevels
                             if (useTranspose) then
                                 ! Loop over the coarser levels
-                                call MatSetValuesBlocked(A(lvl), 1, coarseCols(1, lvl), 1, coarseRows(lvl), &
-                                                         blk, ADD_VALUES, ierr)
+                                call MatSetValuesBlocked(A(lvl), 1, [coarseCols(1, lvl)], 1, [coarseRows(lvl)], &
+                                                         blkPetScPtr, ADD_VALUES, ierr)
                             else
-                                call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(1, lvl), &
-                                                         blk, ADD_VALUES, ierr)
+                                call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseCols(1, lvl)], &
+                                                         blkPetScPtr, ADD_VALUES, ierr)
                             end if
                         end do
                     else
@@ -699,11 +703,11 @@ contains
                                 if (coarseCols(m, lvl) >= 0) then
                                     if (useTranspose) then
                                         ! Loop over the coarser levels
-                                        call MatSetValuesBlocked(A(lvl), 1, coarseCols(m, lvl), 1, coarseRows(lvl), &
-                                                                 blk * weights(m), ADD_VALUES, ierr)
+                                        call MatSetValuesBlocked(A(lvl), 1, [coarseCols(m, lvl)], 1, [coarseRows(lvl)], &
+                                                                 blkPetScPtr * weights(m), ADD_VALUES, ierr)
                                     else
-                                        call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(m, lvl), &
-                                                                 blk * weights(m), ADD_VALUES, ierr)
+                                        call MatSetValuesBlocked(A(lvl), 1, [coarseRows(lvl)], 1, [coarseCols(m, lvl)], &
+                                                                 blkPetScPtr * weights(m), ADD_VALUES, ierr)
                                     end if
                                 end if
                             end do
@@ -717,6 +721,7 @@ contains
     subroutine allocDerivativeValues(level)
 
         use constants
+        use petscvec
         use block, only: flowDoms, flowDomsd
         use blockPointers, only: nDom, il, jl, kl, ie, je, ke, ib, jb, kb, BCData, &
                                  nBOcos, nViscBocos
@@ -1302,7 +1307,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         Mat matrix
@@ -1405,7 +1410,7 @@ contains
         use utils, only: ECHk
         use inputADjoint, only: GMRESOrthogType
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Params
@@ -1418,7 +1423,8 @@ contains
 
         ! Working Variables
         PC master_PC, globalPC, subpc
-        KSP master_PC_KSP, subksp
+        KSP master_PC_KSP
+        KSP, pointer :: subksp(:) => null()
         integer(kind=intType) :: nlocal, first, ierr
 
         ! First, KSPSetFromOptions MUST be called
@@ -1526,25 +1532,25 @@ contains
         ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (localPreConIts > 1) then
             ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
-            call KSPSetType(subksp, 'richardson', ierr)
+            call KSPSetType(subksp(1), 'richardson', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+            call KSPSetTolerances(subksp(1), PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
                                   localPreConIts, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! normtype is NONE because we don't want to check error
-            call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+            call kspsetnormtype(subksp(1), KSP_NORM_NONE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         else
             ! Set the subksp object to preonly because we are only doing one iteration
-            call KSPSetType(subksp, 'preonly', ierr)
+            call KSPSetType(subksp(1), 'preonly', ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
         ! Extract the preconditioner for subksp object.
-        call KSPGetPC(subksp, subpc, ierr)
+        call KSPGetPC(subksp(1), subpc, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the subpc type; only ILU is currently supported
@@ -1572,7 +1578,7 @@ contains
                        setupShellPC, destroyShellPC, applyShellPC, &
                        amgFillLevelFine, amgFillLevelCoarse, amgLocalPreConItsFine, amgLocalPreConItsCoarse
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Inputs
@@ -1679,7 +1685,7 @@ contains
 
         ! Call the C-version of the petsc initialize routine
 
-        use ADjointPETSc, only: petsc_comm_world
+        use petscsys, only: PETSC_COMM_WORLD
         use communication, only: adflow_comm_world
         implicit none
 
@@ -1724,7 +1730,7 @@ contains
         use utils, only: setPointers, EChk
         use sorting, only: unique
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Subroutine Arguments
@@ -1865,7 +1871,7 @@ contains
                                         else
                                             ! The offproc values need to be sent to
                                             ! the other processors and summed.
-                                            call VecSetValue(offProcVec, gc, real(1), ADD_VALUES, ierr)
+                                            call VecSetValue(offProcVec, gc, one, ADD_VALUES, ierr)
                                             call EChk(ierr, __FILE__, __LINE__)
                                         end if
                                     end do
@@ -1891,13 +1897,13 @@ contains
 
         if (transposed) then
             ! Pull the local vector out and convert it back to integers.
-            call VecGetArrayF90(offProcVec, tmpPointer, ierr)
+            call VecGetArray(offProcVec, tmpPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
             do i = 1, wSize
                 offProc(i) = int(tmpPointer(i) + half) ! Make sure, say 14.99999 is 15.
             end do
 
-            call VecRestoreArrayF90(offProcVec, tmpPointer, ierr)
+            call VecRestoreArray(offProcVec, tmpPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
 

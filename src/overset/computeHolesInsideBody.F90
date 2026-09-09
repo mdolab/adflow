@@ -14,6 +14,7 @@ subroutine computeHolesInsideBody(level, sps)
     use inputTimeSpectral
     use oversetData
     use inputOverset
+    use petscvec
     use adjointVars, only: totalVolumeNodes => nNodesLocal, totalVolumeCells => nCellsLocal
     implicit none
 
