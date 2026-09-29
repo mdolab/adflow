@@ -242,6 +242,11 @@ eddyVisInfRatio:
     Free stream value of eddy viscosity.
     See `here <https://turbmodels.larc.nasa.gov/spalart.html>`__ for more details.
 
+turbIntensityInf:
+  desc: >
+    Free-stream turbulence intensity, as a fraction.
+    Used by the k-omega models and by the SA-BCM transition model.
+
 useWallFunctions:
   desc: >
     Flag specifying if wall functions are to be used.
@@ -407,6 +412,34 @@ SAct4:
 
 SAcrot:
   desc: SA model constant crot, scaling factor for the rotation correction term.
+
+useSABCM:
+  desc: >
+    Use the SA-BCM algebraic transition model (Mura and Cakmakcioglu, AIAA 2020-2714) with the Spalart-Allmaras model.
+    ft2 is not used with this model.
+    The intermittency is available as the ``intermittency`` volume and isosurface variable.
+    The recommended free-stream boundary condition for the model is ``eddyVisInfRatio`` from 1.4e-10 to 1.1e-9.
+    Transitional cases are stiffer than fully turbulent ones: the recommended solver settings are ``ANKCFL0 = 1``, ``ANKCFLLimit = 1e8``, ``ANKADPC`` and ``NKADPC``, and a late switch to the NK solver (``useNKSolver`` with ``NKSwitchTol = 5e-8``).
+
+SABCMSmooth:
+  desc: >
+    Use the differentiable form of the SA-BCM intermittency, recommended for adjoint-based optimization.
+    If False, the original form is used.
+
+SABCMChi1:
+  desc: SA-BCM model constant chi1, used in Term1.
+
+SABCMChi2:
+  desc: SA-BCM model constant chi2, used in Term2.
+
+SABCMRho:
+  desc: KS aggregation parameter of Term1 in the differentiable form of SA-BCM.
+
+SABCMTanhCenter:
+  desc: Center of the tanh blend of the intermittency in the differentiable form of SA-BCM.
+
+SABCMTanhWidth:
+  desc: Width of the tanh blend of the intermittency in the differentiable form of SA-BCM.
 
 nCycles:
   desc: >
@@ -1410,6 +1443,7 @@ volumeVariables:
       * ``resrhoe`` (total energy residual)
       * ``resturb`` (turbulence residuals)
       * ``blank`` (cell iblank values used for visualization or other post-processing)
+      * ``intermittency`` (SA-BCM intermittency)
 
 forcesAsTractions:
   desc: >
