@@ -53,6 +53,13 @@ contains
     real(kind=realtype) :: vortx, vorty, vortz
     real(kind=realtype) :: vortxd, vortyd, vortzd
     real(kind=realtype) :: omegax, omegay, omegaz
+    real(kind=realtype) :: vortmag, rethetac, revort, rethetav, term1raw&
+&   , term1bcm, term2bcm
+    real(kind=realtype) :: vortmagd, revortd, rethetavd, term1rawd, &
+&   term1bcmd, term2bcmd
+    real(kind=realtype) :: ksarg, ksmax, gammaarg, gammabcm, dterm2bcm, &
+&   dgammabcm
+    real(kind=realtype) :: ksargd, ksmaxd, gammaargd, gammabcmd
     real(kind=realtype) :: strainmag2, strainprod, vortprod
     real(kind=realtype) :: strainmag2d, strainprodd, vortprodd
     real(kind=realtype), parameter :: xminn=1.e-10_realtype
@@ -61,10 +68,14 @@ contains
     intrinsic exp
     intrinsic min
     intrinsic max
+    intrinsic log
+    intrinsic tanh
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
     real(kind=realtype) :: min1
     real(kind=realtype) :: min1d
+    real(kind=realtype) :: max1
+    real(kind=realtype) :: max1d
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd
     real(kind=realtype) :: temp0
@@ -239,6 +250,73 @@ myIntPtr = myIntPtr + 1
         gg6 = gg**6
         termfw = ((one+cw36)/(gg6+cw36))**sixth
         fwsa = gg*termfw
+! sa-bcm transition model (mura and cakmakcioglu, aiaa
+! 2020-2714). the production term is multiplied by the
+! intermittency gammabcm and ft2 is switched off.
+        gammabcm = one
+        if (usesabcm) then
+! vorticity magnitude, independent of turbprod.
+          vortx = two*fact*(wwy-vvz) - two*omegax
+          vorty = two*fact*(uuz-wwx) - two*omegay
+          vortz = two*fact*(vvx-uuy) - two*omegaz
+          vortprod = vortx**2 + vorty**2 + vortz**2
+          vortmag = sqrt(vortprod)
+! critical momentum-thickness reynolds number from the
+! free-stream turbulence intensity (in percent) and its local
+! estimate from the vorticity reynolds number, re_v / 2.193.
+          rethetac = 803.73_realtype*(100.0_realtype*turbintensityinf+&
+&           0.6067_realtype)**(-1.027_realtype)
+          revort = vortmag*w(i, j, k, irho)/rlv(i, j, k)*d2wall(i, j, k)&
+&           **2
+          rethetav = revort/2.193_realtype
+          term1raw = (rethetav-rethetac)/(rethetac*sabcmchi1)
+          term2bcm = fv1*chi/sabcmchi2
+          if (sabcmsmooth) then
+! differentiable reformulation: ks-smoothed
+! max(term1raw, 0) and a tanh intermittency.
+            ksarg = sabcmrho*term1raw
+            if (ksarg .lt. xminn) then
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+              ksmax = xminn
+            else
+              ksmax = ksarg
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+            end if
+            term1bcm = (ksmax+log(exp(ksarg-ksmax)+exp(-ksmax)))/&
+&             sabcmrho
+            gammaarg = (term1bcm+term2bcm-sabcmtanhcenter)/&
+&             sabcmtanhwidth
+            gammabcm = half*(one+tanh(gammaarg))
+            call pushcontrol2b(0)
+          else
+            if (term1raw .lt. zero) then
+              term1bcm = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+            else
+              term1bcm = term1raw
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+            end if
+            if (term2bcm .lt. zero) then
+              max1 = zero
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+            else
+              max1 = term2bcm
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+            end if
+            gammaarg = sqrt(term1bcm) + sqrt(max1)
+            gammabcm = one - exp(-gammaarg)
+            call pushcontrol2b(1)
+          end if
+          ft2 = zero
+        else
+          call pushcontrol2b(2)
+        end if
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
         if (approxsa) then
@@ -246,12 +324,12 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
           term1 = zero
         else
-          term1 = rsacb1*(one-ft2)*ss
+          term1 = gammabcm*rsacb1*(one-ft2)*ss
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
         end if
-        term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
-&         )
+        term2 = dist2inv*(kar2inv*gammabcm*rsacb1*((one-ft2)*fv2+ft2)-&
+&         rsacw1*fwsa)
         temp = w(i, j, k, itu1)
         tempd0 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp)*&
@@ -261,15 +339,97 @@ myIntPtr = myIntPtr + 1
         term2d = temp*tempd0
         tempd0 = kar2inv*rsacb1*dist2inv*term2d
         fwsad = -(rsacw1*dist2inv*term2d)
-        ft2d = (1.0-fv2)*tempd0
-        fv2d = (one-ft2)*tempd0
+        gammabcmd = ((one-ft2)*fv2+ft2)*tempd0
+        tempd = gammabcm*tempd0
+        ft2d = (1.0-fv2)*tempd
+        fv2d = (one-ft2)*tempd
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .ne. 0) then
-          ft2d = ft2d - ss*rsacb1*term1d
-          ssd = ssd + (one-ft2)*rsacb1*term1d
+          ft2d = ft2d - gammabcm*ss*rsacb1*term1d
+          tempd0 = (one-ft2)*rsacb1*term1d
+          gammabcmd = gammabcmd + ss*tempd0
+          ssd = ssd + gammabcm*tempd0
         end if
-        termfwd = gg*fwsad
+        call popcontrol2b(branch)
+        if (branch .eq. 0) then
+          gammaargd = (1.0-tanh(gammaarg)**2)*half*gammabcmd
+          term1bcmd = gammaargd/sabcmtanhwidth
+          term2bcmd = gammaargd/sabcmtanhwidth
+          tempd0 = term1bcmd/((exp(ksarg-ksmax)+exp(-ksmax))*sabcmrho)
+          tempd = exp(ksarg-ksmax)*tempd0
+          ksmaxd = term1bcmd/sabcmrho - exp(-ksmax)*tempd0 - tempd
+          ksargd = tempd
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .ne. 0) ksargd = ksargd + ksmaxd
+          term1rawd = sabcmrho*ksargd
+        else if (branch .eq. 1) then
+          gammaargd = exp(-gammaarg)*gammabcmd
+          if (term1bcm .eq. 0.0_8) then
+            term1bcmd = 0.0_8
+          else
+            term1bcmd = gammaargd/(2.0*sqrt(term1bcm))
+          end if
+          if (max1 .eq. 0.0_8) then
+            max1d = 0.0_8
+          else
+            max1d = gammaargd/(2.0*sqrt(max1))
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            term2bcmd = 0.0_8
+          else
+            term2bcmd = max1d
+          end if
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+          if (branch .eq. 0) then
+            term1rawd = 0.0_8
+          else
+            term1rawd = term1bcmd
+          end if
+        else
+          fv1d = 0.0_8
+          wwxd = 0.0_8
+          chid = 0.0_8
+          wwyd = 0.0_8
+          vvxd = 0.0_8
+          vvzd = 0.0_8
+          uuyd = 0.0_8
+          uuzd = 0.0_8
+          goto 100
+        end if
+        fv1d = chi*term2bcmd/sabcmchi2
+        chid = fv1*term2bcmd/sabcmchi2
+        rethetavd = term1rawd/(rethetac*sabcmchi1)
+        revortd = rethetavd/2.193_realtype
+        temp = vortmag/rlv(i, j, k)
+        tempd0 = d2wall(i, j, k)**2*revortd
+        wd(i, j, k, irho) = wd(i, j, k, irho) + temp*tempd0
+        tempd = w(i, j, k, irho)*tempd0/rlv(i, j, k)
+        vortmagd = tempd
+        rlvd(i, j, k) = rlvd(i, j, k) - temp*tempd
+        if (vortprod .eq. 0.0_8) then
+          vortprodd = 0.0_8
+        else
+          vortprodd = vortmagd/(2.0*sqrt(vortprod))
+        end if
+        vortxd = 2*vortx*vortprodd
+        vortyd = 2*vorty*vortprodd
+        vortzd = 2*vortz*vortprodd
+        tempd0 = two*fact*vortzd
+        vvxd = tempd0
+        uuyd = -tempd0
+        tempd0 = two*fact*vortyd
+        uuzd = tempd0
+        wwxd = -tempd0
+        tempd0 = two*fact*vortxd
+        wwyd = tempd0
+        vvzd = -tempd0
+        ft2d = 0.0_8
+ 100    termfwd = gg*fwsad
         temp0 = (one+cw36)/(cw36+gg6)
         if (temp0 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
 &           (sixth))) then
@@ -314,9 +474,9 @@ branch = myIntStack(myIntPtr)
           chi2d = 0.0_8
         end if
         tempd = -(fv2d/(one+chi*fv1))
-        chid = tempd
+        chid = chid + tempd
         tempd0 = -(chi*tempd/(one+chi*fv1))
-        fv1d = chi*tempd0
+        fv1d = fv1d + chi*tempd0
         tempd = fv1d/(cv13+chi3)
         chi3d = (1.0-chi3/(cv13+chi3))*tempd
         chi2d = chi2d + chi*chi3d
@@ -343,12 +503,12 @@ branch = myIntStack(myIntPtr)
           sxxd = 2*sxx*strainmag2d + tempd
           syyd = 2*syy*strainmag2d + tempd
           szzd = 2*szz*strainmag2d + tempd
-          vvzd = fact*syzd
-          wwyd = fact*syzd
-          uuzd = fact*sxzd
-          wwxd = fact*sxzd
-          uuyd = fact*sxyd
-          vvxd = fact*sxyd
+          vvzd = vvzd + fact*syzd
+          wwyd = wwyd + fact*syzd
+          uuzd = uuzd + fact*sxzd
+          wwxd = wwxd + fact*sxzd
+          uuyd = uuyd + fact*sxyd
+          vvxd = vvxd + fact*sxyd
           wwzd = two*fact*szzd
           vvyd = two*fact*syyd
           uuxd = two*fact*sxxd
@@ -356,6 +516,10 @@ branch = myIntStack(myIntPtr)
           ssd = 0.0_8
         else
           if (branch .eq. 1) then
+            vortx = two*fact*(wwy-vvz) - two*omegax
+            vorty = two*fact*(uuz-wwx) - two*omegay
+            vortz = two*fact*(vvx-uuy) - two*omegaz
+            vortprod = vortx**2 + vorty**2 + vortz**2
             if (vortprod .eq. 0.0_8) then
               vortprodd = 0.0_8
             else
@@ -365,22 +529,15 @@ branch = myIntStack(myIntPtr)
             vortyd = 2*vorty*vortprodd
             vortzd = 2*vortz*vortprodd
             tempd = two*fact*vortzd
-            vvxd = tempd
-            uuyd = -tempd
+            vvxd = vvxd + tempd
+            uuyd = uuyd - tempd
             tempd = two*fact*vortyd
-            uuzd = tempd
-            wwxd = -tempd
+            uuzd = uuzd + tempd
+            wwxd = wwxd - tempd
             tempd = two*fact*vortxd
-            wwyd = tempd
-            vvzd = -tempd
+            wwyd = wwyd + tempd
+            vvzd = vvzd - tempd
             ssd = 0.0_8
-          else
-            wwxd = 0.0_8
-            wwyd = 0.0_8
-            vvxd = 0.0_8
-            vvzd = 0.0_8
-            uuyd = 0.0_8
-            uuzd = 0.0_8
           end if
           wwzd = 0.0_8
           vvyd = 0.0_8
@@ -452,6 +609,10 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
     real(kind=realtype) :: vortx, vorty, vortz
     real(kind=realtype) :: omegax, omegay, omegaz
+    real(kind=realtype) :: vortmag, rethetac, revort, rethetav, term1raw&
+&   , term1bcm, term2bcm
+    real(kind=realtype) :: ksarg, ksmax, gammaarg, gammabcm, dterm2bcm, &
+&   dgammabcm
     real(kind=realtype) :: strainmag2, strainprod, vortprod
     real(kind=realtype), parameter :: xminn=1.e-10_realtype
     intrinsic mod
@@ -459,8 +620,11 @@ branch = myIntStack(myIntPtr)
     intrinsic exp
     intrinsic min
     intrinsic max
+    intrinsic log
+    intrinsic tanh
     real(kind=realtype) :: y1
     real(kind=realtype) :: min1
+    real(kind=realtype) :: max1
 ! set model constants
     cv13 = rsacv1**3
     kar2inv = one/rsak**2
@@ -605,15 +769,66 @@ branch = myIntStack(myIntPtr)
         gg6 = gg**6
         termfw = ((one+cw36)/(gg6+cw36))**sixth
         fwsa = gg*termfw
+! sa-bcm transition model (mura and cakmakcioglu, aiaa
+! 2020-2714). the production term is multiplied by the
+! intermittency gammabcm and ft2 is switched off.
+        gammabcm = one
+        if (usesabcm) then
+! vorticity magnitude, independent of turbprod.
+          vortx = two*fact*(wwy-vvz) - two*omegax
+          vorty = two*fact*(uuz-wwx) - two*omegay
+          vortz = two*fact*(vvx-uuy) - two*omegaz
+          vortprod = vortx**2 + vorty**2 + vortz**2
+          vortmag = sqrt(vortprod)
+! critical momentum-thickness reynolds number from the
+! free-stream turbulence intensity (in percent) and its local
+! estimate from the vorticity reynolds number, re_v / 2.193.
+          rethetac = 803.73_realtype*(100.0_realtype*turbintensityinf+&
+&           0.6067_realtype)**(-1.027_realtype)
+          revort = vortmag*w(i, j, k, irho)/rlv(i, j, k)*d2wall(i, j, k)&
+&           **2
+          rethetav = revort/2.193_realtype
+          term1raw = (rethetav-rethetac)/(rethetac*sabcmchi1)
+          term2bcm = fv1*chi/sabcmchi2
+          if (sabcmsmooth) then
+! differentiable reformulation: ks-smoothed
+! max(term1raw, 0) and a tanh intermittency.
+            ksarg = sabcmrho*term1raw
+            if (ksarg .lt. xminn) then
+              ksmax = xminn
+            else
+              ksmax = ksarg
+            end if
+            term1bcm = (ksmax+log(exp(ksarg-ksmax)+exp(-ksmax)))/&
+&             sabcmrho
+            gammaarg = (term1bcm+term2bcm-sabcmtanhcenter)/&
+&             sabcmtanhwidth
+            gammabcm = half*(one+tanh(gammaarg))
+          else
+            if (term1raw .lt. zero) then
+              term1bcm = zero
+            else
+              term1bcm = term1raw
+            end if
+            if (term2bcm .lt. zero) then
+              max1 = zero
+            else
+              max1 = term2bcm
+            end if
+            gammaarg = sqrt(term1bcm) + sqrt(max1)
+            gammabcm = one - exp(-gammaarg)
+          end if
+          ft2 = zero
+        end if
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
         if (approxsa) then
           term1 = zero
         else
-          term1 = rsacb1*(one-ft2)*ss
+          term1 = gammabcm*rsacb1*(one-ft2)*ss
         end if
-        term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
-&         )
+        term2 = dist2inv*(kar2inv*gammabcm*rsacb1*((one-ft2)*fv2+ft2)-&
+&         rsacw1*fwsa)
         scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, &
 &         k, itu1)
       end do

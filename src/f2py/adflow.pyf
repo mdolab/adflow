@@ -1218,6 +1218,13 @@ python module libadflow
          real(kind=realtype) :: sact3
          real(kind=realtype) :: sact4
          real(kind=realtype) :: sacrot
+         logical :: usesabcm
+         logical :: sabcmsmooth
+         real(kind=realtype) :: sabcmchi1
+         real(kind=realtype) :: sabcmchi2
+         real(kind=realtype) :: sabcmrho
+         real(kind=realtype) :: sabcmtanhcenter
+         real(kind=realtype) :: sabcmtanhwidth
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90

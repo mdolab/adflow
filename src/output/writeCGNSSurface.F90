@@ -2255,6 +2255,7 @@ contains
         use IOModule
         use utils, only: setPointers, terminate
         use flowUtils, only: computePTot
+        use sa, only: saBCMIntermittency
         implicit none
         !
         !      Subroutine arguments.
@@ -2274,6 +2275,7 @@ contains
         real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy, tmp
         real(kind=realType) :: vortx, vorty, vortz, a2, ptotInf, ptot, uova(3), gradP(3), a
         real(kind=realType), dimension(:, :, :), pointer :: fc, fn
+        real(kind=realType), dimension(:, :, :), allocatable :: gammaBCM
 
         do nn = 1, nDom
             call setPointers(nn, 1, sps)
@@ -2817,6 +2819,31 @@ contains
                         end do
                     end do
                 end do
+
+            case (cgnsIntermittency)
+                if (useSABCM) then
+
+                    ! SA-BCM intermittency, recomputed from the state.
+
+                    allocate (gammaBCM(2:il, 2:jl, 2:kl))
+                    call saBCMIntermittency(gammaBCM)
+                    do k = 1, ke
+                        kk = max(2_intType, k); kk = min(kl, kk)
+                        do j = 1, je
+                            jj = max(2_intType, j); jj = min(jl, jj)
+                            do i = 1, ie
+                                ii = max(2_intType, i); ii = min(il, ii)
+                                fc(i, j, k) = gammaBCM(ii, jj, kk)
+                            end do
+                        end do
+                    end do
+                    deallocate (gammaBCM)
+                else
+
+                    ! Fully turbulent model: the intermittency is one.
+
+                    fc(1:ie, 1:je, 1:ke) = one
+                end if
 
             case default
                 call terminate("computeIsoVariable", &
