@@ -218,28 +218,28 @@ contains
 
     ! end subroutine allocateCudaHaloCommPeriodic1st
 
-    pure function cudaCommVarCount(start, end, commPressure, commVarGamma, &
-                                   commLamVis, commEddyVis) result(nVar)
-        !
-        !       GPU counterpart of the nVar-counting half of haloExchange::setCommPointers.
-        !       (The other half -- pointing realCommVars at the arrays to communicate -- has
-        !       no device equivalent; kernels index d_cudaDoms directly instead.) Used to
-        !       mirror the CPU's early-return when there's nothing to exchange.
-        !
-        use constants, only: intType
-        implicit none
+    ! pure function cudaCommVarCount(start, end, commPressure, commVarGamma, &
+    !                                commLamVis, commEddyVis) result(nVar)
+    !     !
+    !     !       GPU counterpart of the nVar-counting half of haloExchange::setCommPointers.
+    !     !       (The other half -- pointing realCommVars at the arrays to communicate -- has
+    !     !       no device equivalent; kernels index d_cudaDoms directly instead.) Used to
+    !     !       mirror the CPU's early-return when there's nothing to exchange.
+    !     !
+    !     use constants, only: intType
+    !     implicit none
 
-        integer(kind=intType), intent(in) :: start, end
-        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
-        integer(kind=intType) :: nVar
+    !     integer(kind=intType), intent(in) :: start, end
+    !     logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
+    !     integer(kind=intType) :: nVar
 
-        nVar = end - start + 1
-        if (commPressure) nVar = nVar + 1
-        if (commVarGamma) nVar = nVar + 1
-        if (commLamVis) nVar = nVar + 1
-        if (commEddyVis) nVar = nVar + 1
+    !     nVar = end - start + 1
+    !     if (commPressure) nVar = nVar + 1
+    !     if (commVarGamma) nVar = nVar + 1
+    !     if (commLamVis) nVar = nVar + 1
+    !     if (commEddyVis) nVar = nVar + 1
 
-    end function cudaCommVarCount
+    ! end function cudaCommVarCount
 
     subroutine whalo1(level, start, end, commPressure, commGamma, &
                       commViscous)
@@ -352,12 +352,16 @@ contains
             do dom = 1, nDom
                 call setPointers(1, 1, 1)
                 ! call computeEtotBlock(dom, 1, 2, bil, 2, bjl, 2, bkl, correctForK)
-                block_size = dim3(8, 8, 4)
-                grid_size = dim3(ceiling(real(bil - 2 + 1) / block_size%x), &
-                                ceiling(real(bjl - 2 + 1) / block_size%y), &
-                                ceiling(real(bkl - 2 + 1) / block_size%z))
+                ! block_size = dim3(8, 8, 4)
+                ! grid_size = dim3(ceiling(real(bil - 2 + 1) / block_size%x), &
+                !                 ceiling(real(bjl - 2 + 1) / block_size%y), &
+                !                 ceiling(real(bkl - 2 + 1) / block_size%z))
+                block_size = dim3(8, 8, 8)
+                grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
+                                ceiling(real(bjl - 1) / block_size%y), &
+                                ceiling(real(bkl - 1) / block_size%z))
                 call computeEtotBlock<<<grid_size, block_size>>>(2, bil, 2, bjl, 2, bkl, correctForK)
-                istat = cudaDeviceSynchronize()
+                ! istat = cudaDeviceSynchronize()
             end do
         end if
 
@@ -429,9 +433,9 @@ contains
             call allocateCudaHaloComm1st
         end if
 
-        nVar = cudaCommVarCount(start, end, commPressure, commVarGamma, commLamVis, commEddyVis)
-        if (nVar == 0) return
-        if (ncopy1st == 0) return
+        ! nVar = cudaCommVarCount(start, end, commPressure, commVarGamma, commLamVis, commEddyVis)
+        ! if (nVar == 0) return
+        if ((.not. secondHalo ).and. (ncopy1st == 0)) return
         if (secondHalo .and. (ncopy2nd == 0)) return
 
         block_size = dim3(256, 1, 1)
@@ -591,14 +595,14 @@ contains
             ! Indices are stored 0-based on the CPU side (see internalCommType) -- offset by
             ! +1 here at read time, same as the CPU's `... indices(j, 1) + 1` convention.
             d1 = donorBlock1st(ii)
-            i1 = donorIndices1st(ii, 1) + 1
-            j1 = donorIndices1st(ii, 2) + 1
-            k1 = donorIndices1st(ii, 3) + 1
+            i1 = donorIndices1st(ii, 1)
+            j1 = donorIndices1st(ii, 2)
+            k1 = donorIndices1st(ii, 3)
 
             d2 = haloBlock1st(ii)
-            i2 = haloIndices1st(ii, 1) + 1
-            j2 = haloIndices1st(ii, 2) + 1
-            k2 = haloIndices1st(ii, 3) + 1
+            i2 = haloIndices1st(ii, 1)
+            j2 = haloIndices1st(ii, 2)
+            k2 = haloIndices1st(ii, 3)
 
             do kk=start,end
                 tempReal = d_cudaDoms(d1, sps)%w(i1, j1, k1, kk)
@@ -660,14 +664,14 @@ contains
 
         if (ii <= nCopy) then
             d1 = donorBlock2nd(ii)
-            i1 = donorIndices2nd(ii, 1) + 1
-            j1 = donorIndices2nd(ii, 2) + 1
-            k1 = donorIndices2nd(ii, 3) + 1
+            i1 = donorIndices2nd(ii, 1)
+            j1 = donorIndices2nd(ii, 2)
+            k1 = donorIndices2nd(ii, 3)
 
             d2 = haloBlock2nd(ii)
-            i2 = haloIndices2nd(ii, 1) + 1
-            j2 = haloIndices2nd(ii, 2) + 1
-            k2 = haloIndices2nd(ii, 3) + 1
+            i2 = haloIndices2nd(ii, 1)
+            j2 = haloIndices2nd(ii, 2)
+            k2 = haloIndices2nd(ii, 3)
             
             do kk=start,end
                 tempReal = d_cudaDoms(d1, sps)%w(i1, j1, k1, kk)

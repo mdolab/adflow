@@ -225,7 +225,7 @@ contains
 
 
         call rkStoreZerothStage<<<grid_size, block_size>>>()
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
 
         ! Loop over all but the last Runge Kutta stages.
         do rkStage = 1, (nRKStages - 1)
@@ -259,7 +259,7 @@ contains
         use inputDiscretization, only: lowSpeedPreconditioner
         use inputPhysics, only: equationMode
         use iteration, only: currentLevel, groundLevel, exchangePressureEarly
-        use blockPointers, only: bil => il, bjl => jl, bkl => kl
+        use blockPointers, only: bil => il, bjl => jl, bkl => kl, bw=>w
         use utils, only: setPointers, terminate
         use cudaBCRoutines, only: applyAllBC
         use cudaHaloExchange, only: whalo1, whalo2
@@ -333,7 +333,7 @@ contains
 
         ! Scale the residual updates.
         call rkStageUpdateDw<<<grid_size, block_size>>>(dtScale)
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
 
         ! Possibility to smooth the updates.
         if (smoothResidual) then
@@ -342,15 +342,15 @@ contains
 
         ! Compute the new state vector.
         call rkStageUpdateState<<<grid_size, block_size>>>(correctForK)
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
 
         ! Total energy + laminar / eddy viscosity in the owned cells.
         call computeEtotBlock<<<grid_size, block_size>>>(2_intType, bil, 2_intType, bjl, 2_intType, bkl, correctForK)
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
         call computeLamViscosity<<<grid_size, block_size>>>(.false.,correctForK)
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
         call computeEddyViscosity<<<grid_size, block_size>>>(.false.)
-        istat = cudaDeviceSynchronize()
+        ! istat = cudaDeviceSynchronize()
 
         ! Exchange the pressure early if required (fine grid only, first halo).
         if (exchangePressureEarly .and. currentLevel <= groundLevel) &

@@ -121,29 +121,34 @@ subroutine debugCompareCudaData
     call banner('GRID COORDINATES (x)')
     allocate (g_x(0:bie, 0:bje, 0:bke, 3))
     g_x = h_cudaDoms(dom, sps)%x
-    call reportR4('x', g_x, bx)
+    call reportR4('x', g_x, bx, [0,0,0,1])
     deallocate (g_x)
 
     call banner('FLOW STATE (w, p, gamma, shock sensor scratch)')
     allocate (g_w(0:bib, 0:bjb, 0:bkb, 1:nw))
     g_w = h_cudaDoms(dom, sps)%w
-    call reportR4('w', g_w, bw)
+    call reportR4('w', g_w, bw, [0,0,0,1])
+    deallocate (g_w)
+
+    allocate (g_w(2:bil, 2:bjl, 2:bkl, 1:nw))
+    g_w = h_cudaDoms(dom, sps)%w(2:bil, 2:bjl, 2:bkl, 1:nw)
+    call reportR4('w (only owned cells)', g_w, bw(2:bil, 2:bjl, 2:bkl, 1:nw), [2,2,2,1])
     deallocate (g_w)
 
     allocate (g_p(0:bib, 0:bjb, 0:bkb))
     g_p = h_cudaDoms(dom, sps)%p
-    call reportR3('p', g_p, bp)
+    call reportR3('p', g_p, bp, [0,0,0])
     deallocate (g_p)
 
     allocate (g_gamma(0:bib, 0:bjb, 0:bkb))
     g_gamma = h_cudaDoms(dom, sps)%gamma
-    call reportR3('gamma', g_gamma, bgamma)
+    call reportR3('gamma', g_gamma, bgamma, [0,0,0])
     deallocate (g_gamma)
 
     allocate (g_ss(0:bib, 0:bjb, 0:bkb))
     g_ss = h_cudaDoms(dom, sps)%ss
     ! NOTE: The real shock sensor used in the CPU code is not stored. we have to use the reference one to check
-    call reportR3('ss (shockSensor)', g_ss, bshockSensor)
+    call reportR3('ss (shockSensor)', g_ss, bshockSensor, [0,0,0])
     deallocate (g_ss)
 
     call banner('CELL VOLUMES')
@@ -154,23 +159,23 @@ subroutine debugCompareCudaData
 
     allocate (g_volRef(2:bil, 2:bjl, 2:bkl))
     g_volRef = h_cudaDoms(dom, sps)%volRef
-    call reportR3('volRef', g_volRef, bvolRef(2:bil, 2:bjl, 2:bkl))
+    call reportR3('volRef', g_volRef, bvolRef(2:bil, 2:bjl, 2:bkl), [2,2,2])
     deallocate (g_volRef)
 
     call banner('SPEED OF SOUND SQUARED / VISCOSITY')
     allocate (g_aa(1:bie, 1:bje, 1:bke))
     g_aa = h_cudaDoms(dom, sps)%aa
-    call reportR3('aa', g_aa, baa(1:bie, 1:bje, 1:bke))
+    call reportR3('aa', g_aa, baa(1:bie, 1:bje, 1:bke), [1,1,1])
     deallocate (g_aa)
 
     allocate (g_rlv(0:bib, 0:bjb, 0:bkb))
     g_rlv = h_cudaDoms(dom, sps)%rlv
-    call reportR3('rlv', g_rlv, brlv)
+    call reportR3('rlv', g_rlv, brlv, [0,0,0])
     deallocate (g_rlv)
 
     allocate (g_rev(0:bib, 0:bjb, 0:bkb))
     g_rev = h_cudaDoms(dom, sps)%rev
-    call reportR3('rev', g_rev, brev)
+    call reportR3('rev', g_rev, brev, [0,0,0])
     deallocate (g_rev)
 
     call banner('SPECTRAL RADII / TIME STEP')
@@ -178,9 +183,9 @@ subroutine debugCompareCudaData
     g_radI = h_cudaDoms(dom, sps)%radI
     g_radJ = h_cudaDoms(dom, sps)%radJ
     g_radK = h_cudaDoms(dom, sps)%radK
-    call reportR3('radI', g_radI, bradi)
-    call reportR3('radJ', g_radJ, bradj)
-    call reportR3('radK', g_radK, bradk)
+    call reportR3('radI', g_radI, bradi, [1,1,1])
+    call reportR3('radJ', g_radJ, bradj, [1,1,1])
+    call reportR3('radK', g_radK, bradk, [1,1,1])
     deallocate (g_radI, g_radJ, g_radK)
 
     allocate (g_dtl(1:bie, 1:bje, 1:bke))
@@ -191,12 +196,12 @@ subroutine debugCompareCudaData
     call banner('FLOW STATE (RK 0th Stage)')
     allocate (g_wn(0:bib, 0:bjb, 0:bkb, 1:nw))
     g_wn = h_cudaDoms(dom, sps)%wn
-    call reportR4('wn', g_wn, bwn)
+    call reportR4('wn', g_wn, bwn, [0,0,0,1])
     deallocate (g_wn)
 
     allocate (g_pn(0:bib, 0:bjb, 0:bkb))
     g_pn = h_cudaDoms(dom, sps)%pn
-    call reportR3('pn', g_pn, bpn)
+    call reportR3('pn', g_pn, bpn, [0,0,0])
     deallocate (g_pn)
 
     call banner('FACE PROJECTED AREAS (sI, sJ, sK)')
@@ -204,9 +209,9 @@ subroutine debugCompareCudaData
     g_sI = h_cudaDoms(dom, sps)%sI
     g_sJ = h_cudaDoms(dom, sps)%sJ
     g_sK = h_cudaDoms(dom, sps)%sK
-    call reportR4('sI', g_sI, bsI)
-    call reportR4('sJ', g_sJ, bsJ)
-    call reportR4('sK', g_sK, bsK)
+    call reportR4('sI', g_sI, bsI, [0,1,1,1])
+    call reportR4('sJ', g_sJ, bsJ, [1,0,1,1])
+    call reportR4('sK', g_sK, bsK, [1,1,0,1])
     deallocate (g_sI, g_sJ, g_sK)
 
     call banner('FACE VELOCITIES (sFaceI, sFaceJ, sFaceK)')
@@ -214,9 +219,9 @@ subroutine debugCompareCudaData
     g_sFaceI = h_cudaDoms(dom, sps)%sFaceI
     g_sFaceJ = h_cudaDoms(dom, sps)%sFaceJ
     g_sFaceK = h_cudaDoms(dom, sps)%sFaceK
-    call reportR3('sFaceI', g_sFaceI, bsFaceI)
-    call reportR3('sFaceJ', g_sFaceJ, bsFaceJ)
-    call reportR3('sFaceK', g_sFaceK, bsFaceK)
+    call reportR3('sFaceI', g_sFaceI, bsFaceI, [0,1,1])
+    call reportR3('sFaceJ', g_sFaceJ, bsFaceJ, [1,0,1])
+    call reportR3('sFaceK', g_sFaceK, bsFaceK, [1,1,0])
     deallocate (g_sFaceI, g_sFaceJ, g_sFaceK)
 
     call banner('FACE POROSITIES (porI, porJ, porK)')
@@ -224,21 +229,21 @@ subroutine debugCompareCudaData
     g_porI = int(h_cudaDoms(dom, sps)%porI, kind=porType)
     g_porJ = int(h_cudaDoms(dom, sps)%porJ, kind=porType)
     g_porK = int(h_cudaDoms(dom, sps)%porK, kind=porType)
-    call reportPor('porI', g_porI, bPorI)
-    call reportPor('porJ', g_porJ, bPorJ)
-    call reportPor('porK', g_porK, bPorK)
+    call reportPor('porI', g_porI, bPorI, [1,2,2])
+    call reportPor('porJ', g_porJ, bPorJ, [2,1,2])
+    call reportPor('porK', g_porK, bPorK, [2,2,1])
     deallocate (g_porI, g_porJ, g_porK)
 
     call banner('CELL BLANKING / WALL DISTANCE')
     allocate (g_iblank(2:bil, 2:bjl, 2:bkl))
     g_iblank = h_cudaDoms(dom, sps)%iblank
-    call reportI3('iblank', g_iblank, biblank(2:bil, 2:bjl, 2:bkl))
+    call reportI3('iblank', g_iblank, biblank(2:bil, 2:bjl, 2:bkl), [2,2,2])
     deallocate (g_iblank)
 
     if (allocated(h_cudaDoms(dom, sps)%d2wall)) then
         allocate (g_d2wall(2:bil, 2:bjl, 2:bkl))
         g_d2wall = h_cudaDoms(dom, sps)%d2wall
-        call reportR3('d2wall', g_d2wall, bd2wall)
+        call reportR3('d2wall', g_d2wall, bd2wall, [2,2,2])
         deallocate (g_d2wall)
     else
         call reportSkip('d2wall', 'not allocated on this run (RANS only)')
@@ -284,12 +289,12 @@ subroutine debugCompareCudaData
     call banner('RESIDUALS (dw, fw) -- interior cells only, 2:il,2:jl,2:kl')
     allocate (g_dw(1:bie, 1:bje, 1:bke, 1:nw))
     g_dw = h_cudaDoms(dom, sps)%dw
-    call reportR4('dw', g_dw(2:bil, 2:bjl, 2:bkl, 1:nw), bdw(2:bil, 2:bjl, 2:bkl, 1:nw))
+    call reportR4('dw', g_dw(2:bil, 2:bjl, 2:bkl, 1:nw), bdw(2:bil, 2:bjl, 2:bkl, 1:nw),[2,2,2,1])
     deallocate (g_dw)
 
     allocate (g_fw(1:bie, 1:bje, 1:bke, 1:nwf))
     g_fw = h_cudaDoms(dom, sps)%fw
-    call reportR4('fw', g_fw(2:bil, 2:bjl, 2:bkl, 1:nwf), bfw(2:bil, 2:bjl, 2:bkl, 1:nwf))
+    call reportR4('fw', g_fw(2:bil, 2:bjl, 2:bkl, 1:nwf), bfw(2:bil, 2:bjl, 2:bkl, 1:nwf),[2,2,2,1])
     deallocate (g_fw)
 
     call banner('BC METADATA')
@@ -309,21 +314,24 @@ subroutine debugCompareCudaData
             allocate (g_rface(lbound(bBCData(mm)%rface, 1):ubound(bBCData(mm)%rface, 1), &
                                 lbound(bBCData(mm)%rface, 2):ubound(bBCData(mm)%rface, 2)))
             g_rface = h_BCData(mm)%rface
-            call reportR2('  rface', g_rface, bBCData(mm)%rface)
+            call reportR2('  rface', g_rface, bBCData(mm)%rface,[lbound(bBCData(mm)%rface,1),&
+                            lbound(bBCData(mm)%rface, 2)])
             deallocate (g_rface)
 
             allocate (g_norm(lbound(bBCData(mm)%norm, 1):ubound(bBCData(mm)%norm, 1), &
                                 lbound(bBCData(mm)%norm, 2):ubound(bBCData(mm)%norm, 2), &
                                 lbound(bBCData(mm)%norm, 3):ubound(bBCData(mm)%norm, 3)))
             g_norm = h_BCData(mm)%norm
-            call reportR3('  norm', g_norm, bBCData(mm)%norm)
+            call reportR3('  norm', g_norm, bBCData(mm)%norm,[lbound(bBCData(mm)%norm,1), &
+                            lbound(bBCData(mm)%norm, 2),lbound(bBCData(mm)%norm, 3)])
             deallocate (g_norm)
 
             allocate (g_rfaceALE(lbound(bBCData(mm)%rFaceALE, 1):ubound(bBCData(mm)%rFaceALE, 1), &
                                     lbound(bBCData(mm)%rFaceALE, 2):ubound(bBCData(mm)%rFaceALE, 2), &
                                     lbound(bBCData(mm)%rFaceALE, 3):ubound(bBCData(mm)%rFaceALE, 3)))
             g_rfaceALE = h_BCData(mm)%rfaceALE
-            call reportR3('  rfaceALE', g_rfaceALE, bBCData(mm)%rFaceALE)
+            call reportR3('  rfaceALE', g_rfaceALE, bBCData(mm)%rFaceALE,[lbound(bBCData(mm)%rFaceALE,1),&
+                            lbound(bBCData(mm)%rFaceALE, 2),lbound(bBCData(mm)%rFaceALE, 3)])
             deallocate (g_rfaceALE)
 
         case (symm)
@@ -334,7 +342,8 @@ subroutine debugCompareCudaData
                                 lbound(bBCData(mm)%norm, 2):ubound(bBCData(mm)%norm, 2), &
                                 lbound(bBCData(mm)%norm, 3):ubound(bBCData(mm)%norm, 3)))
             g_norm = h_BCData(mm)%norm
-            call reportR3('  norm', g_norm, bBCData(mm)%norm)
+            call reportR3('  norm', g_norm, bBCData(mm)%norm,[lbound(bBCData(mm)%norm,1),lbound(bBCData(mm)%norm, 2),&
+                            lbound(bBCData(mm)%norm, 3)])
             deallocate (g_norm)
 
         case (NSWallAdiabatic)
@@ -345,7 +354,8 @@ subroutine debugCompareCudaData
                                 lbound(bBCData(mm)%uslip, 2):ubound(bBCData(mm)%uslip, 2), &
                                 lbound(bBCData(mm)%uslip, 3):ubound(bBCData(mm)%uslip, 3)))
             g_norm = h_BCData(mm)%uslip
-            call reportR3('  uslip', g_norm, bBCData(mm)%uslip)
+            call reportR3('  uslip', g_norm, bBCData(mm)%uslip,[lbound(bBCData(mm)%uslip,1),lbound(bBCData(mm)%uslip, 2),&
+                            lbound(bBCData(mm)%uslip, 3)])
             deallocate (g_norm)
         case (EulerWall)
                         print '(2X,"boco ",I0,": eulerwall, icBeg:icEnd=",I0,":",I0,", jcBeg:jcEnd=",I0,":",I0)', &
@@ -354,21 +364,24 @@ subroutine debugCompareCudaData
             allocate (g_rface(lbound(bBCData(mm)%rface, 1):ubound(bBCData(mm)%rface, 1), &
                                 lbound(bBCData(mm)%rface, 2):ubound(bBCData(mm)%rface, 2)))
             g_rface = h_BCData(mm)%rface
-            call reportR2('  rface', g_rface, bBCData(mm)%rface)
+            call reportR2('  rface', g_rface, bBCData(mm)%rface,[lbound(bBCData(mm)%rface,1),&
+                            lbound(bBCData(mm)%rface, 2)])
             deallocate (g_rface)
 
             allocate (g_rfaceALE(lbound(bBCData(mm)%rFaceALE, 1):ubound(bBCData(mm)%rFaceALE, 1), &
                                     lbound(bBCData(mm)%rFaceALE, 2):ubound(bBCData(mm)%rFaceALE, 2), &
                                     lbound(bBCData(mm)%rFaceALE, 3):ubound(bBCData(mm)%rFaceALE, 3)))
             g_rfaceALE = h_BCData(mm)%rfaceALE
-            call reportR3('  rfaceALE', g_rfaceALE, bBCData(mm)%rFaceALE)
+            call reportR3('  rfaceALE', g_rfaceALE, bBCData(mm)%rFaceALE,[lbound(bBCData(mm)%rFaceALE,1),&
+                            lbound(bBCData(mm)%rFaceALE, 2),lbound(bBCData(mm)%rFaceALE, 3)])
             deallocate (g_rfaceALE)
 
             allocate (g_norm(lbound(bBCData(mm)%norm, 1):ubound(bBCData(mm)%norm, 1), &
                                 lbound(bBCData(mm)%norm, 2):ubound(bBCData(mm)%norm, 2), &
                                 lbound(bBCData(mm)%norm, 3):ubound(bBCData(mm)%norm, 3)))
             g_norm = h_BCData(mm)%norm
-            call reportR3('  norm', g_norm, bBCData(mm)%norm)
+            call reportR3('  norm', g_norm, bBCData(mm)%norm,[lbound(bBCData(mm)%norm,1),&
+                            lbound(bBCData(mm)%norm, 2),lbound(bBCData(mm)%norm, 3)])
             deallocate (g_norm)
 
             allocate (g_normALE(lbound(bBCData(mm)%normALE, 1):ubound(bBCData(mm)%normALE, 1), &
@@ -376,7 +389,8 @@ subroutine debugCompareCudaData
                                     lbound(bBCData(mm)%normALE, 3):ubound(bBCData(mm)%normALE, 3), &
                                     lbound(bBCData(mm)%normALE, 4):ubound(bBCData(mm)%normALE, 4)))
             g_normALE = h_BCData(mm)%normALE
-            call reportR4('  normALE', g_normALE, bBCData(mm)%normALE)
+            call reportR4('  normALE', g_normALE, bBCData(mm)%normALE,[lbound(bBCData(mm)%normALE,1),&
+                lbound(bBCData(mm)%normALE, 2),lbound(bBCData(mm)%normALE, 3),lbound(bBCData(mm)%normALE, 4)])
             deallocate (g_normALE)
 
 
@@ -403,11 +417,12 @@ contains
         write (s, '(I0)') n
     end function itoa
 
-    subroutine reportR2(name, g, c)
+    subroutine reportR2(name, g, c, lb)
         character(len=*), intent(in) :: name
         real(kind=realType), dimension(:, :), intent(in) :: g, c
         real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff
         integer(kind=intType) :: loc(2)
+        integer(kind=intType), optional :: lb(2)
 
         if (any(shape(g) /= shape(c))) then
             print '(2X,A,T26,"SHAPE MISMATCH: gpu=",2(I0,1X)," cpu=",2(I0,1X))', trim(name), shape(g), shape(c)
@@ -419,17 +434,21 @@ contains
         maxCPU = maxval(abs(c))
         relDiff = maxDiff / max(maxCPU, 1.0e-30_realType)
         loc = maxloc(abs(g - c))
+        if (present(lb)) then 
+            loc = loc + lb - 1
+        end if
 
         print '(2X,A,T26,"maxDiff=",ES13.6,2X,"sumDiff=",ES13.6,2X,"max|cpu|=",ES13.6,&
             &2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,")")', &
             trim(name), maxDiff, sumDiff, maxCPU, relDiff, loc(1), loc(2)
     end subroutine reportR2
 
-    subroutine reportR3(name, g, c)
+    subroutine reportR3(name, g, c, lb)
         character(len=*), intent(in) :: name
         real(kind=realType), dimension(:, :, :), intent(in) :: g, c
         real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff
         integer(kind=intType) :: loc(3)
+        integer(kind=intType), optional :: lb(3)
 
         if (any(shape(g) /= shape(c))) then
             print '(2X,A,T26,"SHAPE MISMATCH: gpu=",3(I0,1X)," cpu=",3(I0,1X))', trim(name), shape(g), shape(c)
@@ -441,17 +460,21 @@ contains
         maxCPU = maxval(abs(c))
         relDiff = maxDiff / max(maxCPU, 1.0e-30_realType)
         loc = maxloc(abs(g - c))
+        if (present(lb)) then 
+            loc = loc + lb - 1
+        end if
 
         print '(2X,A,T26,"maxDiff=",ES13.6,2X,"sumDiff=",ES13.6,2X,"max|cpu|=",ES13.6,&
             &2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,",",I0,")")', &
             trim(name), maxDiff, sumDiff, maxCPU, relDiff, loc(1), loc(2), loc(3)
     end subroutine reportR3
 
-    subroutine reportR4(name, g, c)
+    subroutine reportR4(name, g, c, lb)
         character(len=*), intent(in) :: name
         real(kind=realType), dimension(:, :, :, :), intent(in) :: g, c
         real(kind=realType) :: maxDiff, sumDiff, maxCPU, relDiff, maxGPU
         integer(kind=intType) :: loc(4)
+        integer(kind=intType), optional :: lb(4)
 
         if (any(shape(g) /= shape(c))) then
             print '(2X,A,T26,"SHAPE MISMATCH: gpu=",4(I0,1X)," cpu=",4(I0,1X))', trim(name), shape(g), shape(c)
@@ -464,16 +487,20 @@ contains
         maxGPU = maxval(abs(g))
         relDiff = maxDiff / max(maxCPU, 1.0e-30_realType)
         loc = maxloc(abs(g - c))
+        if (present(lb)) then 
+            loc = loc + lb - 1
+        end if
 
         print '(2X,A,T26,"maxDiff=",ES13.6,2X,"sumDiff=",ES13.6,2X,"max|cpu|=",ES13.6,&
             &2X,"max|gpu|=",ES13.6,2X,"relDiff=",ES13.6,2X,"loc=(",I0,",",I0,",",I0,",",I0,")")', &
             trim(name), maxDiff, sumDiff, maxCPU, maxGPU, relDiff, loc(1), loc(2), loc(3), loc(4)
     end subroutine reportR4
 
-    subroutine reportI3(name, g, c)
+    subroutine reportI3(name, g, c, lb)
         character(len=*), intent(in) :: name
         integer(kind=intType), dimension(:, :, :), intent(in) :: g, c
         integer(kind=intType) :: maxDiff, sumDiff, loc(3)
+        integer(kind=intType), optional  :: lb(3)
 
         if (any(shape(g) /= shape(c))) then
             print '(2X,A,T26,"SHAPE MISMATCH: gpu=",3(I0,1X)," cpu=",3(I0,1X))', trim(name), shape(g), shape(c)
@@ -483,16 +510,20 @@ contains
         maxDiff = maxval(abs(g - c))
         sumDiff = sum(abs(g - c))
         loc = maxloc(abs(g - c))
+        if (present(lb)) then
+            loc = loc + lb - 1
+        end if
 
         print '(2X,A,T26,"maxDiff=",I8,2X,"sumDiff=",I10,2X,"loc=(",I0,",",I0,",",I0,")")', &
             trim(name), maxDiff, sumDiff, loc(1), loc(2), loc(3)
     end subroutine reportI3
 
 
-    subroutine reportPor(name, g, c)
+    subroutine reportPor(name, g, c, lb)
         character(len=*), intent(in) :: name
         integer(kind=porType), dimension(:, :, :), intent(in) :: g, c
         integer(kind=intType) :: maxDiff, sumDiff, loc(3)
+        integer(kind=intType), optional :: lb(3)
 
         if (any(shape(g) /= shape(c))) then
             print '(2X,A,T26,"SHAPE MISMATCH: gpu=",3(I0,1X)," cpu=",3(I0,1X))', trim(name), shape(g), shape(c)
@@ -502,6 +533,9 @@ contains
         maxDiff = maxval(abs(g - c))
         sumDiff = sum(abs(g - c))
         loc = maxloc(abs(g - c))
+        if (present(lb)) then
+            loc = loc + lb - 1
+        end if
 
         print '(2X,A,T26,"maxDiff=",I8,2X,"sumDiff=",I10,2X,"loc=(",I0,",",I0,",",I0,")")', &
             trim(name), maxDiff, sumDiff, loc(1), loc(2), loc(3)

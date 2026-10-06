@@ -11,6 +11,7 @@ module cudaAPI
         use cudaBCRoutines, only: applyAllBC
         use cudaPreprocess, only: cudaPreprocessing
         use BCRoutines, only: applyAllBC_block
+        use cudaBCDataMod, only: copyCudaBCDataMod
 
         implicit none
 
@@ -29,6 +30,7 @@ module cudaAPI
         call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
         call copyCudaBlockToDevice         ! block field values host->device
         call copyCudaBCDataToDevice         ! bc field values host->device
+        call copyCudaBCDataMod             ! copy prescribed BC data
 
         ! call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
 

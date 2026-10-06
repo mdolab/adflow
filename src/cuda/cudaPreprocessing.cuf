@@ -598,6 +598,13 @@ module cudaPreprocess
 
         end if
 
+
+        !
+        ! Setup the ADI descriptors 
+        !
+
+        call setupDeviceADIDescriptors
+
     end subroutine preprocessingADI
 
     subroutine clampPCRStages(dom, sps, direction, n, nStages)

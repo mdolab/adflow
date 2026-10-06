@@ -82,7 +82,6 @@ contains
         use cudaBlock, only: allocateCudaBlock, copyCudaBlockToDevice, &
                              allocateCudaBCData, copyCudaBCDataToDevice
         use cudaBCPointers, only: setCudaBCPointers
-        use cudaBCDataMod, only: copyCudaBCDataMod
         implicit none
 
         ! --- GPU VARS ---
@@ -96,6 +95,7 @@ contains
         logical :: correctForK 
         integer(kind=intType) :: nn 
         integer(kind=intType) :: istat, dom, sps
+        integer(kind=intType) :: h_iStart, h_iEnd, h_iSize, h_jStart, h_jEnd, h_jSize
 
         ibmax = 0
         jbmax = 0
@@ -110,12 +110,11 @@ contains
             end do
         end do 
 
-        istat = cudaDeviceSynchronize()
-
         ! metrics
         ! print *,ibmax,jbmax,kbmax
         block_size = dim3(8, 8, 1)
-        grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), 1)
+        grid_size  = dim3(ceiling(real(max(ibmax,jbmax,kbmax)+1) / block_size%x), &
+                          ceiling(real(max(ibmax,jbmax,kbmax)+1) / block_size%y), 1)
 
         ! call CPU_TIME(start)
 
@@ -133,14 +132,21 @@ contains
         do nn = 1, nBocos
              if (BCType(nn) == symm) then
                 ! First set pointers on CPU
-                call setBCPointers(nn, .False.)
+                ! call setBCPointers(nn, .False.)
                 ! Then copy all data to device
-                call setCudaBCPointers(nn, sps)
-                call copyCudaBCDataMod
+                ! call setCudaBCPointers(nn, sps)
+
+                h_iStart = BCData(nn)%icBeg
+                h_iEnd = BCData(nn)%icEnd
+                h_jStart = BCData(nn)%jcBeg
+                h_jEnd = BCData(nn)%jcEnd
+                h_iSize = h_iEnd - h_iStart + 1
+                h_jSize = h_jEnd - h_jStart + 1
 
                 ! Run routine on GPU
-                call bcSymm1stHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn))
-                istat = cudaDeviceSynchronize()
+                call bcSymm1stHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn), &
+                    h_iStart, h_jStart, h_iSize, h_jSize)
+                ! istat = cudaDeviceSynchronize()
             end if
         end do
 
@@ -149,13 +155,21 @@ contains
            do nn = 1, nBocos
                if (BCType(nn) == symm) then
                    ! First set pointers on CPU
-                   call setBCPointers(nn, .False.)
+                   ! call setBCPointers(nn, .False.)
                    ! Then copy all data to device
-                   call setCudaBCPointers(nn, sps)
-                   call copyCudaBCDataMod
+                   ! call setCudaBCPointers(nn, sps)
+
+                    h_iStart = BCData(nn)%icBeg
+                    h_iEnd = BCData(nn)%icEnd
+                    h_jStart = BCData(nn)%jcBeg
+                    h_jEnd = BCData(nn)%jcEnd
+                    h_iSize = h_iEnd - h_iStart + 1
+                    h_jSize = h_jEnd - h_jStart + 1
+
                    ! Run routine on GPU
-                   call bcSymm2ndHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn))
-                   istat = cudaDeviceSynchronize()
+                   call bcSymm2ndHalo<<<grid_size, block_size>>>(nn, BCFaceID(nn), &
+                    h_iStart, h_jStart, h_iSize, h_jSize)
+                !    istat = cudaDeviceSynchronize()
                end if
            end do
        end if
@@ -169,7 +183,7 @@ contains
 !        !         call setBCPointers(nn, .True.)
 !        !         ! Then copy all data to device
 !        !         call copyCudaBC
-!        !         call copyCudaBCDataMod
+!        !    
 !        !         call bcSymmPolar1stHalo(nn)
 !        !     end if
 !        ! end do
@@ -181,7 +195,7 @@ contains
 !        !             call setBCPointers(nn, .True.)
 !        !             ! Then copy all data to device
 !        !             call copyCudaBC
-!        !             call copyCudaBCDataMod
+!        !        
 !        !             call bcSymmPolar2ndHalo(nn)
 !        !         end if
 !        !     end do
@@ -193,12 +207,19 @@ contains
        !$AD II-LOOP
        do nn = 1, nViscBocos
            if (BCType(nn) == NSWallAdiabatic) then
-               call setBCPointers(nn, .False.)
+               ! call setBCPointers(nn, .False.)
                ! Then copy all data to device
-               call setCudaBCPointers(nn, sps)
-               call copyCudaBCDataMod
-               call bcNSWallAdiabatic<<<grid_size, block_size>>>(nn, BCFaceID(nn), secondHalo, correctForK)
-               istat = cudaDeviceSynchronize()
+               ! call setCudaBCPointers(nn, sps)
+
+                h_iStart = BCData(nn)%icBeg
+                h_iEnd = BCData(nn)%icEnd
+                h_jStart = BCData(nn)%jcBeg
+                h_jEnd = BCData(nn)%jcEnd
+                h_iSize = h_iEnd - h_iStart + 1
+                h_jSize = h_jEnd - h_jStart + 1
+               call bcNSWallAdiabatic<<<grid_size, block_size>>>(nn, BCFaceID(nn), &
+                    h_iStart, h_jStart, h_iSize, h_jSize, secondHalo, correctForK)
+            !    istat = cudaDeviceSynchronize()
            end if
        end do
 !
@@ -211,7 +232,7 @@ contains
 !        !         call setBCPointers(nn, .False.)
 !        !         ! Then copy all data to device
 !        !         call copyCudaBC
-!        !         call copyCudaBCDataMod
+!        !    
 !        !         call bcNSWallIsothermal(nn, secondHalo, correctForK)
 !        !     end if
 !        ! end do
@@ -222,14 +243,22 @@ contains
        !$AD II-LOOP
        do nn = 1, nBocos
            if (BCType(nn) == farField) then
-               call setBCPointers(nn, .False.)
+               ! call setBCPointers(nn, .False.)
                ! Then copy all data to device
                ! call copyCudaBCData
-               call setCudaBCPointers(nn, sps)
-               call copyCudaBCDataMod
+               ! call setCudaBCPointers(nn, sps)
                ! Run routine on GPU
-               call bcFarField<<<grid_size, block_size>>>(nn, BCFaceID(nn), secondHalo, correctForK)
-               istat = cudaDeviceSynchronize()
+
+                h_iStart = BCData(nn)%icBeg
+                h_iEnd = BCData(nn)%icEnd
+                h_jStart = BCData(nn)%jcBeg
+                h_jEnd = BCData(nn)%jcEnd
+                h_iSize = h_iEnd - h_iStart + 1
+                h_jSize = h_jEnd - h_jStart + 1
+
+               call bcFarField<<<grid_size, block_size>>>(nn, BCFaceID(nn), &
+                    h_iStart, h_jStart, h_iSize, h_jSize, secondHalo, correctForK)
+            !    istat = cudaDeviceSynchronize()
            end if
        end do
 !
@@ -242,7 +271,7 @@ contains
 !        !         call setBCPointers(nn, .False.)
 !        !         ! Then copy all data to device
 !        !         call copyCudaBC
-!        !         call copyCudaBCDataMod
+!        !    
 !        !         call bcSubSonicOutFlow(nn, secondHalo, correctForK)
 !        !     end if
 !        ! end do
@@ -255,7 +284,7 @@ contains
 !        !         call setBCPointers(nn, .False.)
 !        !         ! Then copy all data to device
 !        !         call copyCudaBC
-!        !         call copyCudaBCDataMod
+!        !    
 !        !         call bcSubSonicInflow(nn, secondHalo, correctForK)
 !        !     end if
 !        ! end do
@@ -283,11 +312,20 @@ contains
             !$AD II-LOOP
             do nn = 1, nBocos
                 if (BCType(nn) == EulerWall) then
-                    call setBCPointers(nn, .True.)
-                    call setCudaBCPointers(nn, sps)
-                    call copyCudaBCDataMod
-                    call bcEulerWall<<<grid_size, block_size>>>(nn, BCFaceID(nn), secondHalo, correctForK)
-                    istat = cudaDeviceSynchronize()
+                    ! call setBCPointers(nn, .True.)
+                    ! call setCudaBCPointers(nn, sps)
+
+                    h_iStart = BCData(nn)%icBeg
+                    h_iEnd = BCData(nn)%icEnd
+                    h_jStart = BCData(nn)%jcBeg
+                    h_jEnd = BCData(nn)%jcEnd
+                    h_iSize = h_iEnd - h_iStart + 1
+                    h_jSize = h_jEnd - h_jStart + 1
+
+
+                    call bcEulerWall<<<grid_size, block_size>>>(nn, BCFaceID(nn), &
+                    h_iStart, h_jStart, h_iEnd, h_jEnd, h_iSize, h_jSize, secondHalo, correctForK)
+                    ! istat = cudaDeviceSynchronize()
                 end if
             end do
 !
@@ -306,7 +344,7 @@ contains
     ! ===================================================================
     !   Actual implementation of each of the boundary condition routines
     ! ===================================================================
-    attributes(global) subroutine bcSymm1stHalo(nn, faceID)
+    attributes(global) subroutine bcSymm1stHalo(nn, faceID, iStart, jStart, iSize, jSize)
 
         !  bcSymm1stHalo applies the symmetry boundary conditions to a
         !  block.  * It is assumed that the pointers in blockPointers are
@@ -320,12 +358,12 @@ contains
         use constants
         ! use cudaBlock, only: BCData=>d_BCdata
         use cudaflowVarRefState, only: viscous, eddyModel
-        use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+        use cudaBCPointers, only: faceLayerIndices
         use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Subroutine arguments.
-        integer(kind=intType), intent(in), value :: nn, faceID
+        integer(kind=intType), intent(in), value :: nn, faceID, iStart, jStart, iSize, jSize
 
         ! Local variables.
         integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
@@ -371,7 +409,7 @@ contains
         end if
     end subroutine bcSymm1stHalo
 
-    attributes(global) subroutine bcSymm2ndHalo(nn, faceID)
+    attributes(global) subroutine bcSymm2ndHalo(nn, faceID, iStart, jStart, iSize, jSize)
 
         !  bcSymm2ndHalo applies the symmetry boundary conditions to a
         !  block for the 2nd halo. This routine is separate as it makes
@@ -379,12 +417,12 @@ contains
         use constants
         ! use cudaBlock, only: BCData => d_BCdata
         use cudaflowVarRefState, only: viscous, eddyModel
-        use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+        use cudaBCPointers, only: faceLayerIndices
         use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Subroutine arguments.
-        integer(kind=intType), intent(in), value :: nn, faceID
+        integer(kind=intType), intent(in), value :: nn, faceID, iStart, jStart, iSize, jSize
 
         ! Local variables.
         integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
@@ -586,7 +624,7 @@ contains
 !
 !    ! end subroutine bcSymmPolar2ndHalo
 !
-   attributes(global) subroutine bcFarfield(nn, faceID, secondHalo, correctForK)
+   attributes(global) subroutine bcFarfield(nn, faceID, iStart, jStart, iSize, jSize, secondHalo, correctForK)
 
        ! bcFarfield applies the farfield boundary condition to a block.
        ! It is assumed that the BCPointers are already set *
@@ -594,13 +632,13 @@ contains
        use constants
        ! use blockPointers, only: BCData
        use cudaFlowVarRefState, only: eddyModel, viscous, gammaInf, wInf, pInfCorr
-       use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+       use cudaBCPointers, only: faceLayerIndices
        use cudaBlock, only: d_cudaDoms
        implicit none
 
        ! Subroutine arguments.
        logical, intent(in), value :: secondHalo, correctForK
-       integer, intent(in), value :: nn, faceID
+       integer, intent(in), value :: nn, faceID, iStart, jStart, iSize, jSize
        ! Local variables.
        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
        integer(kind=intType) :: i, j
@@ -713,22 +751,22 @@ contains
        end if
 
        ! Compute the energy for these halos.
-       call computeEtot(faceID, 1_intType, correctForK)
+       call computeEtot(faceID, iStart, jStart, iSize, jSize, 1_intType, correctForK)
 
        ! Extrapolate the state vectors in case a second halo
        ! is needed.
-       if (secondHalo) call extrapolate2ndHalo(faceID, correctForK)
+       if (secondHalo) call extrapolate2ndHalo(faceID, iStart, jStart, iSize, jSize, correctForK)
 
    end subroutine bcFarfield
 !
-   attributes(global) subroutine bcNSWallAdiabatic(nn, faceID, secondHalo, correctForK)
+   attributes(global) subroutine bcNSWallAdiabatic(nn, faceID, iStart, jStart, iSize, jSize, secondHalo, correctForK)
 
        ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
        ! condition the pointers already defined.
 
        use constants
        ! use blockPointers, only: BCData
-       use cudaBCPointers, only: iStart, jStart, iSize, jSize, faceLayerIndices
+       use cudaBCPointers, only: faceLayerIndices
        use cudaflowVarRefState, only: viscous, eddyModel
        use cudaInputDiscretization, only: viscWallBCTreatment
        use cudaIteration, only: currentLevel, groundLevel
@@ -736,7 +774,7 @@ contains
        implicit none
 
        logical, intent(in), value :: secondHalo, correctForK
-       integer(kind=intType), intent(in), value :: nn, faceID
+       integer(kind=intType), intent(in), value :: nn, faceID, iStart, jStart, iSize, jSize
        integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
        real(kind=realType) :: rhok
        integer(kind=intType) :: wallTreatment
@@ -810,12 +848,12 @@ contains
 
        ! Compute the energy for these halo's.
 
-       call computeEtot(faceID, 1_intType, correctForK)
+       call computeEtot(faceID, iStart, jStart, iSize, jSize, 1_intType, correctForK)
 
        ! Extrapolate the state vectors in case a second halo
        ! is needed.
 
-       if (secondHalo) call extrapolate2ndHalo(faceID, correctForK)
+       if (secondHalo) call extrapolate2ndHalo(faceID, iStart, jStart, iSize, jSize, correctForK)
 
    end subroutine bcNSWallAdiabatic
 !
@@ -1051,7 +1089,7 @@ contains
 
     end function cudaMyDim
 
-    attributes(global) subroutine bcEulerWall(nn, faceID, secondHalo, correctForK)
+    attributes(global) subroutine bcEulerWall(nn, faceID, iStart, jStart, iEnd, jEnd, iSize, jSize, secondHalo, correctForK)
 
         !  bcEulerWall applies the inviscid wall boundary condition to a
         !  block. It is assumed that the bcpointers are already set to the
@@ -1061,8 +1099,7 @@ contains
         ! use blockPointers, only: BCData, addGridVelocities
         use cudaflowVarRefState, only: viscous, eddyModel
         use cudaInputDiscretization, only: eulerWallBCTreatment
-        use cudaBCPointers, only: iStart, jStart, iEnd, jEnd, iSize, jSize, faceLayerIndices, &
-        spatialFaceIndices
+        use cudaBCPointers, only: faceLayerIndices, spatialFaceIndices
         use cudaBlock, only: d_cudaDoms
         ! use iteration, only: currentLevel, groundLevel
         ! use BCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, &
@@ -1072,7 +1109,7 @@ contains
 
         ! Subroutine arguments.
         logical, intent(in), value  :: secondHalo, correctForK
-        integer(kind=intType), intent(in), value  :: nn, faceID
+        integer(kind=intType), intent(in), value  :: nn, faceID, iStart, jStart, iEnd, jEnd, iSize, jSize
 
         ! Local variables.
         integer(kind=intType) :: j, k
@@ -1459,19 +1496,19 @@ contains
 
         ! Compute the energy for these halo's.
 
-        call computeEtot(faceID, 1, correctForK)
+        call computeEtot(faceID, iStart, jStart, iSize, jSize, 1, correctForK)
 
         ! Extrapolate the state vectors in case a second halo
         ! is needed.
 
-        if (secondHalo) call extrapolate2ndHalo(faceID, correctForK)
+        if (secondHalo) call extrapolate2ndHalo(faceID, iStart, jStart, iSize, jSize, correctForK)
 
     end subroutine bcEulerWall
 
 !    ! ========================================
     !  DEVICE SUBROUTINES
     ! ========================================
-    attributes(device) subroutine computeEtot(faceID, haloSlot, correctForK)
+    attributes(device) subroutine computeEtot(faceID, iStart, jStart, iSize, jSize, haloSlot, correctForK)
 
         ! Simplified total energy computation for boundary conditions.
         ! Only implements the constant cpModel
@@ -1481,11 +1518,11 @@ contains
 
         use constants, only: third, five, half, irho, ivx, ivy, ivz, irhoE, itu1, one
         use cudaInputPhysics, only: gammaConstant
-        use cudaBCPointers, only: iSize, jSize, iStart, jStart, faceLayerIndices
+        use cudaBCPointers, only: faceLayerIndices
         use cudaBlock, only: d_cudaDoms
         implicit none
 
-        integer(kind=intType), value :: faceID, haloSlot
+        integer(kind=intType), value :: faceID, haloSlot, iSize, jSize, iStart, jStart
         logical, value :: correctForK
         integer(kind=intType), parameter :: dm = 1, sps = 1 ! single-block/single-spectral harness
         integer(kind=intType) :: i, j, layer
@@ -1534,20 +1571,20 @@ contains
 
     end subroutine computeEtot
 
-    attributes(device) subroutine extrapolate2ndHalo(faceID, correctForK)
+    attributes(device) subroutine extrapolate2ndHalo(faceID, iStart, jStart, iSize, jSize, correctForK)
 
         ! extrapolate2ndHalo determines the states of the second layer
         ! halo cells for the given subface of the block. It is assumed
         ! that the appropriate BCPointers are already set
 
         use constants, only: irho, ivx, ivy, ivz, two
-        use cudaBCPointers, only: iSize, jSize, iStart, jStart, faceLayerIndices
+        use cudaBCPointers, only: faceLayerIndices
         use cudaFlowVarRefState, only: viscous, eddyModel
         use cudaBlock, only: d_cudaDoms
         implicit none
 
         ! Input variables
-        integer(kind=intType), value :: faceID
+        integer(kind=intType), value :: faceID, iSize, jSize, iStart, jStart
         logical :: correctForK
 
         ! Working variables
@@ -1595,7 +1632,7 @@ contains
         end if
 
         ! Compute the energy for this halo range.
-        call computeEtot(faceID, 0_intType, correctForK)
+        call computeEtot(faceID, iStart, jStart, iSize, jSize, 0_intType, correctForK)
 
     end subroutine extrapolate2ndHalo
 
