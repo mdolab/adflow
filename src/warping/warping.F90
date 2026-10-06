@@ -320,7 +320,7 @@ contains
 
         ! Working parameters
         integer(kind=intType) :: i, j, k, ierr, iDim, iBeg, iEnd, jBeg, jEnd, nn, mm
-        integer(kind=intType) :: ii, jj, indI, indJ, indK, jjInd, iBCGroup, nZipperLocal
+        integer(kind=intType) :: ii, jj, indI, indJ, indK, jjInd, iBCGroup
         type(zipperMesh), pointer :: zipper
         type(familyexchange), pointer :: exch
         logical :: BCGroupNeeded
@@ -424,7 +424,7 @@ contains
                 ! The local Pointer is just the localRandSurface we've set
                 ! above.
                 do j = 1, size(localPtr)
-                    localPtr(j) = randSurface(3 * (j - 1) + iDim)
+                    localPtr(i) = randSurface(3 * (j - 1) + iDim)
                 end do
 
                 ! Restore the pointer
@@ -450,18 +450,10 @@ contains
                     randSurface(3 * ii + 3 * (j - 1) + iDim) = localPtr(j)
                 end do
 
-                ! Record how many zipper nodes are local to this proc before
-                ! handing the pointer back, we need it to advance ii below.
-                nZipperLocal = size(localPtr)
-
-                ! Restore the pointer
-                call vecRestoreArray(zipper%localVal, localPtr, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
             end do dimLoop
 
             ! Increcment the running ii counter.
-            ii = ii + nZipperLocal
+            ii = ii + size(localPtr)
         end do
     end subroutine getSurfacePerturbation
 
