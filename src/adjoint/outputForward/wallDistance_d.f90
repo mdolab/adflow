@@ -3,7 +3,9 @@
 !
 module walldistance_d
   use constants, only : inttype, realtype
-  use walldistancedata
+  use walldistancedata, only : xvolume, xsurf, xsurfd, xvolumevec, &
+& xsurfvec, wallscatter, is1, is2, walldistancedataallocated, &
+& updatelevelwallassociation
   implicit none
   save 
 

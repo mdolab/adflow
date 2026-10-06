@@ -17,7 +17,8 @@ contains
         use surfaceFamilies, only: BCFamGroups
         use su_cgns
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscdmda
+        use petscao
         implicit none
 
         ! Input Params
@@ -474,7 +475,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Determine the bounds of the arrays we will be getting back.
-        call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+        call DMDAVecGetArray(cartArray, cartVecLocal, arrVals, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
         iBeg = lbound(arrVals, 1)
@@ -489,7 +490,7 @@ contains
         jSize = jEnd - jBeg + 1
         kSize = kEnd - kBeg + 1
 
-        call DMDAVecRestoreArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+        call DMDAVecRestoreArray(cartArray, cartVecLocal, arrVals, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
         loopIter = 1
@@ -498,10 +499,10 @@ contains
 
         parallelSyncLoop: do
 
-            call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+            call DMDAVecGetArray(cartArray, cartVecLocal, arrVals, ierr)
             call ECHK(ierr, __FILE__, __LINE__)
 
-            call DMDAVecGetArrayF90(cartArray, changedVecLocal, changed, ierr)
+            call DMDAVecGetArray(cartArray, changedVecLocal, changed, ierr)
             call ECHK(ierr, __FILE__, __LINE__)
 
             ! Keep track of the total number of fringes we've modified
@@ -639,10 +640,10 @@ contains
                 end do
             end do
 
-            call DMDAVecRestoreArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+            call DMDAVecRestoreArray(cartArray, cartVecLocal, arrVals, ierr)
             call ECHK(ierr, __FILE__, __LINE__)
 
-            call DMDAVecRestoreArrayF90(cartArray, changedVecLocal, changed, ierr)
+            call DMDAVecRestoreArray(cartArray, changedVecLocal, changed, ierr)
             call ECHK(ierr, __FILE__, __LINE__)
 
             ! Exchange "changed"
@@ -678,7 +679,7 @@ contains
         ! Now that we have flooded everything, any cells left over must
         ! be *inside. Do one last pass through and flip those.
 
-        call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+        call DMDAVecGetArray(cartArray, cartVecLocal, arrVals, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
         do k = kBeg + 1, kEnd - 1
@@ -691,7 +692,7 @@ contains
             end do
         end do
 
-        call DMDAVecRestoreArrayF90(cartArray, cartVecLocal, arrVals, ierr)
+        call DMDAVecRestoreArray(cartArray, cartVecLocal, arrVals, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
 
         ! Restore the vectors obtained with "get"
@@ -775,7 +776,7 @@ contains
         call VecScatterDestroy(blankScatterLocal, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(blanKVecLocal, cartPointer, ierr)
+        call VecGetArray(blanKVecLocal, cartPointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         do nn = 1, nDom
@@ -829,7 +830,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(blankVecLocal, cartPointer, ierr)
+        call VecRestoreArray(blankVecLocal, cartPointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Clean up the remaining PETScmemory
@@ -877,7 +878,8 @@ contains
     subroutine writeCartMesh(blankVec, cellDims, xMin, h)
 
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscdmda
+        use petscao
         implicit none
 
         ! Input
@@ -956,13 +958,13 @@ contains
             deallocate (xtmp)
 
             call cg_sol_write_f(cg, base, zoneID, "flowSolution", CellCenter, iSol, ierr)
-            call VecGetArrayF90(blanKVecLocal, cartPointer, ierr)
+            call VecGetArray(blanKVecLocal, cartPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call cg_field_write_f(cg, base, zoneID, iSol, realDouble, "iBlank", &
                                   cartPointer, iField, ierr)
 
-            call VecRestoreArrayF90(blankVecLocal, cartPointer, ierr)
+            call VecRestoreArray(blankVecLocal, cartPointer, ierr)
             call EChk(ierr, __FILE__, __LINE__)
             call cg_close_f(cg, ierr)
         end if

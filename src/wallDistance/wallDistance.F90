@@ -1,7 +1,8 @@
 module wallDistance
 
     use constants, only: intType, realType
-    use wallDistanceData
+    use wallDistanceData, only: xVolume, xSurf, xVolumeVec, xSurfVec, wallScatter, IS1, IS2, &
+                                 wallDistanceDataAllocated, updateLevelWallAssociation
     implicit none
     save
 
@@ -144,6 +145,7 @@ contains
         use oversetData, only: oversetPresent
         use utils, only: setPointers, EChk, terminate, &
                          deallocateTempMemory, allocateTempMemory
+        use petscvec
         implicit none
         !
         !      Subroutine arguments.
@@ -288,7 +290,7 @@ contains
             do sps = 1, nTimeIntervalsSpectral
 
                 ! Now extract the vector of the surface data we need
-                call VecGetArrayF90(xSurfVec(level, sps), xSurf, ierr)
+                call VecGetArray(xSurfVec(level, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
                 do nn = 1, nDom
@@ -296,7 +298,7 @@ contains
                     call updateWallDistancesQuickly(nn, level, sps)
                 end do
 
-                call VecRestoreArrayF90(xSurfVec(level, sps), xSurf, ierr)
+                call VecRestoreArray(xSurfVec(level, sps), xSurf, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
             end do
@@ -1681,6 +1683,7 @@ contains
         use surfaceFamilies, only: BCFamGroups
         use utils, only: setPointers, EChk
         use sorting, only: unique
+        use petscvec
         implicit none
 
         ! Input Variables
@@ -2006,6 +2009,7 @@ contains
         use blockPointers
         use inputTimeSpectral
         use utils, only: EChk, setPointers
+        use petscvec
         implicit none
 
         ! Input Parameters
@@ -2015,7 +2019,7 @@ contains
         integer(kind=intType) :: ii, i, j, k, l, nn, sps, ierr
 
         ! Fill up xVolumeVec
-        call VecGetArrayF90(xVolumeVec(level), xVolume, ierr)
+        call VecGetArray(xVolumeVec(level), xVolume, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -2034,7 +2038,7 @@ contains
                 end do
             end do
         end do
-        call vecRestoreArrayF90(xVolumeVec(level), xVolume, ierr)
+        call vecRestoreArray(xVolumeVec(level), xVolume, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Perform the scatter from the global x vector to xSurf. SPS loop since the xSurfVec is done by SPS instance.
@@ -2074,6 +2078,7 @@ contains
         use utils, onlY: EChk
         use block, only: flowDoms
 
+        use petscvec
         implicit none
 
         ! Input Parameters

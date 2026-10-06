@@ -13,6 +13,7 @@ config.mk
 config/config*
 src_cs/*
 src/adjoint/temp*
+src/adjoint/preprocess*
 *.cgnsSpectral*
 *~
 .*~
