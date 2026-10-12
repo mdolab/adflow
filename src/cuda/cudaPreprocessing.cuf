@@ -1,30 +1,30 @@
-module cudaPreprocess
-    use constants
-    use cudafor
-    use cudaBlock, only: cudaDoms=>d_cudaDoms, h_cudaDoms
+! @File    :   cudaPreprocessing.cuf
+! @Desc    :   This module contains the CUDA preprocessing routines: querying and reporting
+!              the CUDA devices and setting up the ADI/PCR configuration of the blocks
 
+module cudaPreprocess
+    !
+    !   CUDA Modules
+    !
+    use cudafor
+
+    !
+    !   ADflow modules
+    !
+    use constants
+
+    implicit none
+
+    !
+    !   Module variables
+    !
 
     ! Store the device info globally here
     integer(kind=intType) :: deviceCount, currentDevice, mypcrOccupancyTarget
     type(cudaDeviceProp), dimension(:), allocatable :: cudaDeviceInfo
-    
 
 
-    type cudaBlockADIConfig
-        integer(kind=intType) :: nPCRStagesI
-        integer(kind=intType) :: nPCRStagesJ
-        integer(kind=intType) :: nPCRStagesK
-        integer(kind=intType) :: nPCRThreadsI
-        integer(kind=intType) :: nPCRThreadsJ
-        integer(kind=intType) :: nPCRThreadsK
-    end type cudaBlockADIConfig
-
-    ! Store the ADI/PCR config here
-    type(cudaBlockADIConfig), dimension(:,:), allocatable :: cudaADIPCRConfigs 
-
-
-
-    contains
+contains
 
     subroutine cudaPreprocessing
         use inputCUDASolver, only: verboseCudaPrint, verboseCudaADIPrint
@@ -56,7 +56,7 @@ module cudaPreprocess
 
         if (deviceCount == 0) then
             print "(a)", "#"
-            print "(a),(I1)", "# ERROR: no CUDA capable devices were detected on rank: ", myID
+            print "(a,i0)", "# ERROR: no CUDA capable devices were detected on rank: ", myID
             print "(a)", "# A CUDA capable device must be available on all ranks to use the ADflow GPU solver"
             print "(a)", "#"
             call terminate("cudapreprocessing", &
@@ -70,7 +70,7 @@ module cudaPreprocess
                            "Failed to query current CUDA device")
         end if
 
-        if (allocated(cudaDeviceInfo) ) then
+        if (allocated(cudaDeviceInfo)) then
             deallocate(cudaDeviceInfo)
         end if
 
@@ -80,7 +80,7 @@ module cudaPreprocess
             istat = cudaGetDeviceProperties(cudaDeviceInfo(i), i)
             if (istat /= cudaSuccess) then
                 print *, "Error getting properties for device ", i, ": ", cudaGetErrorString(istat)
-            end if 
+            end if
         end do
 
     end subroutine preprocessingGetDeviceInfo
@@ -128,10 +128,9 @@ module cudaPreprocess
         ! Make sure the device information is actually available.
 
         if (.not. allocated(cudaDeviceInfo)) then
-            print *, "Error printing device info. Hint: Call preprocessingsGetDeviceInfo first"
-            stop 
+            print *, "Error printing device info. Hint: Call preprocessingGetDeviceInfo first"
+            stop
         end if
-        
 
         !
         !      The concise summary. One line per device, plus a header with
@@ -329,9 +328,11 @@ module cudaPreprocess
     end subroutine printCUDADeviceInfo
 
     pure function peakBandWidth(deviceInfo) result(bandWidth)
-        ! Peak theoretical device memory bandwidth in GB/s. The memory clock
-        ! is reported in kHz and the bus width in bits. The factor two
-        ! accounts for the double data rate of the device memory.
+        !
+        !       Peak theoretical device memory bandwidth in GB/s. The memory clock
+        !       is reported in kHz and the bus width in bits. The factor two
+        !       accounts for the double data rate of the device memory.
+        !
         use constants
         implicit none
 
@@ -344,8 +345,10 @@ module cudaPreprocess
     end function peakBandWidth
 
     pure function yesNo(flag) result(answer)
-        ! Converts one of the integer valued cudaDeviceProp flags into
-        ! something a bit friendlier to read.
+        !
+        !       Converts one of the integer valued cudaDeviceProp flags into
+        !       something a bit friendlier to read.
+        !
         use constants
         implicit none
 
@@ -361,10 +364,12 @@ module cudaPreprocess
     end function yesNo
 
     pure function coresPerSM(major, minor) result(cores)
-        ! Returns the number of fp32 CUDA cores per SM for the given compute
-        ! capability. This is not queryable through the runtime API, so it
-        ! has to be tabulated. A negative value flags an architecture that is
-        ! newer/older than this table.
+        !
+        !       Returns the number of fp32 CUDA cores per SM for the given compute
+        !       capability. This is not queryable through the runtime API, so it
+        !       has to be tabulated. A negative value flags an architecture that is
+        !       newer/older than this table.
+        !
         use constants
         implicit none
 
@@ -400,7 +405,6 @@ module cudaPreprocess
 
     end function coresPerSM
 
-
     subroutine preprocessingADI(verbose)
         !
         !       preprocessingADI determines the number of PCR stages and the
@@ -416,12 +420,13 @@ module cudaPreprocess
         !       PCR thread ends up with.
         !
         use constants
-        use cudaADI
         use communication, only: myID
-        use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bie=>ie, bje=>je, bke=>ke, bnx=>nx, bny=>ny, bnz=>nz
-        use cudaFlowVarRefState, only: nwf
+        use blockPointers, only: nDom, bib => ib, bjb => jb, bkb => kb, bie => ie, bje => je, bke => ke, &
+                                 bnx => nx, bny => ny, bnz => nz
         use cudaIteration, only: currentLevel
         use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowVarRefState, only: nwf
+        use cudaADI, only: cudaADIPCRConfigs, setupDeviceADIDescriptors, registerADIProblem
         use inputCUDASolver, only: nPCRStagesI, nPCRStagesJ, nPCRStagesK, nPCRThreadsI, nPCRThreadsJ, nPCRThreadsK, &
                                    matchPCRThreadToBlockSize, pcrOccupancyTarget
         implicit none
@@ -446,7 +451,7 @@ module cudaPreprocess
         if (allocated(cudaADIPCRConfigs)) then
             deallocate(cudaADIPCRConfigs)
         end if
-        allocate(cudaADIPCRConfigs(nDom,nTimeIntervalsSpectral))
+        allocate(cudaADIPCRConfigs(nDom, nTimeIntervalsSpectral))
 
         ! Harcoded for now
         dom = 1
@@ -456,8 +461,8 @@ module cudaPreprocess
         ! First get the device occupancy target if requested
         !
         if (pcrOccupancyTarget .lt. 0) then
-            mypcrOccupancyTarget = cudaDeviceInfo(currentDevice)%multiProcessorCount* &
-            coresPerSM(cudaDeviceInfo(currentDevice)%major, cudaDeviceInfo(currentDevice)%minor)
+            mypcrOccupancyTarget = cudaDeviceInfo(currentDevice)%multiProcessorCount * &
+                                   coresPerSM(cudaDeviceInfo(currentDevice)%major, cudaDeviceInfo(currentDevice)%minor)
         else
             mypcrOccupancyTarget = pcrOccupancyTarget
         end if
@@ -466,22 +471,21 @@ module cudaPreprocess
         ! Setup PCR Stages
         !
 
-        ! 
+        !
         ! Setup the I direction ADI
         !
 
         autoStagesI = nPCRStagesI .lt. 0
         if (autoStagesI) then
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesI = optimizePCRStages(bnx,bny*bnz,.true.)
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesI = optimizePCRStages(bnx, bny * bnz, .true.)
         else
             ! A prescribed value may ask for more stages than the number of
             ! cells in this direction can support, so clamp it. The input
             ! parameter itself is left alone, as it is shared by all blocks.
             nStages = nPCRStagesI
             call clampPCRStages(dom, sps, "i", bnx, nStages)
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesI = nStages
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesI = nStages
         end if
-
 
         !
         ! Setup the J direction ADI
@@ -489,13 +493,12 @@ module cudaPreprocess
 
         autoStagesJ = nPCRStagesJ .lt. 0
         if (autoStagesJ) then
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesJ = optimizePCRStages(bny,bnx*bnz,.false.)
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesJ = optimizePCRStages(bny, bnx * bnz, .false.)
         else
             nStages = nPCRStagesJ
             call clampPCRStages(dom, sps, "j", bny, nStages)
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesJ = nStages
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesJ = nStages
         end if
-
 
         !
         ! Setup the K direction ADI
@@ -503,19 +506,18 @@ module cudaPreprocess
 
         autoStagesK = nPCRStagesK .lt. 0
         if (autoStagesK) then
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesK = optimizePCRStages(bnz,bny*bnx,.false.)
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesK = optimizePCRStages(bnz, bny * bnx, .false.)
         else
             nStages = nPCRStagesK
             call clampPCRStages(dom, sps, "k", bnz, nStages)
-            cudaADIPCRConfigs(dom,sps)%nPCRStagesK = nStages
+            cudaADIPCRConfigs(dom, sps)%nPCRStagesK = nStages
         end if
-
 
         !
         ! Setup PCR Threads
         !
 
-        ! 
+        !
         ! Setup the I direction ADI
         !
 
@@ -523,15 +525,14 @@ module cudaPreprocess
         if (autoThreadsI) then
 
             if (matchPCRThreadToBlockSize) then
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = bnx
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsI = bnx
             else
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = 2**floor(log(real(bnx,realType))/log(2.0_realType))
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsI = 2**floor(log(real(bnx, realType)) / log(2.0_realType))
             end if
 
         else
-            cudaADIPCRConfigs(dom,sps)%nPCRThreadsI = nPCRThreadsI
+            cudaADIPCRConfigs(dom, sps)%nPCRThreadsI = nPCRThreadsI
         end if
-
 
         !
         ! Setup the J direction ADI
@@ -541,15 +542,14 @@ module cudaPreprocess
         if (autoThreadsJ) then
 
             if (matchPCRThreadToBlockSize) then
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = bny
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsJ = bny
             else
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = 2**floor(log(real(bny,realType))/log(2.0_realType))
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsJ = 2**floor(log(real(bny, realType)) / log(2.0_realType))
             end if
 
         else
-            cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ = nPCRThreadsJ
+            cudaADIPCRConfigs(dom, sps)%nPCRThreadsJ = nPCRThreadsJ
         end if
-
 
         !
         ! Setup the K direction ADI
@@ -559,13 +559,13 @@ module cudaPreprocess
         if (autoThreadsK) then
 
             if (matchPCRThreadToBlockSize) then
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsK  = bnz
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsK = bnz
             else
-                cudaADIPCRConfigs(dom,sps)%nPCRThreadsK  = 2**floor(log(real(bnz,realType))/log(2.0_realType))
+                cudaADIPCRConfigs(dom, sps)%nPCRThreadsK = 2**floor(log(real(bnz, realType)) / log(2.0_realType))
             end if
 
         else
-            cudaADIPCRConfigs(dom,sps)%nPCRThreadsK = nPCRThreadsK
+            cudaADIPCRConfigs(dom, sps)%nPCRThreadsK = nPCRThreadsK
         end if
 
         !
@@ -579,31 +579,40 @@ module cudaPreprocess
 
             call printADIConfigHeader
 
-            call printADIConfigRow(dom, sps, "i", bnx, bny*bnz, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRStagesI, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsI, &
+            call printADIConfigRow(dom, sps, "i", bnx, bny * bnz, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRStagesI, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRThreadsI, &
                  autoStagesI, autoThreadsI)
 
-            call printADIConfigRow(dom, sps, "j", bny, bnx*bnz, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRStagesJ, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsJ, &
+            call printADIConfigRow(dom, sps, "j", bny, bnx * bnz, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRStagesJ, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRThreadsJ, &
                  autoStagesJ, autoThreadsJ)
 
-            call printADIConfigRow(dom, sps, "k", bnz, bnx*bny, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRStagesK, &
-                 cudaADIPCRConfigs(dom,sps)%nPCRThreadsK, &
+            call printADIConfigRow(dom, sps, "k", bnz, bnx * bny, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRStagesK, &
+                 cudaADIPCRConfigs(dom, sps)%nPCRThreadsK, &
                  autoStagesK, autoThreadsK)
 
             call printADIConfigFooter
 
         end if
 
-
         !
-        ! Setup the ADI descriptors 
+        ! Setup the ADI descriptors
         !
-
         call setupDeviceADIDescriptors
+
+        ! Register IRS
+        call registerADIProblem(IRSProblem, [2, 2, 2], nwf, 1, nwf)
+
+        ! Register DADI NOT IMPLEMENTED
+        ! TODO: Update this when implementing DADI
+        call registerADIProblem(DADIProblem, [2, 2, 2], nwf, 1, nwf)
+
+        ! Register TurbDADI NOT IMPLEMENTED
+        ! TODO: Update this when implementing TurbDADI
+        call registerADIProblem(TurbDADIProblem, [2, 2, 2], nwf, 1, nwf)
 
     end subroutine preprocessingADI
 
@@ -737,32 +746,28 @@ module cudaPreprocess
 
     end subroutine printADIConfigFooter
 
-
-    pure function optimizePCRStages(n,nLines,coalesceOnRow) result(sopt)
-        ! Executes a poor mans mixed integer optimization for optimal number of PCR stages
+    pure function optimizePCRStages(n, nLines, coalesceOnRow) result(sopt)
+        !
+        !       Executes a poor mans mixed integer optimization for optimal number of PCR stages
+        !
         use constants
         use inputCUDASolver, only: maxPCRStages, minRowsPerPCRThread, pcrOccupancyTarget, thomasCostFloor
         implicit none
-
         !
-        ! Subroutine arguments
-        ! 
-
+        !      Subroutine arguments
+        !
         integer(kind=intType), intent(in) :: n, nLines
         logical, intent(in) :: coalesceOnRow
-
         !
-        ! Working variables
-        ! 
-
+        !      Working variables
+        !
         real(kind=realType), dimension(:), allocatable :: stageTotalCost
         integer(kind=intType) :: s, sopt, maxsallowed
         real(kind=realType) :: pcrCost, occupancyGain, coalesceGain, thomasCost, rho
 
         allocate(stageTotalCost(0:maxPCRStages))
 
-
-        do s=0,maxPCRStages 
+        do s = 0, maxPCRStages
 
             if (coalesceOnRow) then
                 rho = computePCRCostFit(s)
@@ -770,25 +775,25 @@ module cudaPreprocess
                 rho = computePCRCostFit(s) ! same for now
             end if
 
-            pcrCost = rho*s
+            pcrCost = rho * s
 
-            occupancyGain = min(2**s,max(mypcrOccupancyTarget/nLines,1))
-            coalesceGain = merge(min(cudaDeviceInfo(currentDevice)%warpSize,2**s),1,coalesceOnRow) !  warp size is usually 32
-            thomasCost = max(real(n,realType) / (max(coalesceGain,occupancyGain)),thomasCostFloor) ! Thomas Cost floor (tuned from data) as you can't infinitely make it better
+            occupancyGain = min(2**s, max(mypcrOccupancyTarget / nLines, 1))
+            coalesceGain = merge(min(cudaDeviceInfo(currentDevice)%warpSize, 2**s), 1, coalesceOnRow) !  warp size is usually 32
+            thomasCost = max(real(n, realType) / (max(coalesceGain, occupancyGain)), thomasCostFloor) ! Thomas Cost floor (tuned from data) as you can't infinitely make it better
 
-            stageTotalCost(s) = (1_realType + pcrCost)*thomasCost
+            stageTotalCost(s) = (1_realType + pcrCost) * thomasCost
 
         end do
-        
-        sopt = minloc(stageTotalCost,dim=1) - 1
+
+        sopt = minloc(stageTotalCost, dim=1) - 1
 
         ! check the constraint
-        do while ((n/(2**sopt) .lt. minRowsPerPCRThread) .and. (sopt .gt. 0))
+        do while ((n / (2**sopt) .lt. minRowsPerPCRThread) .and. (sopt .gt. 0))
             sopt = sopt - 1
         end do
 
         ! Protect from exceeding max allowable s for this n in case it's less than maxPCRStages
-        maxsallowed = floor(log(real(n,realType))/log(2.0_realType))
+        maxsallowed = floor(log(real(n, realType)) / log(2.0_realType))
         if (sopt .gt. maxsallowed) then
             sopt = maxsallowed
         end if
@@ -796,17 +801,20 @@ module cudaPreprocess
     end function optimizePCRStages
 
     pure function computePCRCostFit(s) result(rho)
-        use inputCUDASolver, only: pcrCostRatioCoeffOne, pcrCostRatioCoeffTwo, pcrCostRatioCoeffThree, pcrCostRatioCoeffFour
+        !
+        !       Function that computes the relative cost (rho) of running s PCR stages using a curve fit
+        !
+        use inputCUDASolver, only: pcrCostRatioCoeffOne, pcrCostRatioCoeffTwo, pcrCostRatioCoeffThree, &
+                                   pcrCostRatioCoeffFour
         implicit none
 
         integer(kind=intType), intent(in) :: s
         real(kind=realType) :: sreal
         real(kind=realType) :: rho
-        
-        sreal = real(s,kind=realType)
-        rho = pcrCostRatioCoeffFour*sreal**3 + pcrCostRatioCoeffThree*sreal**2 + pcrCostRatioCoeffTwo*sreal + pcrCostRatioCoeffOne
+
+        sreal = real(s, kind=realType)
+        rho = pcrCostRatioCoeffFour * sreal**3 + pcrCostRatioCoeffThree * sreal**2 + pcrCostRatioCoeffTwo * sreal + pcrCostRatioCoeffOne
 
     end function computePCRCostFit
-
 
 end module cudaPreprocess

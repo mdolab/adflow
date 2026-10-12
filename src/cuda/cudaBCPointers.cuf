@@ -1,84 +1,41 @@
 ! @File    :   cudaBCPointers.cuf
 ! @Desc    :   CUDA Fortran version of BCPointers.F90 / utils::setBCPointers.
-!
-!              Earlier designs here tried to build "current boco" pointer views (mirroring
-!              CPU's setBCPointers, which points ww0/ww1/... at slices of the block arrays)
-!              and set them up on the HOST side before each kernel launch. That runs into
-!              two CUDA Fortran restrictions that don't exist on the CPU:
-!                - `pointer, device` targets must be "simply contiguous"; the natural
-!                  face-slice of a block array (e.g. `w(3, 1:, 1:, :)` for an iMin boco) is
-!                  not, since the fixed spatial index is never the trailing dimension.
-!                - A single host-side assignment can reference at most ONE device-resident
-!                  object, which rules out even a plain device-to-device value copy from one
-!                  block-array slice into another array in one statement.
-!
-!              So instead: each BC kernel now does its own per-thread indexing directly into
-!              cudaBlock::d_cudaDoms, via the faceLayerIndices device helper below. That's
-!              ordinary device-code scalar array access (not a host-side whole-array
-!              operation), so neither restriction applies. This module now only holds the
-!              face-local (i,j) launch bounds (iStart/iEnd/iSize/jStart/jEnd/jSize) -- set
-!              once per boco by setCudaBCPointers -- and the index helper itself.
-!
-!              rlv0/rev0 (viscosity 2nd/outermost halo layer, i.e. faceLayerIndices' layer=0)
-!              still have no backing memory: rlv/rev are allocated single-halo on the GPU
-!              (see cudaBlock.cuf) to save memory. Kernels must skip updates at layer 0 for
-!              rlv/rev specifically (see bcSymm2ndHalo/extrapolate2ndHalo in
-!              cudaBCRoutines.cuf) until that's resolved.
 
 module cudaBCPointers
+    !
+    !       This module is complete rewrite of BCPointers for CUDA.
+    !       The original CPU code BCPointers approach to slicing boundary cells
+    !       from a block fundamentally doesn't work on GPU since pointers must target
+    !       simply contiguous slices of an array which is never the case with boundary slices
+    !       Instead we come up with a fundamentally new approach for getting the subface
+    !       slices by instead converting a 2D index on a given face to the equivalent 3D index
+    !       on the block
+    !
+
+    !
+    !   ADflow modules
+    !
     use constants, only: intType, realType
+    use cudaBlock, only: cudaDoms => d_cudaDoms
+
     implicit none
-    save
 
-    ! Face-local (i,j) launch bounds for the current boco -- set once per boco by
-    ! setCudaBCPointers, read by every BC kernel to bound-check its thread index.
-    integer(kind=intType), device :: iStart, iEnd, iSize
-    integer(kind=intType), device :: jStart, jEnd, jSize
-
-    contains
-
-    subroutine setCudaBCPointers(nn, sps)
-        ! Computes the face-local index bounds for boco `nn` and writes them into the
-        ! device scalars above. Block-data access itself is done directly inside each BC
-        ! kernel via faceLayerIndices -- see file header.
-        use blockPointers, only: BCData
-        implicit none
-
-        integer(kind=intType), intent(in) :: nn, sps
-
-        integer(kind=intType) :: h_iStart, h_iEnd, h_iSize, h_jStart, h_jEnd, h_jSize
-
-        ! Host locals first: an expression referencing more than one device-resident object
-        ! (e.g. iEnd - iStart, with both device scalars) isn't a valid implicit host
-        ! operation in CUDA Fortran (NVFORTRAN-S-0519). Each assignment into a device scalar
-        ! below has exactly one device-resident reference (the LHS).
-        h_iStart = BCData(nn)%icBeg
-        h_iEnd = BCData(nn)%icEnd
-        h_jStart = BCData(nn)%jcBeg
-        h_jEnd = BCData(nn)%jcEnd
-        h_iSize = h_iEnd - h_iStart + 1
-        h_jSize = h_jEnd - h_jStart + 1
-
-        iStart = h_iStart
-        iEnd = h_iEnd
-        iSize = h_iSize
-        jStart = h_jStart
-        jEnd = h_jEnd
-        jSize = h_jSize
-
-    end subroutine setCudaBCPointers
+contains
 
     attributes(device) subroutine faceLayerIndices(faceID, layer, i, j, dm, sps, I3, J3, K3)
-        ! Converts a face-local (i,j) position + "layer" (0=2nd/outermost halo, 1=1st halo,
-        ! 2=1st interior, 3=2nd interior -- matching the ww0/ww1/ww2/ww3 naming convention
-        ! this replaces) into the actual 3D cell index (I3,J3,K3) into d_cudaDoms(dm,sps)'s
-        ! block arrays, for the given boco face direction. Mirrors utils::setBCPointers'
-        ! per-face index arithmetic (utils.F90:917-1098), computed per-thread instead of as
-        ! a host-side pointer slice.
+        !
+        !       Converts a face-local (i,j) position + "layer" (0=2nd/outermost halo, 1=1st halo,
+        !       2=1st interior, 3=2nd interior) into the actual 3D cell index (I3,J3,K3) into
+        !       block arrays, for the given boco face direction. Matches setBCPointers'
+        !       per-face index arithmetic, computed per-thread instead of as
+        !       a host-side pointer slice.
+        !
         use constants, only: iMin, iMax, jMin, jMax, kMin, kMax
-        use cudaBlock, only: d_cudaDoms
         implicit none
 
+        !
+        !       Subroutine arguments
+        !
         integer(kind=intType), intent(in), value :: faceID, layer, i, j, dm, sps
         integer(kind=intType), intent(out) :: I3, J3, K3
 
@@ -89,10 +46,10 @@ module cudaBCPointers
             K3 = j
         case (iMax)
             select case (layer)
-            case (0); I3 = d_cudaDoms(dm, sps)%ib
-            case (1); I3 = d_cudaDoms(dm, sps)%ie
-            case (2); I3 = d_cudaDoms(dm, sps)%il
-            case (3); I3 = d_cudaDoms(dm, sps)%nx
+            case (0); I3 = cudaDoms(dm,sps)%ib
+            case (1); I3 = cudaDoms(dm,sps)%ie
+            case (2); I3 = cudaDoms(dm,sps)%il
+            case (3); I3 = cudaDoms(dm,sps)%nx
             end select
             J3 = i
             K3 = j
@@ -103,10 +60,10 @@ module cudaBCPointers
         case (jMax)
             I3 = i
             select case (layer)
-            case (0); J3 = d_cudaDoms(dm, sps)%jb
-            case (1); J3 = d_cudaDoms(dm, sps)%je
-            case (2); J3 = d_cudaDoms(dm, sps)%jl
-            case (3); J3 = d_cudaDoms(dm, sps)%ny
+            case (0); J3 = cudaDoms(dm,sps)%jb
+            case (1); J3 = cudaDoms(dm,sps)%je
+            case (2); J3 = cudaDoms(dm,sps)%jl
+            case (3); J3 = cudaDoms(dm,sps)%ny
             end select
             K3 = j
         case (kMin)
@@ -117,24 +74,27 @@ module cudaBCPointers
             I3 = i
             J3 = j
             select case (layer)
-            case (0); K3 = d_cudaDoms(dm, sps)%kb
-            case (1); K3 = d_cudaDoms(dm, sps)%ke
-            case (2); K3 = d_cudaDoms(dm, sps)%kl
-            case (3); K3 = d_cudaDoms(dm, sps)%nz
+            case (0); K3 = cudaDoms(dm,sps)%kb
+            case (1); K3 = cudaDoms(dm,sps)%ke
+            case (2); K3 = cudaDoms(dm,sps)%kl
+            case (3); K3 = cudaDoms(dm,sps)%nz
             end select
         end select
 
     end subroutine faceLayerIndices
 
-
     attributes(device) subroutine spatialFaceIndices(faceID, dir, i, j, dm, sps, I3, J3, K3)
-        ! Converts a face-local (i,j) position + faceID into the i j k index needed to index
-        ! into a per face array. Basically faceLayerIndices but for face quantities like normals
-        ! instead of cell centered quantities
+        !
+        !       Converts a face-local (i,j) position + faceID into the i j k index needed to index
+        !       into a per face array. Basically faceLayerIndices but for face quantities like normals
+        !       instead of cell centered quantities
+        !
         use constants, only: iMin, iMax, jMin, jMax, kMin, kMax
-        use cudaBlock, only: d_cudaDoms
         implicit none
 
+        !
+        !       Subroutine arguments
+        !
         integer(kind=intType), intent(in), value :: faceID, dir, i, j, dm, sps
         integer(kind=intType), intent(out) :: I3, J3, K3
 
@@ -150,7 +110,7 @@ module cudaBCPointers
                 K3 = j
             end if
         case (iMax)
-            I3 = d_cudaDoms(dm, sps)%il
+            I3 = cudaDoms(dm,sps)%il
             J3 = i
             K3 = j
         case (jMin)
@@ -165,7 +125,7 @@ module cudaBCPointers
             end if
         case (jMax)
             I3 = i
-            J3 = d_cudaDoms(dm, sps)%jl
+            J3 = cudaDoms(dm,sps)%jl
             K3 = j
         case (kMin)
             if (dir .eq. 1) then
@@ -180,7 +140,7 @@ module cudaBCPointers
         case (kMax)
             I3 = i
             J3 = j
-            K3 = d_cudaDoms(dm, sps)%kl
+            K3 = cudaDoms(dm,sps)%kl
         end select
 
     end subroutine spatialFaceIndices

@@ -526,4 +526,12 @@ module constants
     integer(kind=intType), parameter :: MetricVolume = 1
     integer(kind=intType), parameter :: MetricSkewness = 2
 
+    ! CUDA ADI Problem Types
+    integer(kind=intType), parameter :: nADIProblems = 3
+    
+    integer(kind=intType), parameter :: IRSProblem = 1
+    integer(kind=intType), parameter :: DADIProblem = 2
+    integer(kind=intType), parameter :: TurbDADIProblem = 3
+
+
 end module constants

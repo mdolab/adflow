@@ -1,20 +1,51 @@
-! @File    :   cudaConstants.f90
+! @File    :   cudaConstants.cuf
 ! @Desc    :   This is a bunch of modules for the cuda residual code. These aren't really 'constants'
+!              Each module mirrors a CPU module into device constant (or device) memory and
+!              provides a cudaCopy* routine that copies the host values to the device.
+!              See the header of each module for its implementation status.
 
 module cudaFlowVarRefState
-    use cudafor
-    use precision, only: realType, intType
-    implicit none
-    save 
+    !
+    !       Input parameters related to the freestream state of the flow variable
+    !
+    !   Implementation status relative to flowVarRefState (flowVarRefState.F90)
+    !       Implemented:
+    !           nw, nwf, nwt, nt1, nt2, pRef, rhoRef, TRef, muRef, timeRef, uRef, href,
+    !           LRef, LRefSpecified, pInfDim, rhoInfDim, muDim, TinfDim, muInfDim,
+    !           rhoInf, uInf, pInf, pInfCorr, RGas, muInf, gammaInf, wInf,
+    !           kPresent, eddyModel, viscous
+    !           NOTE: wInf is a fixed dimension(10) array on the GPU (allocatable on the
+    !           CPU); only wInf(1:nw) is copied.
+    !       NOT implemented (AD derivative variables):
+    !           prefd, rhorefd, trefd, uRefd, Hrefd, murefd, timerefd, pinfdimd, rhoinfdimd,
+    !           tinfdimd, mudimd, muinfdimd, pinfdimb, rhoinfdimb, rhoinfd, uinfd, pinfd,
+    !           pinfcorrd, rgasd, muinfd, gammainfd, wInfd, wInfb
+    !
 
+    !
+    !   CUDA Modules
+    !
+    use cudafor
+
+    !
+    !   ADflow modules
+    !
+    use precision, only: realType, intType
+
+    implicit none
+    save
+
+    !
+    !   Module variables
+    !
     ! nw:       Total number of independent variables including the
-    !           turbulent variables.
+    !           turbulence variables.
     ! nwf:      Number of flow variables. For perfect gas computations
     !           this is 5.
-    ! nwt:      Number of turbulent variables, nwt = nw - nwf
+    ! nwt:      Number of turbulence variables, nwt = nw - nwf
     ! nt1, nt2: Initial and final indices for turbulence variables
 
-    integer(kind=intType),constant :: nw, nwf, nwt, nt1, nt2
+    integer(kind=intType), constant :: nw, nwf, nwt, nt1, nt2
 
     ! pRef:     Reference pressure (in Pa) used to nondimensionalize
     !           the flow equations.
@@ -36,24 +67,23 @@ module cudaFlowVarRefState
     ! hRef:     enthalpy scale;
     !           hRef = pRef/rhoRef;
 
-    real(kind=realType),constant :: pRef, rhoRef, TRef
-    real(kind=realType),constant :: muRef, timeRef, uRef, href
+    real(kind=realType), constant :: pRef, rhoRef, TRef
+    real(kind=realType), constant :: muRef, timeRef, uRef, href
 
     ! LRef:          Conversion factor of the length unit of the
     !                grid to meter. e.g. if the grid is in mm.,
     !                LRef = 1.e-3.
     ! LRefSpecified: Whether or not a conversion factor is specified
-    !                in the input file.
+    !                in the input parameters.
 
-    real(kind=realType),constant :: LRef
-    logical,constant :: LRefSpecified
+    real(kind=realType), constant :: LRef
+    logical, constant :: LRefSpecified
 
     ! pInfDim:   Free stream pressure in Pa.
     ! rhoInfDim: Free stream density in kg/m^3.
-    ! muDim:     Free stream molecular viscosity in kg/(m s)
+    ! muDim:     Free stream dynamic viscosity in kg/(m s)
 
-    real(kind=realType),constant :: pInfDim, rhoInfDim, muDim, TinfDim, muInfDim
-    !AD derivative values
+    real(kind=realType), constant :: pInfDim, rhoInfDim, muDim, TinfDim, muInfDim
 
     ! wInf(nw): Nondimensional free stream state vector.
     !           Variables stored are rho, u, v, w and rhoE.
@@ -66,33 +96,39 @@ module cudaFlowVarRefState
     ! RGas:     Nondimensional gas constant.
     ! gammaInf: Free stream specific heat ratio.
 
-    real(kind=realType),constant :: rhoInf, uInf, pInf, pInfCorr
-    real(kind=realType),constant :: RGas, muInf, gammaInf
-    
-    real(kind=realType), dimension(10),constant :: wInf
+    real(kind=realType), constant :: rhoInf, uInf, pInf, pInfCorr
+    real(kind=realType), constant :: RGas, muInf, gammaInf
+
+    real(kind=realType), dimension(10), constant :: wInf ! NOTE: This is fixed to dim 10 on GPU but only 1:nw is copied
 
     ! viscous:   whether or not this is a viscous computation.
     ! kPresent:  whether or not a turbulent kinetic energy is present
     !            in the turbulence model.
     ! eddyModel: whether or not the turbulence model is an eddy
     !            viscosity model.
-    logical,constant :: kPresent, eddyModel, viscous
-    contains
+    logical, constant :: kPresent, eddyModel, viscous
+
+    ! TODO: AD derivative values
+contains
     subroutine cudaCopyFlowVarRefState
-        use flowVarRefState, only: h_nw=> nw, h_nwf=> nwf, h_nwt=> nwt, h_nt1=> nt1, h_nt2=> nt2, &
-                                 h_pRef=> pRef, h_rhoRef=> rhoRef, h_TRef=> TRef, h_muRef=> muRef, &
-                                    h_timeRef=> timeRef, h_uRef=> uRef, h_href=> href, &
-                                    h_LRef=> LRef, h_LRefSpecified=> LRefSpecified, &
-                                    h_pInfDim=> pInfDim, h_rhoInfDim=> rhoInfDim, h_muDim=> muDim, &
-                                    h_TinfDim=> TinfDim, h_muInfDim=> muInfDim, &
-                                    h_wInf=> wInf, h_pInf=> pInf, h_pInfCorr=> pInfCorr, &
-                                    h_rhoInf=> rhoInf, h_uInf=> uInf, h_muInf=> muInf, &
-                                    h_RGas=> RGas, h_gammaInf=> gammaInf, &
-                                    h_viscous=> viscous, h_kPresent=> kPresent, h_eddyModel=> eddyModel
-        
-        
+        !
+        !       Copy the flowVarRefState host values to the device
+        !
+        use flowVarRefState, only: h_nw => nw, h_nwf => nwf, h_nwt => nwt, h_nt1 => nt1, h_nt2 => nt2, &
+                                   h_pRef => pRef, h_rhoRef => rhoRef, h_TRef => TRef, h_muRef => muRef, &
+                                   h_timeRef => timeRef, h_uRef => uRef, h_href => href, &
+                                   h_LRef => LRef, h_LRefSpecified => LRefSpecified, &
+                                   h_pInfDim => pInfDim, h_rhoInfDim => rhoInfDim, h_muDim => muDim, &
+                                   h_TinfDim => TinfDim, h_muInfDim => muInfDim, &
+                                   h_wInf => wInf, h_pInf => pInf, h_pInfCorr => pInfCorr, &
+                                   h_rhoInf => rhoInf, h_uInf => uInf, h_muInf => muInf, &
+                                   h_RGas => RGas, h_gammaInf => gammaInf, &
+                                   h_viscous => viscous, h_kPresent => kPresent, h_eddyModel => eddyModel
+
         implicit none
-        !copy data to gpu
+        !
+        ! Copy data to gpu
+        !
         nw = h_nw
         nwf = h_nwf
         nwt = h_nwt
@@ -124,7 +160,6 @@ module cudaFlowVarRefState
         kPresent = h_kPresent
         eddyModel = h_eddyModel
 
-
     end subroutine cudaCopyFlowVarRefState
 
 end module cudaFlowVarRefState
@@ -135,11 +170,31 @@ module cudaInputDiscretization
     !       the governing equations, i.e. scheme parameters, time accuracy
     !       (in case of an unsteady computation) and preconditioning info.
     !
+    !   Implementation status relative to inputDiscretization (inputParam.F90)
+    !       Implemented:
+    !           spaceDiscr, spaceDiscrCoarse, orderTurb, limiter, riemann, riemannCoarse,
+    !           precond, eulerWallBCTreatment, viscWallBCTreatment, outflowTreatment,
+    !           nonMatchTreatment, vis2, vis4, vis2Coarse, adis, acousticScaleFactor,
+    !           kappaCoef, lumpedDiss, approxSA, sigma, vortexCorr, dirScaling,
+    !           hScalingInlet, radiiNeededFine, radiiNeededCoarse, useApproxWallDistance,
+    !           lowSpeedPreconditioner
+    !       Declared but NOT copied (uninitialized on the GPU):
+    !           useBlockettes
+    !       NOT implemented:
+    !           updateWallAssociations
+    !           AD derivative variables: vis2b, vis4b, vis2Coarseb, adisb, kappaCoefb, sigmab
+    !
+
+    !
+    !   ADflow modules
+    !
     use constants, only: intType, realType
+
     implicit none
     save
+
     !
-    !       Definition of the discretization input parameters.
+    !   Module variables
     !
     ! spaceDiscr:             Fine grid discretization.
     ! spaceDiscrCoarse:       Coarse grid discretization.
@@ -193,42 +248,44 @@ module cudaInputDiscretization
     !                         not have changed significantly
     ! lowspeedpreconditoner:  Whether or not to use low-speed precondioner
 
-    integer(kind=intType),constant :: spaceDiscr, spaceDiscrCoarse
-    integer(kind=intType),constant :: orderTurb, limiter
-    integer(kind=intType),constant :: riemann, riemannCoarse, precond
-    integer(kind=intType),constant :: eulerWallBCTreatment, viscWallBCTreatment, outflowTreatment
-    integer(kind=intType),constant :: nonMatchTreatment
+    integer(kind=intType), constant :: spaceDiscr, spaceDiscrCoarse
+    integer(kind=intType), constant :: orderTurb, limiter
+    integer(kind=intType), constant :: riemann, riemannCoarse, precond
+    integer(kind=intType), constant :: eulerWallBCTreatment, viscWallBCTreatment, outflowTreatment
+    integer(kind=intType), constant :: nonMatchTreatment
 
-    real(kind=realType),constant :: vis2, vis4, vis2Coarse, adis
-    real(kind=realType),constant :: acousticScaleFactor
-    real(kind=realType),constant :: kappaCoef
-    logical,constant :: lumpedDiss
-    logical,constant :: approxSA
-    real(kind=realType),constant :: sigma
-    logical,constant :: useBlockettes
+    real(kind=realType), constant :: vis2, vis4, vis2Coarse, adis
+    real(kind=realType), constant :: acousticScaleFactor
+    real(kind=realType), constant :: kappaCoef
+    logical, constant :: lumpedDiss
+    logical, constant :: approxSA
+    real(kind=realType), constant :: sigma
+    logical, constant :: useBlockettes
 
+    logical, constant :: vortexCorr, dirScaling, hScalingInlet
+    logical, constant :: radiiNeededFine, radiiNeededCoarse
 
-    logical,constant :: vortexCorr, dirScaling, hScalingInlet
-    logical,constant :: radiiNeededFine, radiiNeededCoarse
-
-    logical,constant :: useApproxWallDistance
-    logical,constant :: lowSpeedPreconditioner
-    contains
+    logical, constant :: useApproxWallDistance
+    logical, constant :: lowSpeedPreconditioner
+contains
     subroutine cudaCopyInputDiscretization
-        use inputDiscretization, only: h_spaceDiscr=>spaceDiscr, h_spaceDiscrCoarse=>spaceDiscrCoarse, &
-                                        h_orderTurb=>orderTurb, h_riemann=>riemann, &
-                                        h_riemannCoarse=>riemannCoarse, h_limiter=>limiter, &
-                                        h_precond=>precond, h_eulerWallBCTreatment=>eulerWallBCTreatment, &
-                                        h_viscWallBCTreatment=>viscWallBCTreatment, h_outflowTreatment=>outflowTreatment, &
-                                        h_nonMatchTreatment=>nonMatchTreatment, h_vis2=>vis2, &
-                                        h_vis4=>vis4, h_vis2Coarse=>vis2Coarse, h_adis=>adis, &
-                                        h_kappaCoef=>kappaCoef, h_vortexCorr=>vortexCorr, &
-                                        h_dirScaling=>dirScaling, h_hScalingInlet=>hScalingInlet, &
-                                        h_radiiNeededFine=>radiiNeededFine, h_radiiNeededCoarse=>radiiNeededCoarse, &
-                                        h_lumpedDiss=>lumpedDiss, h_approxSA=>approxSA, h_sigma=>sigma, &
-                                        h_useApproxWallDistance=>useApproxWallDistance, &
-                                        h_lowSpeedPreconditioner=>lowSpeedPreconditioner, &
-                                        h_acousticScaleFactor=>acousticScaleFactor
+        !
+        !       Copy the inputDiscretization host values to the device
+        !
+        use inputDiscretization, only: h_spaceDiscr => spaceDiscr, h_spaceDiscrCoarse => spaceDiscrCoarse, &
+                                       h_orderTurb => orderTurb, h_riemann => riemann, &
+                                       h_riemannCoarse => riemannCoarse, h_limiter => limiter, &
+                                       h_precond => precond, h_eulerWallBCTreatment => eulerWallBCTreatment, &
+                                       h_viscWallBCTreatment => viscWallBCTreatment, h_outflowTreatment => outflowTreatment, &
+                                       h_nonMatchTreatment => nonMatchTreatment, h_vis2 => vis2, &
+                                       h_vis4 => vis4, h_vis2Coarse => vis2Coarse, h_adis => adis, &
+                                       h_kappaCoef => kappaCoef, h_vortexCorr => vortexCorr, &
+                                       h_dirScaling => dirScaling, h_hScalingInlet => hScalingInlet, &
+                                       h_radiiNeededFine => radiiNeededFine, h_radiiNeededCoarse => radiiNeededCoarse, &
+                                       h_lumpedDiss => lumpedDiss, h_approxSA => approxSA, h_sigma => sigma, &
+                                       h_useApproxWallDistance => useApproxWallDistance, &
+                                       h_lowSpeedPreconditioner => lowSpeedPreconditioner, &
+                                       h_acousticScaleFactor => acousticScaleFactor
         implicit none
         spaceDiscr = h_spaceDiscr
         spaceDiscrCoarse = h_spaceDiscrCoarse
@@ -257,6 +314,7 @@ module cudaInputDiscretization
         useApproxWallDistance = h_useApproxWallDistance
         lowSpeedPreconditioner = h_lowSpeedPreconditioner
         acousticScaleFactor = h_acousticScaleFactor
+
     end subroutine cudaCopyInputDiscretization
 
 end module cudaInputDiscretization
@@ -267,11 +325,31 @@ module cudaInputIteration
     !       i.e. multigrid parameters, cfl numbers, smoothers and
     !       convergence.
     !
+    !   Implementation status relative to inputIteration (inputParam.F90)
+    !       Implemented:
+    !           nCycles, nCyclesCoarse, nSaveVolume, nSaveSurface, nsgStartup, smoother,
+    !           nRKStages, nSubiterations, nSubIterTurb, nUpdateBleeds, resAveraging,
+    !           CFLLimit, turbTreatment, turbSmoother, turbRelax, mgBoundCorr, mgStartlevel,
+    !           nMGSteps, nMGLevels, timeLimit, miniterNum, cfl, cflCoarse, fcoll, smoop,
+    !           alfaTurb, betaTurb, L2Conv, L2ConvCoarse, L2ConvRel, maxL2DeviationFactor,
+    !           relaxBleeds, epscoefconv, convcheckwindowsize, mgDescription, rkReset,
+    !           useLinResMonitor, freezeTurbSource, printIterations, printWarnings,
+    !           printNegativeVolumes, turbResScale, useDissContinuation, dissContMagnitude,
+    !           dissContMidpoint, dissContSharpness, cycleStrategy, etaRK, cdisRK   
+    !       NOT implemented:
+    !           printBadlySkewedCells, printBCWarnings, meshMaxSkewness, useSkewnessCheck
+    !
+
+    !
+    !   ADflow modules
+    !
     use constants
+
     implicit none
     save
+
     !
-    !       Definition of the iteration input parameters.
+    !   Module variables
     !
     ! nCycles:          Maximum number of multigrid cycles.
     ! nCyclesCoarse:    Idem, but on the coarse grids in full multigrid.
@@ -336,59 +414,60 @@ module cudaInputIteration
     ! strategy.
     !
 
-    integer(kind=intType),constant :: nCycles, nCyclesCoarse
-    integer(kind=intType),constant :: nSaveVolume, nSaveSurface
-    integer(kind=intType),constant :: nsgStartup, smoother, nRKStages
-    integer(kind=intType),constant :: nSubiterations
-    integer(kind=intType),constant :: nSubIterTurb, nUpdateBleeds
-    integer(kind=intType),constant :: resAveraging
-    real(kind=realType),constant :: CFLLimit
-    integer(kind=intType),constant :: turbTreatment, turbSmoother, turbRelax
-    integer(kind=intType),constant :: mgBoundCorr, mgStartlevel
-    integer(kind=intType),constant :: nMGSteps, nMGLevels
-    real(kind=realType),constant :: timeLimit
-    integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
-    integer(kind=intType),constant :: miniterNum
-    real(kind=realType),constant :: cfl, cflCoarse, fcoll, smoop
-    real(kind=realType),constant :: alfaTurb, betaTurb
-    real(kind=realType),constant :: L2Conv, L2ConvCoarse
-    real(kind=realType),constant :: L2ConvRel
-    real(kind=realType),constant :: maxL2DeviationFactor
-    real(kind=realType),constant :: relaxBleeds
-    real(kind=realtype),constant :: epscoefconv
-    integer(kind=inttype),constant :: convcheckwindowsize
-    real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
-    character(len=maxStringLen),constant :: mgDescription
-    logical,constant :: rkReset
-    logical,constant :: useLinResMonitor
-    logical,constant :: freezeTurbSource
-    logical,constant :: printIterations
-    logical,constant :: printWarnings
-    logical,constant :: printNegativeVolumes
-    real(kind=realType),constant, dimension(4) :: turbResScale
-    logical,constant :: useDissContinuation
-    real(kind=realType),constant :: dissContMagnitude, dissContMidpoint, dissContSharpness
+    integer(kind=intType), constant :: nCycles, nCyclesCoarse
+    integer(kind=intType), constant :: nSaveVolume, nSaveSurface
+    integer(kind=intType), constant :: nsgStartup, smoother, nRKStages
+    integer(kind=intType), constant :: nSubiterations
+    integer(kind=intType), constant :: nSubIterTurb, nUpdateBleeds
+    integer(kind=intType), constant :: resAveraging
+    real(kind=realType), constant :: CFLLimit
+    integer(kind=intType), constant :: turbTreatment, turbSmoother, turbRelax
+    integer(kind=intType), constant :: mgBoundCorr, mgStartlevel
+    integer(kind=intType), constant :: nMGSteps, nMGLevels
+    real(kind=realType), constant :: timeLimit
+    integer(kind=intType), device, allocatable, dimension(:) :: cycleStrategy
+    integer(kind=intType), constant :: miniterNum
+    real(kind=realType), constant :: cfl, cflCoarse, fcoll, smoop
+    real(kind=realType), constant :: alfaTurb, betaTurb
+    real(kind=realType), constant :: L2Conv, L2ConvCoarse
+    real(kind=realType), constant :: L2ConvRel
+    real(kind=realType), constant :: maxL2DeviationFactor
+    real(kind=realType), constant :: relaxBleeds
+    real(kind=realType), constant :: epscoefconv
+    integer(kind=intType), constant :: convcheckwindowsize
+    real(kind=realType), device, allocatable, dimension(:) :: etaRK, cdisRK
+    character(len=maxStringLen), constant :: mgDescription
+    logical, constant :: rkReset
+    logical, constant :: useLinResMonitor
+    logical, constant :: freezeTurbSource
+    logical, constant :: printIterations
+    logical, constant :: printWarnings
+    logical, constant :: printNegativeVolumes
+    real(kind=realType), constant, dimension(4) :: turbResScale
+    logical, constant :: useDissContinuation
+    real(kind=realType), constant :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
-    contains
+contains
     subroutine cudaCopyInputIteration
-        use inputIteration, only: h_nCycles=>nCycles, h_nCyclesCoarse=>nCyclesCoarse, h_nSaveVolume=>nSaveVolume, h_nSaveSurface=>nSaveSurface,&
-                                 h_nsgStartup=>nsgStartup, h_smoother=>smoother, h_nRKStages=>nRKStages, h_nSubiterations=>nSubiterations, &
-                                    h_nSubIterTurb=>nSubIterTurb, h_nUpdateBleeds=>nUpdateBleeds, h_resAveraging=>resAveraging,  h_CFLLimit=>CFLLimit, &
-                                    h_turbTreatment=>turbTreatment, h_turbSmoother=>turbSmoother, h_turbRelax=>turbRelax, &
-                                    h_mgBoundCorr=>mgBoundCorr, h_mgStartlevel=>mgStartlevel, h_nMGSteps=>nMGSteps, &
-                                    h_nMGLevels=>nMGLevels, h_timelimit=>timeLimit,h_cycleStrategy=>cycleStrategy, h_miniterNum=>miniterNum, &
-                                    h_cfl=>cfl, h_cflCoarse=>cflCoarse, h_fcoll=>fcoll, &
-                                    h_smoop=>smoop, h_alfaTurb=>alfaTurb, h_betaTurb=>betaTurb, h_L2Conv=>L2Conv, &
-                                    h_L2ConvCoarse=>L2ConvCoarse, h_L2ConvRel=>L2ConvRel, h_maxL2DeviationFactor=>maxL2DeviationFactor, &
-
-                                    h_relaxBleeds=>relaxBleeds, h_epscoefconv=>epscoefconv, h_convcheckwindowsize=>convcheckwindowsize, &
-                                    h_etaRK=>etaRK, h_cdisRK=>cdisRK, h_mgDescription=>mgDescription, h_rkReset=>rkReset, &
-                                    h_useLinResMonitor=>useLinResMonitor, h_freezeTurbSource=>freezeTurbSource, &
-
-                                    h_printIterations=>printIterations, h_printWarnings=>printWarnings, &
-                                    h_printNegativeVolumes=>printNegativeVolumes, h_turbResScale=>turbResScale, &
-                                    h_useDissContinuation=>useDissContinuation, h_dissContMagnitude=>dissContMagnitude, &
-                                    h_dissContMidpoint=>dissContMidpoint, h_dissContSharpness=>dissContSharpness
+        !
+        !       Copy the inputIteration host values to the device
+        !
+        use inputIteration, only: h_nCycles => nCycles, h_nCyclesCoarse => nCyclesCoarse, h_nSaveVolume => nSaveVolume, h_nSaveSurface => nSaveSurface, &
+                                  h_nsgStartup => nsgStartup, h_smoother => smoother, h_nRKStages => nRKStages, h_nSubiterations => nSubiterations, &
+                                  h_nSubIterTurb => nSubIterTurb, h_nUpdateBleeds => nUpdateBleeds, h_resAveraging => resAveraging, h_CFLLimit => CFLLimit, &
+                                  h_turbTreatment => turbTreatment, h_turbSmoother => turbSmoother, h_turbRelax => turbRelax, &
+                                  h_mgBoundCorr => mgBoundCorr, h_mgStartlevel => mgStartlevel, h_nMGSteps => nMGSteps, &
+                                  h_nMGLevels => nMGLevels, h_timelimit => timeLimit, h_cycleStrategy => cycleStrategy, h_miniterNum => miniterNum, &
+                                  h_cfl => cfl, h_cflCoarse => cflCoarse, h_fcoll => fcoll, &
+                                  h_smoop => smoop, h_alfaTurb => alfaTurb, h_betaTurb => betaTurb, h_L2Conv => L2Conv, &
+                                  h_L2ConvCoarse => L2ConvCoarse, h_L2ConvRel => L2ConvRel, h_maxL2DeviationFactor => maxL2DeviationFactor, &
+                                  h_relaxBleeds => relaxBleeds, h_epscoefconv => epscoefconv, h_convcheckwindowsize => convcheckwindowsize, &
+                                  h_etaRK => etaRK, h_cdisRK => cdisRK, h_mgDescription => mgDescription, h_rkReset => rkReset, &
+                                  h_useLinResMonitor => useLinResMonitor, h_freezeTurbSource => freezeTurbSource, &
+                                  h_printIterations => printIterations, h_printWarnings => printWarnings, &
+                                  h_printNegativeVolumes => printNegativeVolumes, h_turbResScale => turbResScale, &
+                                  h_useDissContinuation => useDissContinuation, h_dissContMagnitude => dissContMagnitude, &
+                                  h_dissContMidpoint => dissContMidpoint, h_dissContSharpness => dissContSharpness
 
         implicit none
         nCycles = h_nCycles
@@ -411,7 +490,6 @@ module cudaInputIteration
         nMGSteps = h_nMGSteps
         nMGLevels = h_nMGLevels
         timeLimit = h_timelimit
-        !TODO allocate this
         if (.not. allocated(cycleStrategy)) then
             allocate(cycleStrategy(h_nMGSteps))
         end if
@@ -430,7 +508,6 @@ module cudaInputIteration
         relaxBleeds = h_relaxBleeds
         epscoefconv = h_epscoefconv
         convcheckwindowsize = h_convcheckwindowsize
-        !TODO ALLOCATE THIS DATA
         if (.not. allocated(etaRk)) then
             allocate(etaRk(h_nRKStages))
         end if
@@ -451,7 +528,9 @@ module cudaInputIteration
         dissContMagnitude = h_dissContMagnitude
         dissContMidpoint = h_dissContMidpoint
         dissContSharpness = h_dissContSharpness
+
     end subroutine cudaCopyInputIteration
+
 end module cudaInputIteration
 
 module cudaInputPhysics
@@ -460,11 +539,38 @@ module cudaInputPhysics
     !       like governing equations, mode of the equations, turbulence
     !       model and free stream conditions.
     !
+    !   Implementation status relative to inputPhysics (inputParam.F90)
+    !       Implemented:
+    !           equations, equationMode, flowType, turbModel, cpModel, turbProd, rvfN, rvfB,
+    !           useQCR, useRotationSA, useft2SA, wallFunctions, wallDistanceNeeded, alpha,
+    !           beta, liftIndex, Mach, MachCoef, MachGrid, Reynolds, ReynoldsLength,
+    !           gammaConstant, RGasDim, Prandtl, PrandtlTurb, pklim, wallOffset,
+    !           wallDistCutoff, eddyVisInfRatio, turbIntensityInf, surfaceRef, lengthRef,
+    !           velDirFreestream, liftDirection, dragDirection, pointRef, momentAxis,
+    !           SSuthDim, muSuthDim, TSuthDim, cavitationnumber, cpmin_rho, pointRefEC,
+    !           forcesAsTractions, cpmin_family
+    !       NOT implemented:
+    !           sepSenMaxRho, sepSenMaxFamily
+    !           SA constants SAKappa, SAcb1, SAcb2, SAsigma, SAcv1, SAcw2, SAcw3, SAct1,
+    !           SAct2, SAct3, SAct4, SAcrot (available on the GPU as the rsa* constants in
+    !           cudaParamTurb, with SAsigma as rsaCb3)
+    !           AD derivative variables: alphad, betad, velDirFreestreamd, velDirFreeStreamb,
+    !           liftDirectiond, liftDirectionb, dragDirectiond, dragDirectionb, pointRefd,
+    !           pointRefb, momentAxisd, momentAxisb, Machd, MachCoefd, MachGridd, reynoldsd,
+    !           reynoldslengthd, gammaconstantd, surfaceRefd, lengthRefd, rgasdimd,
+    !           Prandtlb, PrandtlTurbb
+    !
+
+    !
+    !   ADflow modules
+    !
     use precision
+
     implicit none
     save
 
-    !       Definition of the physics input parameters.
+    !
+    !   Module variables
     !
     ! equations:           Governing equations to be solved.
     ! equationMode:        Mode of the equations, steady, unsteady
@@ -526,54 +632,56 @@ module cudaInputPhysics
     ! cpmin_rho            The rho parameter used with the KS-based cavitation sensor.
     ! cpmin_family         The cpmin for a given surface family that does not use
     !                      KS-aggregation, but rather an exact min computation.
+    ! forcesAsTractions    Return forces as tractions instead of forces
 
-    integer(kind=intType),constant :: equations, equationMode, flowType
-    integer(kind=intType),constant :: turbModel, cpModel, turbProd
-    integer(kind=intType),constant :: rvfN
-    logical,constant :: rvfB
-    logical,constant :: useQCR, useRotationSA, useft2SA
+    integer(kind=intType), constant :: equations, equationMode, flowType
+    integer(kind=intType), constant :: turbModel, cpModel, turbProd
+    integer(kind=intType), constant :: rvfN
+    logical, constant :: rvfB
+    logical, constant :: useQCR, useRotationSA, useft2SA
 
-    logical,constant :: wallFunctions, wallDistanceNeeded
+    logical, constant :: wallFunctions, wallDistanceNeeded
 
-    real(kind=realType),constant :: alpha, beta
-    integer(kind=intType),constant :: liftIndex
-    real(kind=realType),constant :: Mach, MachCoef, MachGrid
-    real(kind=realType),constant :: Reynolds, ReynoldsLength
-    real(kind=realType),constant :: gammaConstant, RGasDim
-    real(kind=realType),constant :: Prandtl, PrandtlTurb, pklim, wallOffset, wallDistCutoff
-    real(kind=realType),constant :: eddyVisInfRatio, turbIntensityInf
-    real(kind=realType),constant :: surfaceRef, lengthRef
-    real(kind=realType),constant, dimension(3) :: velDirFreestream
-    real(kind=realType),constant, dimension(3) :: liftDirection
-    real(kind=realType),constant, dimension(3) :: dragDirection
-    real(kind=realType),constant, dimension(3) :: pointRef
-    real(kind=realType),constant, dimension(3, 2) :: momentAxis
-    real(kind=realType),constant :: SSuthDim, muSuthDim, TSuthDim
-    real(kind=realType),constant :: cavitationnumber
-    real(kind=realType),constant :: cpmin_rho
-    real(kind=realType), dimension(:), allocatable :: cpmin_family
+    real(kind=realType), constant :: alpha, beta
+    integer(kind=intType), constant :: liftIndex
+    real(kind=realType), constant :: Mach, MachCoef, MachGrid
+    real(kind=realType), constant :: Reynolds, ReynoldsLength
+    real(kind=realType), constant :: gammaConstant, RGasDim
+    real(kind=realType), constant :: Prandtl, PrandtlTurb, pklim, wallOffset, wallDistCutoff
+    real(kind=realType), constant :: eddyVisInfRatio, turbIntensityInf
+    real(kind=realType), constant :: surfaceRef, lengthRef
+    real(kind=realType), constant, dimension(3) :: velDirFreestream
+    real(kind=realType), constant, dimension(3) :: liftDirection
+    real(kind=realType), constant, dimension(3) :: dragDirection
+    real(kind=realType), constant, dimension(3) :: pointRef
+    real(kind=realType), constant, dimension(3, 2) :: momentAxis
+    real(kind=realType), constant :: SSuthDim, muSuthDim, TSuthDim
+    real(kind=realType), constant :: cavitationnumber
+    real(kind=realType), constant :: cpmin_rho
+    real(kind=realType), device, dimension(:), allocatable :: cpmin_family
+    real(kind=realType), constant, dimension(3) :: pointRefEC
 
-    real(kind=realType),constant, dimension(3) :: pointRefEC
-
-    ! Return forces as tractions instead of forces:
-    logical,constant:: forcesAsTractions
-    contains
+    logical, constant :: forcesAsTractions
+contains
     subroutine cudaCopyInputPhysics
-        use inputPhysics, only: h_equations=>equations, h_equationMode=>equationMode, h_flowType=>flowType, &
-                                h_turbModel=>turbModel, h_cpModel=>cpModel, h_turbProd=>turbProd, &
-                                h_rvfN=>rvfN, h_rvfB=>rvfB, h_useQCR=>useQCR, h_useRotationSA=>useRotationSA, &
-                                h_useft2SA=>useft2SA, h_wallFunctions=>wallFunctions, h_wallDistanceNeeded=>wallDistanceNeeded, &
-                                h_alpha=>alpha, h_beta=>beta, h_liftIndex=>liftIndex, h_Mach=>Mach, &
-                                h_MachCoef=>MachCoef, h_MachGrid=>MachGrid, h_Reynolds=>Reynolds, &
-                                h_ReynoldsLength=>ReynoldsLength, h_gammaConstant=>gammaConstant, &
-                                h_RGasDim=>RGasDim, h_Prandtl=>Prandtl, h_PrandtlTurb=>PrandtlTurb, &
-                                h_pklim=>pklim, h_wallOffset=>wallOffset, h_wallDistCutoff=>wallDistCutoff, &
-                                h_eddyVisInfRatio=>eddyVisInfRatio, h_turbIntensityInf=>turbIntensityInf, &
-                                h_surfaceRef=>surfaceRef, h_lengthRef=>lengthRef, h_velDirFreestream=>velDirFreestream, &
-                                h_liftDirection=>liftDirection, h_dragDirection=>dragDirection, h_pointRef=>pointRef, &
-                                h_momentAxis=>momentAxis, h_SSuthDim=>SSuthDim, h_muSuthDim=>muSuthDim, &
-                                h_TSuthDim=>TSuthDim, h_cavitationnumber=>cavitationnumber, h_cpmin_rho=>cpmin_rho, &
-                                h_cpmin_family=>cpmin_family, h_pointRefEC=>pointRefEC, h_forcesAsTractions=>forcesAsTractions
+        !
+        !       Copy the inputPhysics host values to the device
+        !
+        use inputPhysics, only: h_equations => equations, h_equationMode => equationMode, h_flowType => flowType, &
+                                h_turbModel => turbModel, h_cpModel => cpModel, h_turbProd => turbProd, &
+                                h_rvfN => rvfN, h_rvfB => rvfB, h_useQCR => useQCR, h_useRotationSA => useRotationSA, &
+                                h_useft2SA => useft2SA, h_wallFunctions => wallFunctions, h_wallDistanceNeeded => wallDistanceNeeded, &
+                                h_alpha => alpha, h_beta => beta, h_liftIndex => liftIndex, h_Mach => Mach, &
+                                h_MachCoef => MachCoef, h_MachGrid => MachGrid, h_Reynolds => Reynolds, &
+                                h_ReynoldsLength => ReynoldsLength, h_gammaConstant => gammaConstant, &
+                                h_RGasDim => RGasDim, h_Prandtl => Prandtl, h_PrandtlTurb => PrandtlTurb, &
+                                h_pklim => pklim, h_wallOffset => wallOffset, h_wallDistCutoff => wallDistCutoff, &
+                                h_eddyVisInfRatio => eddyVisInfRatio, h_turbIntensityInf => turbIntensityInf, &
+                                h_surfaceRef => surfaceRef, h_lengthRef => lengthRef, h_velDirFreestream => velDirFreestream, &
+                                h_liftDirection => liftDirection, h_dragDirection => dragDirection, h_pointRef => pointRef, &
+                                h_momentAxis => momentAxis, h_SSuthDim => SSuthDim, h_muSuthDim => muSuthDim, &
+                                h_TSuthDim => TSuthDim, h_cavitationnumber => cavitationnumber, h_cpmin_rho => cpmin_rho, &
+                                h_cpmin_family => cpmin_family, h_pointRefEC => pointRefEC, h_forcesAsTractions => forcesAsTractions
 
         implicit none
         equations = h_equations
@@ -618,7 +726,6 @@ module cudaInputPhysics
         TSuthDim = h_TSuthDim
         cavitationnumber = h_cavitationnumber
         cpmin_rho = h_cpmin_rho
-        !TODO allocate this data
         if (.not. allocated(cpmin_family)) then
             allocate(cpmin_family(1:size(h_cpmin_family)))
         end if
@@ -630,15 +737,42 @@ module cudaInputPhysics
 end module cudaInputPhysics
 
 module cudaParamTurb
+    !
+    !       This module contains parameters related to the turbulence models on GPU
+    !
+    !   TODO: This module only supports the Spalart-Allmaras model at this time.
+    !         Everything not needed for SA is commented out below.
+    !
+    !   Implementation status relative to paramTurb (paramTurb.F90)
+    !       Implemented:
+    !           SA constants (constant memory): rsaK, rsaCb1, rsaCb2, rsaCb3, rsaCv1, rsaCw2,
+    !           rsaCw3, rsaCt1, rsaCt2, rsaCt3, rsaCt4, rsaCrot, rsaCw1
+    !       Commented out (not needed for SA):
+    !           v2f constants: rvfLimitK, rvfLimitE, rvfCl, rvfCmu
+    !           Wall function fits: nFit, ypT, reT, up0, up1, up2, tup0, tup1, tup2, tup3,
+    !           tuLogFit
+    !       NOT implemented:
+    !           up3
+    !           AD derivative variables: ypTb, reTb, up0b, up1b, up2b, up3b
+    !
+
+    !
+    !   ADflow modules
+    !
     use precision, only: realType, intType
+
     implicit none
     save
 
     !
+    !   Module variables
+    !
+
+    !
     !       V2-f constants.
     !
-    real(kind=realType), constant :: rvfLimitK, rvfLimitE, rvfCl
-    real(kind=realType), constant :: rvfCmu
+    ! real(kind=realType), constant :: rvfLimitK, rvfLimitE, rvfCl
+    ! real(kind=realType), constant :: rvfCmu
 
     !
     !       SA constants.
@@ -678,32 +812,35 @@ module cudaParamTurb
     ! tup3(nFit,nt1:nt2): Idem for coefficient 3.
     ! tuLogFit(nt1:nt2):  Whether or not the logarithm of the variable
     !                     has been fitted.
-    integer(kind=intType), constant :: nFit
-    real(kind=realType), dimension(:), allocatable, device :: ypT, reT
-    real(kind=realType), dimension(:), allocatable, device :: up0, up1
-    real(kind=realType), dimension(:), allocatable, device :: up2
-    
-    real(kind=realType), dimension(:, :), allocatable,device :: tup0, tup1
-    real(kind=realType), dimension(:, :), allocatable,device :: tup2, tup3
-    logical, dimension(:), allocatable,device :: tuLogFit
-    contains
-    subroutine cudaCopyParamTurb
-        use paramTurb, only: h_rvfLimitK=>rvflimitK, h_rvfLimitE=>rvfLimitE, h_rvfCl=>rvfCl, &
-                            h_rvfCmu=>rvfCmu, h_nFit=>nFit, h_ypT=>ypT, h_reT=>reT, &
-                            h_up0=>up0, h_up1=>up1, h_up2=>up2, h_tup0=>tup0, &
-                            h_tup1=>tup1, h_tup2=>tup2, h_tup3=>tup3, h_tuLogFit=>tuLogFit, &
-                            h_rsaK=>rsaK, h_rsaCb1=>rsaCb1, h_rsaCb2=>rsaCb2, &
-                            h_rsaCb3=>rsaCb3, h_rsaCv1=>rsaCv1, h_rsaCw2=>rsaCw2, h_rsaCw3=>rsaCw3, &
-                            h_rsaCt1=>rsaCt1, h_rsaCt2=>rsaCt2, h_rsaCt3=>rsaCt3, &
-                            h_rsaCt4=>rsaCt4, h_rsaCrot=>rsaCrot, h_rsaCw1=>rsaCw1
+    ! integer(kind=intType), constant :: nFit
+    ! real(kind=realType), dimension(:), allocatable, device :: ypT, reT
+    ! real(kind=realType), dimension(:), allocatable, device :: up0, up1
+    ! real(kind=realType), dimension(:), allocatable, device :: up2
 
-        
-        use flowVarRefState, only: nt1, nt2
+    ! real(kind=realType), dimension(:, :), allocatable, device :: tup0, tup1
+    ! real(kind=realType), dimension(:, :), allocatable, device :: tup2, tup3
+    ! logical, dimension(:), allocatable, device :: tuLogFit
+
+contains
+    subroutine cudaCopyParamTurb
+        !
+        !       Copy the paramTurb host values to the device
+        !
+        use paramTurb, only: h_rsaK => rsaK, h_rsaCb1 => rsaCb1, h_rsaCb2 => rsaCb2, &
+                             h_rsaCb3 => rsaCb3, h_rsaCv1 => rsaCv1, h_rsaCw2 => rsaCw2, h_rsaCw3 => rsaCw3, &
+                             h_rsaCt1 => rsaCt1, h_rsaCt2 => rsaCt2, h_rsaCt3 => rsaCt3, &
+                             h_rsaCt4 => rsaCt4, h_rsaCrot => rsaCrot, h_rsaCw1 => rsaCw1
+                             ! h_rvfLimitK => rvflimitK, h_rvfLimitE => rvfLimitE, h_rvfCl => rvfCl, &
+                             ! h_rvfCmu => rvfCmu, h_nFit => nFit, h_ypT => ypT, h_reT => reT, &
+                             ! h_up0 => up0, h_up1 => up1, h_up2 => up2, h_tup0 => tup0, &
+                             ! h_tup1 => tup1, h_tup2 => tup2, h_tup3 => tup3, h_tuLogFit => tuLogFit
+
+        ! use flowVarRefState, only: nt1, nt2
         implicit none
 
         !
         !       SA constants.
-        !    
+        !
         rsaK = h_rsaK
         rsaCb1 = h_rsaCb1
         rsaCb2 = h_rsaCb2
@@ -720,32 +857,30 @@ module cudaParamTurb
 
         !
         !       V2-f constants.
-        !    
-        rvfLimitK = h_rvfLimitK
-        rvfLimitE = h_rvfLimitE
-        rvfCl = h_rvfCl
-        rvfCmu = h_rvfCmu
+        !
+        ! rvfLimitK = h_rvfLimitK
+        ! rvfLimitE = h_rvfLimitE
+        ! rvfCl = h_rvfCl
+        ! rvfCmu = h_rvfCmu
 
         !  Wall function fits
-        nFit = h_nFit
+        ! nFit = h_nFit
 
         ! TOOD allocate these and fix copy for proper dimensions
-        if (allocated(h_ypt))then 
-            if (.not. allocated(ypT)) then
-                allocate(ypT(0:h_nFit))
-            end if
-            ypT(0:h_nFit) = h_ypT(0:h_nFit)
+        ! if (allocated(h_ypt)) then
+        !     if (.not. allocated(ypT)) then
+        !         allocate(ypT(0:h_nFit))
+        !     end if
+        !     ypT(0:h_nFit) = h_ypT(0:h_nFit)
+        ! end if
 
-        end if 
-        
-        if(allocated(h_reT)) then
-            if (.not. allocated(reT)) then
-                allocate(reT(0:h_nFit))
-            end if
-            reT(0:h_nFit) = h_reT(0:h_nFit)
-        end if 
+        ! if (allocated(h_reT)) then
+        !     if (.not. allocated(reT)) then
+        !         allocate(reT(0:h_nFit))
+        !     end if
+        !     reT(0:h_nFit) = h_reT(0:h_nFit)
+        ! end if
 
-        
         ! if(.not. allocated(up0)) then
         !     allocate(up0(h_nFit))
         ! end if
@@ -755,7 +890,7 @@ module cudaParamTurb
         !     allocate(up1(h_nFit))
         ! end if
         ! up1(1:h_nFit) = h_up1(1:h_nFit)
-        
+
         ! if(.not. allocated(up2)) then
         !     allocate(up2(h_nFit))
         ! end if
@@ -780,56 +915,108 @@ module cudaParamTurb
         !     allocate(tup3(1:h_nFit, nt1:nt2))
         ! end if
         ! tup3(1:h_nFit, nt1:nt2) = h_tup3(1:h_nFit, nt1:nt2)
-        
+
         ! if (.not. allocated(tuLogFit)) then
         !     allocate(tuLogFit(nt1:nt2))
         ! end if
         ! tuLogFit(nt1:nt2) = h_tuLogFit(nt1:nt2)
+
     end subroutine cudaCopyParamTurb
+
 end module cudaParamTurb
 
-
 module cudaIteration
+    !
+    !       Contains variable related to each particular solver iteration
+    !
+    !   Implementation status relative to iteration (iteration.f90)
+    !       Implemented (device memory, copied by cudaCopyIteration):
+    !           groundLevel, currentLevel, rFil, totalR0, totalR
+    !           NOTE: rFil is also set on the device every residual call by
+    !           cudaResidual::setRFil
+    !       NOT implemented:
+    !           rkStage, Subit, nStepsCycling, cycling, iterTot, rfilb, t0Solver, converged,
+    !           exchangePressureEarly, standAloneMode, changing_Grid, deforming_Grid,
+    !           changingOverset, nOldSolAvail, nOldLevels, coefTime, iterType,
+    !           approxTotalIts, CFLMonitor, stepMonitor, linResMonitor, nALEMeshes,
+    !           nALEsteps, coefTimeALE, coefMeshALE, timeSpectralGridsNotWritten,
+    !           oldSolWritten, totalRStart, totalRFinal, rhoRes0, rhoResStart, rhoResFinal,
+    !           rhoRes, ordersConverged
+    !
+
+    !
+    !   ADflow modules
+    !
     use precision, only: realType, intType
+
     implicit none
     save
+
+    !
+    !   Module variables
+    !
     ! groundLevel:  Current ground level of the computation. Needed
     !               to determine what kind of action must be
     !               undertaken. E.G. On the coarse grids no solution
     !               will be written.
     ! currentLevel: MG level at which the compution currently resides.
 
-    integer(kind=intType),device :: groundLevel, currentLevel
+    integer(kind=intType), device :: groundLevel, currentLevel
     ! integer(kind=intType),device :: rkStage, Subit ! Not needed on device for now
-    !rFil : coefficient to control the fraction of the dissipation
+    ! rFil : coefficient to control the fraction of the dissipation
     !        residual of the previous runge-kutta stage.
     real(kind=realType), device :: rFil
     ! Variables for monitoring the residuals
-    real(kind=realType),device :: totalR0, totalR
-    contains
+    real(kind=realType), device :: totalR0, totalR
+contains
     subroutine cudaCopyIteration
-        use iteration, only: h_groundLevel=>groundLevel, h_currentLevel=>currentLevel, &
-                             h_rFil=>rFil, h_totalR0=>totalR0, h_totalR=>totalR
+        !
+        !       Copy the iteration host values to the device
+        !
+        use iteration, only: h_groundLevel => groundLevel, h_currentLevel => currentLevel, &
+                             h_rFil => rFil, h_totalR0 => totalR0, h_totalR => totalR
         implicit none
         groundLevel = h_groundLevel
         currentLevel = h_currentLevel
         rFil = h_rFil
         totalR0 = h_totalR0
         totalR = h_totalR
+
     end subroutine cudaCopyIteration
 
 end module cudaIteration
 
 module cudaTurbMod
+    !
+    !   Implementation status relative to turbMod (turbMod.F90)
+    !       Implemented (device memory, copied by cudaCopyTurbMod):
+    !           secondOrd
+    !           NOTE: copied but not read by any kernel; cudaResidual::saAdvection uses a
+    !           per-thread local secondOrd instead
+    !       NOT implemented:
+    !           sig1, sig2, dvt, vort, prod, f1, kwCD, ktCD, sct, scl2, strain2
+    !           AD derivative variables: dvtd, vortd, prodd, f1d, kwCDd, ktCDd, sctd,
+    !           scl2d, strain2d
+    !
+
     implicit none
     save
+
+    !
+    !   Module variables
+    !
     ! secondOrd:  whether or not a second order discretization for
     !             the advective terms must be used.
-    logical,device :: secondOrd
-    contains
+    logical, device :: secondOrd
+contains
     subroutine cudaCopyTurbMod
-        use turbMod, only: h_secondOrd=>secondOrd
+        !
+        !       Copy the turbMod host values to the device
+        !
+        use turbMod, only: h_secondOrd => secondOrd
         implicit none
         secondOrd = h_secondOrd
+
     end subroutine cudaCopyTurbMod
+
 end module cudaTurbMod

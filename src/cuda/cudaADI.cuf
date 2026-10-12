@@ -1,945 +1,1062 @@
+! @File    :   cudaADI.cuf
+! @Desc    :   This module contains the GPU ADI solver. Batched tridiagonal systems are solved
+!              along a block direction using Parallel Cyclic Reduction (PCR) followed by
+!              the Thomas algorithm. The systems are described by the lhs and rhs descriptors.
+
 module cudaADI
-    use constants, only: realType, intType
+    !
+    !   CUDA Modules
+    !
     use cudafor
+
+    !
+    !   ADflow modules
+    !
+    use constants, only: realType, intType, nADIProblems
     use cudaBlock, only: h_cudaDoms
+
     implicit none
 
-
+    !
+    !   Types
+    !
     type lhsTDDescriptor
-        integer(kind=intType) :: n ! number of rows per system
-        integer(kind=intType) :: nCeil ! upper number of rows (ragged edges)
-        integer(kind=intType) :: nFloor ! lower number of rows per system (ragged edges)
-        integer(kind=intType) :: nSub ! number of subsystems per line
-        integer(kind=intType) :: nPCRThreads ! number of threads per line (PCR and setup only)
+        integer(kind=intType) :: n                 ! number of rows per system
+        integer(kind=intType) :: nCeil             ! upper number of rows (ragged edges)
+        integer(kind=intType) :: nFloor            ! lower number of rows per system (ragged edges)
+        integer(kind=intType) :: nSub              ! number of subsystems per line
+        integer(kind=intType) :: nPCRThreads       ! number of threads per line (PCR and setup only)
+        integer(kind=intType) :: nPCRStages        ! number of PCR stages to execute on ths system
         integer(kind=intType) :: raggedFloorSwitch ! threshold to switch to floor sub system length
-        integer(kind=intType) :: nsysFast ! number of systems along the contiguous direction
-        integer(kind=intType) :: nsysSlow     ! number of systems along the outer direction
-        integer(kind=intType) :: rowStride    ! stride between row i and row i+1 of one system
-        integer(kind=intType) :: fastStride   ! stride between adjacent systems in the fast direction (ideally 1)
-        integer(kind=intType) :: slowStride   ! stride  between adjacent systems in the slow direction
-        integer(kind=intType) :: base         ! offset of row 1, system (1,1)
-        integer(kind=intType) :: segLen       ! length of the line segment this block computes
-        logical :: coalesceOnRow             ! set when the rowStride is 1 so that the consequtive threads walk a row
-        ! THIS WONT COMPILE: REFACTORED
-        ! real(kind=realType), dimension(:),pointer,device :: aTarget ! target array for the sub diagonal
-        ! real(kind=realType), dimension(:),pointer,device :: bTarget ! target array for the diagonal
-        ! real(kind=realType), dimension(:),pointer,device :: cTarget ! target array for super diagonal
-        ! real(kind=realType), dimension(:),pointer,device :: scratchTarget ! target array for the solver scratch
+        integer(kind=intType) :: nsysFast          ! number of systems along the contiguous direction
+        integer(kind=intType) :: nsysSlow          ! number of systems along the outer direction
+        integer(kind=intType) :: rowStride         ! stride between row i and row i+1 of one system
+        integer(kind=intType) :: fastStride        ! stride between adjacent systems in the fast direction (ideally 1)
+        integer(kind=intType) :: slowStride        ! stride  between adjacent systems in the slow direction
+        integer(kind=intType) :: base              ! offset of row 1, system (1,1)
+        integer(kind=intType) :: segLen            ! length of the line segment this block computes
+        logical :: coalesceOnRow                   ! set when the rowStride is 1 so that the consequtive threads walk a row
     end type lhsTDDescriptor
 
     type rhsDescriptor
-        integer(kind=intType), dimension(3) :: rowStride    ! stride 3 dim vector between row i and row i+1 of one system
-        integer(kind=intType), dimension(3) :: fastStride   ! stride 3 dim vector between adjacent systems in the fast direction (ideally 1)
-        integer(kind=intType), dimension(3) :: slowStride   ! stride 3 dim vector  between adjacent systems in the slow direction
-        integer(kind=intType), dimension(3) :: baseIJK ! Offset for the first entry of the RHS
-        integer(kind=intType) :: nrhs         ! number of RHS vectors
-        integer(kind=intType) :: nrhsBeg         ! start idx of RHS vector 
-        integer(kind=intType) :: nrhsEnd         ! end idx of RHS vector 
-        integer(kind=intType) :: ni ! block dim of the RHS i dimension
-        integer(kind=intType) :: nj ! block dim of the RHS j dimension
-        integer(kind=intType) :: nk ! block dim of the RHS k dimension
-        ! THIS WONT COMPILE: REFACTORED
-        ! real(kind=realType), dimension(:,:,:,:),pointer,device :: rhsTarget ! target array for the RHS
+        integer(kind=intType), dimension(3) :: rowStride  ! stride 3 dim vector between row i and row i+1 of one system
+        integer(kind=intType), dimension(3) :: fastStride ! stride 3 dim vector between adjacent systems in the fast direction (ideally 1)
+        integer(kind=intType), dimension(3) :: slowStride ! stride 3 dim vector  between adjacent systems in the slow direction
+        integer(kind=intType), dimension(3) :: baseIJK    ! Offset for the first entry of the RHS
+        integer(kind=intType) :: nrhs                     ! number of RHS vectors
+        integer(kind=intType) :: nrhsBeg                  ! start idx of RHS vector
+        integer(kind=intType) :: nrhsEnd                  ! end idx of RHS vector
+        integer(kind=intType) :: ni                       ! block dim w/ single Halo of the RHS i dimension
+        integer(kind=intType) :: nj                       ! block dim w/ single Halo of the RHS j dimension
+        integer(kind=intType) :: nk                       ! block dim w/ single Halo of the RHS k dimension
     end type rhsDescriptor
 
+    type cudaBlockADIConfig
+        integer(kind=intType) :: nPCRStagesI
+        integer(kind=intType) :: nPCRStagesJ
+        integer(kind=intType) :: nPCRStagesK
+        integer(kind=intType) :: nPCRThreadsI
+        integer(kind=intType) :: nPCRThreadsJ
+        integer(kind=intType) :: nPCRThreadsK
+    end type cudaBlockADIConfig
 
-    ! Store the descriptors here
-    type(lhsTDDescriptor), device, allocatable, dimension(:,:) :: d_lhsDescs(:,:)
-    type(lhsTDDescriptor), allocatable, dimension(:,:) :: h_lhsDescs(:,:)
-    type(rhsDescriptor), device, allocatable, dimension(:,:) :: d_rhsDescs(:,:)
-    type(rhsDescriptor), allocatable, dimension(:,:) :: h_rhsDescs(:,:)
-
+    !
+    !   Module variables
+    !
+    type(lhsTDDescriptor), device, allocatable, dimension(:,:,:) :: d_lhsDescs
+    type(lhsTDDescriptor), allocatable, dimension(:,:,:) :: h_lhsDescs
+    type(rhsDescriptor), device, allocatable, dimension(:,:,:) :: d_rhsDescs
+    type(rhsDescriptor), allocatable, dimension(:,:,:) :: h_rhsDescs
+    type(cudaBlockADIConfig), dimension(:,:), allocatable :: cudaADIPCRConfigs
 
 contains
 
-
-subroutine setupDeviceADIDescriptors
-    use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bie=>ie, bje=>je, bke=>ke, bnx=>nx, bny=>ny, bnz=>nz
-    use cudaPreprocess, only: cudaADIPCRConfigs
-    use flowVarRefState, only: nwf
-    use utils, only: setPointers
-    implicit none
-
-    ! 
-    ! Local Variables
-    !
-
-    ! integer(kind=intType) :: nPCRStagesI, nPCRStagesJ, nPCRStagesK, nPCRThreadsI, nPCRThreadsJ, nPCRThreadsK 
-    integer(kind=intType) :: i, nn, sps, dir
-    
-    if (allocated(d_lhsDescs)) then
-        return
-    end if
-
-    allocate(d_lhsDescs(3, nDom))
-    allocate(h_lhsDescs(3, nDom))
-    allocate(d_rhsDescs(3, nDom)) 
-    allocate(h_rhsDescs(3, nDom))
-
-    ! Hardcode for now
-    sps = 1
-
-
-    domainsLoop: do nn=1,nDom
-
-        ! call setPointers(nn, 1, sps)
-
+    subroutine setupDeviceADIDescriptors
+        !
+        !       Preprocessing routine that allocates and configures the lhs and rhs descriptors which
+        !       data structures that the GPU ADI solver needs to execute. registerADIProblem must then
+        !       be call to configure problem specific data
+        !
+        use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bie=>ie, bje=>je, bke=>ke, bnx=>nx, bny=>ny, bnz=>nz
+        use flowVarRefState, only: nwf
+        implicit none
 
         !
-        !   Setup the standard part of the RHS descriptor
+        !       Local variables
         !
-        do i=1,3
-            h_rhsDescs(i, nn)%baseIJK = [2,2,2]
-            h_rhsDescs(i, nn)%nrhs = nwf
-            h_rhsDescs(i, nn)%nrhsBeg = 1
-            h_rhsDescs(i, nn)%nrhsEnd = nwf
-            h_rhsDescs(i, nn)%ni = bie ! Block Dims
-            h_rhsDescs(i, nn)%nj = bje
-            h_rhsDescs(i, nn)%nk = bke
-        end do
+        integer(kind=intType) :: iDir, nn, sps, dir, prob
 
-        ! 
-        ! Setup the i direction 
-        !
-
-        dir = 1
-
-        h_rhsDescs(dir, nn)%rowStride = [1,0,0]
-        h_rhsDescs(dir, nn)%fastStride = [0,1,0]
-        h_rhsDescs(dir, nn)%slowStride = [0,0,1]
-
-        h_lhsDescs(dir, nn)%n = bnx
-        h_lhsDescs(dir, nn)%nsysFast = bny
-        h_lhsDescs(dir, nn)%nsysSlow = bnz
-        h_lhsDescs(dir, nn)%rowStride = 1
-        h_lhsDescs(dir, nn)%fastStride = bnx
-        h_lhsDescs(dir, nn)%slowStride = bnx*bny
-        h_lhsDescs(dir, nn)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesI
-        h_lhsDescs(dir, nn)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsI
-        ! h_lhsDescs%segLen = (h_lhsDescs%n + nPCRThreads - 1)/nPCRThreads
-        h_lhsDescs(dir, nn)%nFloor = h_lhsDescs(dir, nn)%n/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%nCeil = (h_lhsDescs(dir, nn)%n + h_lhsDescs(dir, nn)%nSub - 1)/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn)%n,h_lhsDescs(dir, nn)%nSub)
-        h_lhsDescs(dir, nn)%coalesceOnRow = .true.
-
-        !
-        ! Setup the j direction
-        !
-
-        dir = 2
-
-        h_rhsDescs(dir, nn)%rowStride = [0,1,0]
-        h_rhsDescs(dir, nn)%fastStride = [1,0,0]
-        h_rhsDescs(dir, nn)%slowStride = [0,0,1]
-
-        h_lhsDescs(dir, nn)%n = bny
-        h_lhsDescs(dir, nn)%nsysFast = bnx
-        h_lhsDescs(dir, nn)%nsysSlow = bnz
-        h_lhsDescs(dir, nn)%rowStride = bnx
-        h_lhsDescs(dir, nn)%fastStride = 1
-        h_lhsDescs(dir, nn)%slowStride = bnx*bny
-        h_lhsDescs(dir, nn)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesJ
-        h_lhsDescs(dir, nn)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsJ
-        ! h_lhsDescs(dir, nn)%segLen = (h_lhsDescs(dir, nn)%n + nPCRThreads - 1)/nPCRThreads
-        h_lhsDescs(dir, nn)%nFloor = h_lhsDescs(dir, nn)%n/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%nCeil = (h_lhsDescs(dir, nn)%n + h_lhsDescs(dir, nn)%nSub - 1)/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn)%n,h_lhsDescs(dir, nn)%nSub)
-        h_lhsDescs(dir, nn)%coalesceOnRow = .false.
-
-        !
-        ! Setup the k direction
-        !
-
-        dir = 3
-
-        h_rhsDescs(dir, nn)%rowStride = [0,0,1]
-        h_rhsDescs(dir, nn)%fastStride = [1,0,0]
-        h_rhsDescs(dir, nn)%slowStride = [0,1,0]
-
-        h_lhsDescs(dir, nn)%n = bnz
-        h_lhsDescs(dir, nn)%nsysFast = bnx
-        h_lhsDescs(dir, nn)%nsysSlow = bny
-        h_lhsDescs(dir, nn)%rowStride = bnx*bny
-        h_lhsDescs(dir, nn)%fastStride = 1
-        h_lhsDescs(dir, nn)%slowStride = bnx
-        h_lhsDescs(dir, nn)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesK
-        h_lhsDescs(dir, nn)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsK
-        ! h_lhsDescs(dir, nn)%segLen = (h_lhsDescs(dir, nn)%n + nPCRThreads - 1)/nPCRThreads
-        h_lhsDescs(dir, nn)%nFloor = h_lhsDescs(dir, nn)%n/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%nCeil = (h_lhsDescs(dir, nn)%n + h_lhsDescs(dir, nn)%nSub - 1)/h_lhsDescs(dir, nn)%nSub
-        h_lhsDescs(dir, nn)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn)%n,h_lhsDescs(dir, nn)%nSub)
-        h_lhsDescs(dir, nn)%coalesceOnRow = .false.
-
-    end do domainsLoop
-
-    !
-    ! Push descriptors to the device
-    !
-
-    d_lhsDescs = h_lhsDescs
-    d_rhsDescs = h_rhsDescs
-    
-end subroutine setupDeviceADIDescriptors
-
-
-attributes(global) subroutine bTDForward(dir, aTarget, bTarget, cTarget, scratchTarget, rhsTarget)
-    ! Master batched parallel thomas tridiagonal solver
-    use constants,       only: one
-    implicit none
-    integer(kind=intType), intent(in), value :: dir
-    type(lhsTDDescriptor) :: lhsDesc
-    type(rhsDescriptor) ::  rhsDesc
-    real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), scratchTarget(*)
-    real(kind=realType), device ::  rhsTarget(*)
-    integer(kind=intType) :: nbeg, nend
-    integer(kind=intType) :: u, v, m, l, psys, sys, nsysFast, idx, seg, j_sub
-    integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linm1
-    real(kind=realType) :: denom
-
-    !
-    ! Read the descriptors (hardcoded to one block for now!)
-    !
-    lhsDesc = d_lhsDescs(dir, 1)
-    rhsDesc = d_rhsDescs(dir, 1)
-
-
-    nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x ! total system index (1 based)
-
-    if (lhsDesc%coalesceOnRow) then
-        ! Make j-sub the fastest axis
-        j_sub = mod(sys-1,lhsDesc%nSub) ! the subsystem index (leave it 0 based)
-        psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
-        v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
-        u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
-    else
-        ! Otherwise make u the fastest axis
-        u = mod(sys-1,nsysFast) + 1 ! The fast system row (make it 1 based)
-        psys = (sys-1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
-        j_sub = mod(psys,lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
-        v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
-    end if
-
-    
-    ! Check if system out of bounds
-    if (v>lhsDesc%nsysSlow) then
-        return
-    end if
-
-    ! Handle non pow 2 block dims
-    nbeg = 1_intType
-    if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
-        nend = lhsDesc%nCeil
-    else
-        nend = lhsDesc%nFloor
-    end if
-
-
-    ! compute the step stride
-    stepStride = lhsDesc%nSub*lhsDesc%rowStride
-
-
-    ii = rhsDesc%baseIJK(1) + j_sub*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + j_sub*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + j_sub*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-
-    iii = ii !- rhsDesc%rowStride(1)*lhsDesc%nSub ! Indexing the row BEFORE
-    jjj = jj !- rhsDesc%rowStride(2)*lhsDesc%nSub ! NOTE: We do the first row seperately other wise we would be reading out of bounds!
-    kkk = kk !- rhsDesc%rowStride(3)*lhsDesc%nSub ! so we start this off for the NEXT row
-
-    idx = 1 + (nbeg-1)*stepStride + j_sub*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-
-    ! Clear the start of the working array at the first row before we start to avoid unintialized data
-    ! if (nbeg .eq. 1_intType) then
-        scratchTarget(idx) = 0.0_realType
-    ! end if
-
-    ! Do the first row outside of the loop
-
-    ! Compute the thomas algorithm denominator, second part goes to zero as enforced by 0 in d_smoop
-    denom = one/&
-    (bTarget(idx)) ! - scratchTarget(idx)*aTarget(idx)) this term is always zero on the first row
-
-    ! Compute the upper diagonal in this row (c) after transformation but store it for the NEXT row to use
-    if (nbeg < nend) then
-        scratchTarget(idx+stepStride) = denom * cTarget(idx)
-    end if
-    ! scratchTarget(idx+stepStride) = denom * cTarget(idx)
-
-
-    ! Update RHS in place
-    do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-        ! rhs has to be indexed as flat even though it is multi dimensional
-        lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-
-        rhsTarget(lin) = denom &
-                * (rhsTarget(lin)) ! note the second part is ZERO on the first term so we just set it to that to avoid indexing RHS out of bounds
-
-        
-
-    end do
-
-    ! Increment
-    ii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub
-    jj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
-    kk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
-    idx = idx + stepStride 
-    
-
-    do m=nbeg+1,nend
-
-        ! Forward Elimination
-
-        ! Compute the thomas algorithm denominator, second part goes to zero as enforced by 0 in d_smoop
-        denom = one/&
-        (bTarget(idx) - scratchTarget(idx)*aTarget(idx))
-
-        ! Compute the upper diagonal in this row (c) after transformation but store it for the NEXT row to use
-        ! Unfortunetly we have to guard the spill as the padding required to catch it in scratchTarget is number of
-        ! PCR iterations dependent
-        ! NOTE: Look into possibly allocating the scratch dynamically to avoid this
-        if (m < nend) then
-            scratchTarget(idx+stepStride) = denom * cTarget(idx)
+        if (allocated(d_lhsDescs)) then
+            return
         end if
 
-        ! Update RHS in place
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
+        allocate(d_lhsDescs(3, nDom, nADIProblems))
+        allocate(h_lhsDescs(3, nDom, nADIProblems))
+        allocate(d_rhsDescs(3, nDom, nADIProblems))
+        allocate(h_rhsDescs(3, nDom, nADIProblems))
 
+        !
+        ! Hardcoded to single block
+        !
+        ! Hardcode for now
+        sps = 1
+
+        problemsLoop: do prob = 1, nADIProblems
+            domainsLoop: do nn = 1, nDom
+                ! setpointers call here when multiblock
+
+                !
+                ! Setup the standard part of the RHS descriptor
+                !
+                do iDir = 1, 3
+                    h_rhsDescs(iDir, nn, prob)%baseIJK = [2, 2, 2] ! Populating default values here
+                    h_rhsDescs(iDir, nn, prob)%nrhs = nwf
+                    h_rhsDescs(iDir, nn, prob)%nrhsBeg = 1
+                    h_rhsDescs(iDir, nn, prob)%nrhsEnd = nwf
+                    h_rhsDescs(iDir, nn, prob)%ni = bie ! Block Dims w/ single halo
+                    h_rhsDescs(iDir, nn, prob)%nj = bje
+                    h_rhsDescs(iDir, nn, prob)%nk = bke
+                end do
+
+                !
+                ! Setup the i direction
+                !
+                dir = 1
+
+                h_rhsDescs(dir, nn, prob)%rowStride = [1, 0, 0]
+                h_rhsDescs(dir, nn, prob)%fastStride = [0, 1, 0]
+                h_rhsDescs(dir, nn, prob)%slowStride = [0, 0, 1]
+
+                h_lhsDescs(dir, nn, prob)%n = bnx
+                h_lhsDescs(dir, nn, prob)%nsysFast = bny
+                h_lhsDescs(dir, nn, prob)%nsysSlow = bnz
+                h_lhsDescs(dir, nn, prob)%rowStride = 1
+                h_lhsDescs(dir, nn, prob)%fastStride = bnx
+                h_lhsDescs(dir, nn, prob)%slowStride = bnx*bny
+                h_lhsDescs(dir, nn, prob)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesI
+                h_lhsDescs(dir, nn, prob)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsI
+                h_lhsDescs(dir, nn, prob)%nPCRStages = cudaADIPCRConfigs(nn,sps)%nPCRStagesI
+                ! h_lhsDescs%segLen = (h_lhsDescs(dir, nn, prob)%n + nPCRThreads - 1)/nPCRThreads
+                h_lhsDescs(dir, nn, prob)%nFloor = h_lhsDescs(dir, nn, prob)%n/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%nCeil = (h_lhsDescs(dir, nn, prob)%n + h_lhsDescs(dir, nn, prob)%nSub - 1)/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn, prob)%n, h_lhsDescs(dir, nn, prob)%nSub)
+                h_lhsDescs(dir, nn, prob)%coalesceOnRow = .true.
+
+                !
+                ! Setup the j direction
+                !
+                dir = 2
+
+                h_rhsDescs(dir, nn, prob)%rowStride = [0, 1, 0]
+                h_rhsDescs(dir, nn, prob)%fastStride = [1, 0, 0]
+                h_rhsDescs(dir, nn, prob)%slowStride = [0, 0, 1]
+
+                h_lhsDescs(dir, nn, prob)%n = bny
+                h_lhsDescs(dir, nn, prob)%nsysFast = bnx
+                h_lhsDescs(dir, nn, prob)%nsysSlow = bnz
+                h_lhsDescs(dir, nn, prob)%rowStride = bnx
+                h_lhsDescs(dir, nn, prob)%fastStride = 1
+                h_lhsDescs(dir, nn, prob)%slowStride = bnx*bny
+                h_lhsDescs(dir, nn, prob)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesJ
+                h_lhsDescs(dir, nn, prob)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsJ
+                h_lhsDescs(dir, nn, prob)%nPCRStages = cudaADIPCRConfigs(nn,sps)%nPCRStagesJ
+                ! h_lhsDescs(dir, nn, prob)%segLen = (h_lhsDescs(dir, nn, prob)%n + nPCRThreads - 1)/nPCRThreads
+                h_lhsDescs(dir, nn, prob)%nFloor = h_lhsDescs(dir, nn, prob)%n/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%nCeil = (h_lhsDescs(dir, nn, prob)%n + h_lhsDescs(dir, nn, prob)%nSub - 1)/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn, prob)%n, h_lhsDescs(dir, nn, prob)%nSub)
+                h_lhsDescs(dir, nn, prob)%coalesceOnRow = .false.
+
+                !
+                ! Setup the k direction
+                !
+                dir = 3
+
+                h_rhsDescs(dir, nn, prob)%rowStride = [0, 0, 1]
+                h_rhsDescs(dir, nn, prob)%fastStride = [1, 0, 0]
+                h_rhsDescs(dir, nn, prob)%slowStride = [0, 1, 0]
+
+                h_lhsDescs(dir, nn, prob)%n = bnz
+                h_lhsDescs(dir, nn, prob)%nsysFast = bnx
+                h_lhsDescs(dir, nn, prob)%nsysSlow = bny
+                h_lhsDescs(dir, nn, prob)%rowStride = bnx*bny
+                h_lhsDescs(dir, nn, prob)%fastStride = 1
+                h_lhsDescs(dir, nn, prob)%slowStride = bnx
+                h_lhsDescs(dir, nn, prob)%nSub = 2**cudaADIPCRConfigs(nn,sps)%nPCRStagesK
+                h_lhsDescs(dir, nn, prob)%nPCRThreads = cudaADIPCRConfigs(nn,sps)%nPCRThreadsK
+                h_lhsDescs(dir, nn, prob)%nPCRStages = cudaADIPCRConfigs(nn,sps)%nPCRStagesK
+                ! h_lhsDescs(dir, nn, prob)%segLen = (h_lhsDescs(dir, nn, prob)%n + nPCRThreads - 1)/nPCRThreads
+                h_lhsDescs(dir, nn, prob)%nFloor = h_lhsDescs(dir, nn, prob)%n/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%nCeil = (h_lhsDescs(dir, nn, prob)%n + h_lhsDescs(dir, nn, prob)%nSub - 1)/h_lhsDescs(dir, nn, prob)%nSub
+                h_lhsDescs(dir, nn, prob)%raggedFloorSwitch = mod(h_lhsDescs(dir, nn, prob)%n, h_lhsDescs(dir, nn, prob)%nSub)
+                h_lhsDescs(dir, nn, prob)%coalesceOnRow = .false.
+            end do domainsLoop
+        end do problemsLoop
+
+        !
+        ! Push descriptors to the device
+        !
+        d_lhsDescs = h_lhsDescs
+        d_rhsDescs = h_rhsDescs
+
+    end subroutine setupDeviceADIDescriptors
+
+    subroutine registerADIProblem(problemID, baseIJK, nrhs, nrhsBeg, nrhsEnd)
+        !
+        !       This routine sets problem specific RHS descriptor settings.
+        !       (i.e. IRS and turbDADI operate on different residual variables)
+        !       It must be called for every problem after setting up the device
+        !       ADI descriptors or else default values for the RHS will be used
+        !       which may not work with the given problem
+        !
+        use blockPointers, only: nDom
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), dimension(3) :: baseIJK
+        integer(kind=intType), intent(in) :: problemID, nrhs, nrhsBeg, nrhsEnd
+
+        !
+        !       Local variables
+        !
+        integer(kind=intType) :: dir, nn
+
+        if (.not. allocated(h_rhsDescs)) then
+            return
+        end if
+
+        domainsLoop: do nn = 1, nDom
+            directionLoop: do dir = 1, 3
+                h_rhsDescs(dir, nn, problemID)%baseIJK = baseIJK
+                h_rhsDescs(dir, nn, problemID)%nrhs = nrhs
+                h_rhsDescs(dir, nn, problemID)%nrhsBeg = nrhsBeg
+                h_rhsDescs(dir, nn, problemID)%nrhsEnd = nrhsEnd
+            end do directionLoop
+        end do domainsLoop
+
+        !
+        ! Push rhs descriptors to the device
+        !
+        d_rhsDescs = h_rhsDescs
+
+    end subroutine registerADIProblem
+
+    subroutine destroyDeviceADIDescriptors
+        !
+        !       Destroys the device and host mirrors of the ADI descriptors
+        !
+        implicit none
+
+        if (allocated(h_lhsDescs)) then
+            deallocate(h_lhsDescs)
+        end if
+        if (allocated(d_lhsDescs)) then
+            deallocate(d_lhsDescs)
+        end if
+        if (allocated(h_rhsDescs)) then
+            deallocate(h_rhsDescs)
+        end if
+        if (allocated(d_rhsDescs)) then
+            deallocate(d_rhsDescs)
+        end if
+
+    end subroutine destroyDeviceADIDescriptors
+
+    attributes(global) subroutine bTDForward(problemID, dir, aTarget, bTarget, cTarget, scratchTarget, rhsTarget)
+        !
+        !       CUDA kernel that executes the forward pass of a batched Thomas algorithm tridiagonal solve
+        !       along the specified direction over the blocks. lhs and rhs descriptors MUST be configured in device memory
+        !       for this kernel to work. Device arrays for the diagonals (upper, lower, and main), RHS, and a
+        !       scratch array must be allocated and passed in as arguments.
+        !
+        use constants, only: one
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir
+        real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), scratchTarget(*)
+        real(kind=realType), device :: rhsTarget(*)
+
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        integer(kind=intType) :: nbeg, nend
+        integer(kind=intType) :: u, v, m, l, psys, sys, nsysFast, idx, seg, j_sub
+        integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linm1
+        real(kind=realType) :: denom
+
+        !
+        ! Read the descriptors (hardcoded to one block for now!)
+        !
+        lhsDesc = d_lhsDescs(dir, 1, problemID)
+        rhsDesc = d_rhsDescs(dir, 1, problemID)
+
+        !
+        ! Initialize GPU thread indices
+        !
+        nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        sys = (blockIdx%x-1)*blockDim%x + threadIdx%x ! total system index (1 based)
+
+        if (lhsDesc%coalesceOnRow) then
+            ! Make j-sub the fastest axis
+            j_sub = mod(sys - 1, lhsDesc%nSub) ! the subsystem index (leave it 0 based)
+            psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
+            v   = (psys/nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys, nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u = mod(sys - 1, nsysFast) + 1 ! The fast system row (make it 1 based)
+            psys = (sys - 1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
+            j_sub = mod(psys, lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
+            v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
+        end if
+
+        ! Check if system out of bounds
+        if (v .gt. lhsDesc%nsysSlow) then
+            return
+        end if
+
+        ! Handle non pow 2 block dims
+        nbeg = 1_intType
+        if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
+            nend = lhsDesc%nCeil
+        else
+            nend = lhsDesc%nFloor
+        end if
+
+        ! compute the step stride
+        stepStride = lhsDesc%nSub*lhsDesc%rowStride
+
+        ii = rhsDesc%baseIJK(1) + j_sub*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + j_sub*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + j_sub*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+
+        iii = ii !- rhsDesc%rowStride(1)*lhsDesc%nSub ! Indexing the row BEFORE
+        jjj = jj !- rhsDesc%rowStride(2)*lhsDesc%nSub ! NOTE: We do the first row seperately other wise we would be reading out of bounds!
+        kkk = kk !- rhsDesc%rowStride(3)*lhsDesc%nSub ! so we start this off for the NEXT row
+
+        idx = 1 + (nbeg - 1)*stepStride + j_sub*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+
+        ! Clear the start of the working array at the first row before we start to avoid unintialized data
+        ! if (nbeg .eq. 1_intType) then
+        scratchTarget(idx) = 0.0_realType
+        ! end if
+
+        ! Do the first row outside of the loop
+
+        ! Compute the thomas algorithm denominator, second part goes to zero as enforced by 0 in d_smoop
+        denom = one / &
+                (bTarget(idx)) ! - scratchTarget(idx)*aTarget(idx)) this term is always zero on the first row
+
+        ! Compute the upper diagonal in this row (c) after transformation but store it for the NEXT row to use
+        if (nbeg .lt. nend) then
+            scratchTarget(idx + stepStride) = denom * cTarget(idx)
+        end if
+        ! scratchTarget(idx+stepStride) = denom * cTarget(idx)
+
+        ! Update RHS in place
+        do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
             ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            linm1 = (iii-1) + (jjj-1)*rhsDesc%ni + (kkk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+            lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
 
             rhsTarget(lin) = denom &
-                    * (rhsTarget(lin) - aTarget(idx)*rhsTarget(linm1))
-
+                             * (rhsTarget(lin)) ! note the second part is ZERO on the first term so we just set it to that to avoid indexing RHS out of bounds
         end do
 
         ! Increment
-        idx = idx + stepStride
-        iii = ii
-        jjj = jj
-        kkk = kk
         ii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub
         jj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
         kk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
-        
-    end do
+        idx = idx + stepStride
 
-end subroutine bTDForward
+        do m = nbeg + 1, nend
+            ! Forward Elimination
 
+            ! Compute the thomas algorithm denominator, second part goes to zero as enforced by 0 in d_smoop
+            denom = one / &
+                    (bTarget(idx) - scratchTarget(idx)*aTarget(idx))
 
-attributes(global) subroutine bTDBackSub(dir, scratchTarget, rhsTarget)
-    ! Master batched parallel thomas tridiagonal solver
-    use constants,       only: one
-    implicit none
-    integer(kind=intType), intent(in), value :: dir
-    type(lhsTDDescriptor) :: lhsDesc
-    type(rhsDescriptor) ::  rhsDesc
-    real(kind=realType), device :: scratchTarget(*)
-    real(kind=realType), device :: rhsTarget(*)
-    integer(kind=intType) :: nbeg, nend
-    integer(kind=intType) :: u, v, m, l, backStart, psys, sys, nsysFast, idx, dom, sps, seg, j_sub
-    integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linp1
+            ! Compute the upper diagonal in this row (c) after transformation but store it for the NEXT row to use
+            ! Unfortunetly we have to guard the spill as the padding required to catch it in scratchTarget is number of
+            ! PCR iterations dependent
+            ! NOTE: Look into possibly allocating the scratch dynamically to avoid this
+            if (m .lt. nend) then
+                scratchTarget(idx + stepStride) = denom * cTarget(idx)
+            end if
 
+            ! Update RHS in place
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                linm1 = (iii - 1) + (jjj - 1)*rhsDesc%ni + (kkk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
 
-    dom = 1
-    sps = 1 ! Hardcoded for now
+                rhsTarget(lin) = denom &
+                                 * (rhsTarget(lin) - aTarget(idx)*rhsTarget(linm1))
+            end do
 
-    !
-    ! Read the descriptors (hardcoded to one block for now!)
-    !
-    lhsDesc = d_lhsDescs(dir, dom)
-    rhsDesc = d_rhsDescs(dir, dom)
-
-    ! Non PCR setup
-    ! nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    ! sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x
-    ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
-    ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
-
-    ! PCR Setup
-    nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x ! total system index (1 based)
-
-    if (lhsDesc%coalesceOnRow) then
-        ! Make j-sub the fastest axis
-        j_sub = mod(sys-1,lhsDesc%nSub) ! the subsystem index (leave it 0 based)
-        psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
-        v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
-        u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
-    else
-        ! Otherwise make u the fastest axis
-        u = mod(sys-1,nsysFast) + 1 ! The fast system row (make it 1 based)
-        psys = (sys-1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
-        j_sub = mod(psys,lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
-        v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
-    end if
-
-    
-    ! Check if system out of bounds
-    if (v>lhsDesc%nsysSlow) then
-        return
-    end if
-
-    ! Handle non pow 2 block dims
-    nbeg = 1_intType
-    if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
-        nend = lhsDesc%nCeil
-    else
-        nend = lhsDesc%nFloor
-    end if
-
-    ! Compute step stride
-    stepStride = lhsDesc%nSub*lhsDesc%rowStride
-
-    ! Determine if the backsub should include the last row as the start point or not
-    ! NOTE: May not need this anymore
-    ! backStart = nend - merge(1_intType, 0_intType, nend == lhsDesc%n)
-    backStart = nend - 1_intType
-
-
-    ! Reset the indicies to nEnd - 1  
-    ii = rhsDesc%baseIJK(1) + (backStart-1)*rhsDesc%rowStride(1)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (backStart-1)*rhsDesc%rowStride(2)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (backStart-1)*rhsDesc%rowStride(3)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-    iii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub ! We are now indexing the RHS one row AHEAD here
-    jjj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
-    kkk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
-
-    idx = 1  + (backStart-1)*stepStride + j_sub*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-
-    ! NOTE: Loop will never run if nend = nbeg (fully reduced subsystems)
-
-    do m=backStart,nbeg,-1
-
-        ! Back substitution
-
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-            ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            linp1 = (iii-1) + (jjj-1)*rhsDesc%ni + (kkk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-
-            ! recall that the current row's d_smoop is stored one row AHEAD in d_smoop
-            ! Note for the global final row of the system dwork(n+rowstride) should be populated with a zero from
-            rhsTarget(lin) = rhsTarget(lin) - scratchTarget(idx+stepStride)*rhsTarget(linp1)
-
+            ! Increment
+            idx = idx + stepStride
+            iii = ii
+            jjj = jj
+            kkk = kk
+            ii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub
+            jj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
+            kk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
         end do
 
-        ! Decrement
-        idx = idx - stepStride !lhsDesc%rowStride
-        iii = ii
-        jjj = jj
-        kkk = kk
-        ii = ii - rhsDesc%rowStride(1)*lhsDesc%nSub
-        jj = jj - rhsDesc%rowStride(2)*lhsDesc%nSub
-        kk = kk - rhsDesc%rowStride(3)*lhsDesc%nSub
-
-    end do
-
-    
-end subroutine bTDBackSub
-
-
-attributes(global) subroutine bTDBackSubOOP(dir, scratchTarget, rhsIn, rhsOut)
-    ! Out-of-place variation of bTDBackSub
-    ! This version of the routine reads rhs from one array and writes the result to another
-    ! rather than just writing the result in place
-    ! Example: For handling the case where we have an odd number of PCR stages and our PCR
-    ! reduced output is in the buffer residual rather than the actual ADflow residual dw
-    use constants,       only: one
-    implicit none
-    integer(kind=intType), intent(in), value :: dir
-    type(lhsTDDescriptor) :: lhsDesc
-    type(rhsDescriptor) ::  rhsDesc
-    real(kind=realType), device :: scratchTarget(*)
-    real(kind=realType), device :: rhsIn(*), rhsOut(*)
-    integer(kind=intType) :: nbeg, nend
-    integer(kind=intType) :: u, v, m, l, backStart, psys, sys, nsysFast, idx, dom, sps, seg, j_sub
-    integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linp1
-
-
-    dom = 1
-    sps = 1 ! Hardcoded for now
-
-    !
-    ! Read the descriptors (hardcoded to one block for now!)
-    !
-    lhsDesc = d_lhsDescs(dir, dom)
-    rhsDesc = d_rhsDescs(dir, dom)
-
-    ! Non PCR setup
-    ! nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    ! sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x
-    ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
-    ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
-
-    ! PCR Setup
-    nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x ! total system index (1 based)
-
-    if (lhsDesc%coalesceOnRow) then
-        ! Make j-sub the fastest axis
-        j_sub = mod(sys-1,lhsDesc%nSub) ! the subsystem index (leave it 0 based)
-        psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
-        v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
-        u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
-    else
-        ! Otherwise make u the fastest axis
-        u = mod(sys-1,nsysFast) + 1 ! The fast system row (make it 1 based)
-        psys = (sys-1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
-        j_sub = mod(psys,lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
-        v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
-    end if
-
-    
-    ! Check if system out of bounds
-    if (v>lhsDesc%nsysSlow) then
-        return
-    end if
-
-    ! Handle non pow 2 block dims
-    nbeg = 1_intType
-    if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
-        nend = lhsDesc%nCeil
-    else
-        nend = lhsDesc%nFloor
-    end if
-
-    ! Compute step stride
-    stepStride = lhsDesc%nSub*lhsDesc%rowStride
-
-    ! Determine if the backsub should include the last row as the start point or not
-    ! NOTE: May not need this anymore
-    ! backStart = nend - merge(1_intType, 0_intType, nend == lhsDesc%n)
-    backStart = nend - 1_intType
-
-
-    ! Reset the indicies to nEnd - 1  
-    ii = rhsDesc%baseIJK(1) + (backStart-1)*rhsDesc%rowStride(1)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (backStart-1)*rhsDesc%rowStride(2)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (backStart-1)*rhsDesc%rowStride(3)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-    iii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub ! We are now indexing the RHS one row AHEAD here
-    jjj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
-    kkk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
-
-    idx = 1  + (backStart-1)*stepStride + j_sub*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-
-    ! for the out of place variation we need to explictly copy the last row (nend) in from the rhsIn to rhsOut 
-    do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-        lin = (ii+rhsDesc%rowStride(1)*lhsDesc%nSub) + (jj+rhsDesc%rowStride(2)*lhsDesc%nSub-1)*rhsDesc%ni + &
-            (kk+rhsDesc%rowStride(3)*lhsDesc%nSub-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk
-        rhsOut(lin) = rhsIn(lin)
-    end do
-
-    ! NOTE: Loop will never run if nend = nbeg (fully reduced subsystems)
-
-    do m=backStart,nbeg,-1
-
-        ! Back substitution
-
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-            ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            linp1 = (iii-1) + (jjj-1)*rhsDesc%ni + (kkk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-
-            ! recall that the current row's d_smoop is stored one row AHEAD in d_smoop
-            ! Note for the global final row of the system dwork(n+rowstride) should be populated with a zero from
-            ! Note that we populate into rhsOut for the out-of-place backsub operation
-            rhsOut(lin) = rhsIn(lin) - scratchTarget(idx+stepStride)*rhsOut(linp1)
-
-        end do
-
-        ! Decrement
-        idx = idx - stepStride !lhsDesc%rowStride
-        iii = ii
-        jjj = jj
-        kkk = kk
-        ii = ii - rhsDesc%rowStride(1)*lhsDesc%nSub
-        jj = jj - rhsDesc%rowStride(2)*lhsDesc%nSub
-        kk = kk - rhsDesc%rowStride(3)*lhsDesc%nSub
-
-    end do
-
-    
-end subroutine bTDBackSubOOP
-
-
-attributes(global) subroutine simplePCR(dir, stage, aTarget, bTarget, cTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
-    implicit none
-    integer(kind=intType), intent(in), value :: stage, dir
-    type(lhsTDDescriptor) :: lhsDesc
-    type(rhsDescriptor) ::  rhsDesc
-    real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), aBuffer(*), bBuffer(*), cBuffer(*)
-    real(kind=realType), device ::  rhsTarget(*), rhsBuffer(*)
-    integer(kind=intType) :: ii, jj, kk, iii, jjj, kkk, iiii, jjjj, kkkk, lin, linp1, linm1
-    integer(kind=intType) :: dom, sps, stageStride, rowStride, rowStrideRHS1, rowStrideRHS2, rowStrideRHS3
-    integer(kind=intType) :: seg, nbeg, nend, mFirst, tRow, nsysFast, sys, psys, u, v, m, l, idx
-    real(kind=realType) :: k1, k2
-
-    dom = 1
-    sps = 1 ! Hardcoded for now
-
-    !
-    ! Read the descriptors (hardcoded to one block for now!)
-    !
-    lhsDesc = d_lhsDescs(dir, dom)
-    rhsDesc = d_rhsDescs(dir, dom)
-
-    ! This is in case we use multiple blocks per line; nominally it'll be 1 thread per line
-    ! seg = (blockIdx%y-1)*blockDim%y + threadIdx%y
-    ! nbeg = (seg-1)*lhsDesc%segLen + 1
-    ! nend = min(seg*lhsDesc%segLen,lhsDesc%n) ! max row in system this block handles
-    
-    
-    ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
-    ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
-
-
-    nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x
-
-
-    if (lhsDesc%coalesceOnRow) then
-        ! Make the row the fastest axis. threadIdx%x walks the ROW
-        tRow = mod(sys-1,lhsDesc%nPCRThreads) + 1 ! the row thread index (make it 1 based)
-        psys = (sys - 1)/lhsDesc%nPCRThreads ! the parent system flat index (leave it 0 based)
-        v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
-        u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
-    else
-        ! Otherwise make u the fastest axis
-        u   = mod(sys-1,nsysFast) + 1 ! fast system idx (make it 1 based)
-        psys = (sys-1)/nsysFast
-        tRow = mod(psys,lhsDesc%nPCRThreads) + 1 ! the row thread (make it 1 based)
-        v   = (psys / lhsDesc%nPCRThreads) + 1 ! slow system idx (make it 1 based)
-    end if
-
-    ! Kill overshoot threads
-    if (tRow > lhsDesc%n) then
-        return
-    end if
-
-    if (v > lhsDesc%nsysSlow) then
-        return
-    end if
-
-    ! Compute the row stride for the given stage
-    ! note stage 0 is the first stage
-    stageStride = 2**stage
-    rowStride = stageStride*lhsDesc%rowStride
-    rowStrideRHS1 = stageStride*rhsDesc%rowStride(1)
-    rowStrideRHS2 = stageStride*rhsDesc%rowStride(2)
-    rowStrideRHS3 = stageStride*rhsDesc%rowStride(3)
-
-    ! Do PCR: idx terms
-    ii = rhsDesc%baseIJK(1) + (tRow-1)*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (tRow-1)*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (tRow-1)*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-
-    idx = 1 + (tRow-1)*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-    do m=tRow,lhsDesc%n,lhsDesc%nPCRThreads
-
-        ! Zero these out in case the segment this thread is working on isn't the actual first or last row
-        aBuffer(idx) = 0.0_realType
-        cBuffer(idx) = 0.0_realType
-        
-        bBuffer(idx) = bTarget(idx) 
-        ! do all rhs
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-            ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-
-            rhsBuffer(lin) = rhsTarget(lin) 
-
-        end do
-
-        ! Increment
-        idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride  !rowStride
-        ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1) ! rowStrideRHS1
-        jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2) ! rowStrideRHS2
-        kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3) ! rowStrideRHS3
-    end do
-
-
-    ! Do PCR: idx+rowStride terms
-    ii = rhsDesc%baseIJK(1) + (tRow-1)*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (tRow-1)*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (tRow-1)*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-
-    iiii = ii + rowStrideRHS1 ! Indexing the row AFTER
-    jjjj = jj + rowStrideRHS2
-    kkkk = kk + rowStrideRHS3
-
-    idx = 1 + (tRow-1)*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-    do m=tRow,lhsDesc%n-stageStride,lhsDesc%nPCRThreads
-
-        k2 = cTarget(idx)/bTarget(idx+rowStride)
-
-        cBuffer(idx) = -1_realType*cTarget(idx+rowStride)*k2
-        bBuffer(idx) = bBuffer(idx) - aTarget(idx+rowStride)*k2
-
-        ! do all rhs
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-            ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            linp1 = (iiii-1) + (jjjj-1)*rhsDesc%ni + (kkkk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-
-            rhsBuffer(lin) = rhsBuffer(lin) - rhsTarget(linp1)*k2
-
-        end do
-
-
-        ! Increment
-        idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride ! + rowStride
-        ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
-        jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
-        kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
-        iiii = iiii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1) ! rowStrideRHS1
-        jjjj = jjjj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2) ! rowStrideRHS2
-        kkkk = kkkk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3) ! rowStrideRHS3
-    end do
-
-
-    ! Do PCR: idx-rowStride terms
-    mFirst = tRow + (((1+stageStride-tRow) + lhsDesc%nPCRThreads - 1)/lhsDesc%nPCRThreads)*lhsDesc%nPCRThreads
-    ii = rhsDesc%baseIJK(1) + (mFirst-1)*rhsDesc%rowStride(1) + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (mFirst-1)*rhsDesc%rowStride(2) + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (mFirst-1)*rhsDesc%rowStride(3) + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-
-    iii = ii - rowStrideRHS1 ! Indexing the row BEFORE
-    jjj = jj - rowStrideRHS2
-    kkk = kk - rowStrideRHS3
-
-    idx = 1 + (mFirst-1)*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-    do m=mFirst,lhsDesc%n,lhsDesc%nPCRThreads
-
-        k1 = aTarget(idx)/bTarget(idx-rowStride)
-
-        aBuffer(idx) = -1_realType*aTarget(idx-rowStride)*k1
-        bBuffer(idx) = bBuffer(idx) - cTarget(idx-rowStride)*k1 !- aTarget(idx+rowStride)*k2
-
-        ! do all rhs
-        do l=rhsDesc%nrhsBeg,rhsDesc%nrhsEnd
-
-            ! rhs has to be indexed as flat even though it is multi dimensional
-            lin = (ii-1) + (jj-1)*rhsDesc%ni + (kk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            linm1 = (iii-1) + (jjj-1)*rhsDesc%ni + (kkk-1)*rhsDesc%ni*rhsDesc%nj + (l-1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
-            rhsBuffer(lin) = rhsBuffer(lin) - rhsTarget(linm1)*k1
-
-        end do
-
-        ! Increment
-        idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride !  + rowStride
-        iii = iii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
-        jjj = jjj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
-        kkk = kkk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
-        ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
-        jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
-        kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
-    end do
-
-    
-
-end subroutine simplePCR
-
-
-
-attributes(global) subroutine simplePCR_v2(dir, stage, aTarget, bTarget, cTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
-    implicit none
-    integer(kind=intType), intent(in), value :: stage, dir
-    type(lhsTDDescriptor) :: lhsDesc
-    type(rhsDescriptor) ::  rhsDesc
-    real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), aBuffer(*), bBuffer(*), cBuffer(*)
-    real(kind=realType), device ::  rhsTarget(*), rhsBuffer(*)
-    integer(kind=intType) :: ii, jj, kk, rhsIdx, drhsBase, drhs
-    integer(kind=intType) :: stageStride, rowStride, rowStrideRHS1, rowStrideRHS2, rowStrideRHS3
-    integer(kind=intType) :: tRow, nPCRThreads, nsysFast, sys, psys, u, v, m, l, idx, ni, ninj, ninjnk, nRHSBeg, nRHSEnd
-    real(kind=realType) :: k1, k2, aa, bb, cc, r
-    logical :: hasFwdStride, hasBwdStride
-
-    !
-    ! Read the descriptors (hardcoded to one block for now!)
-    !
-    lhsDesc = d_lhsDescs(dir, 1)
-    rhsDesc = d_rhsDescs(dir, 1)
-
-
-    nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
-    nPCRThreads = lhsDesc%nPCRThreads ! number of PCR threads
-    sys = (blockIdx%x - 1)*blockDim%x + threadIdx%x
-
-    if (lhsDesc%coalesceOnRow) then
-        ! Make the row the fastest axis. threadIdx%x walks the ROW
-        tRow = mod(sys-1,nPCRThreads) + 1 ! the row thread index (make it 1 based)
-        psys = (sys - 1)/nPCRThreads ! the parent system flat index (leave it 0 based)
-        v   = (psys/ nsysFast) + 1 ! slow system idx (make it 1 based)
-        u   = mod(psys,nsysFast) + 1 ! fast system idx (make it 1 based)
-    else
-        ! Otherwise make u the fastest axis
-        u   = mod(sys-1,nsysFast) + 1 ! fast system idx (make it 1 based)
-        psys = (sys-1)/nsysFast
-        tRow = mod(psys,nPCRThreads) + 1 ! the row thread (make it 1 based)
-        v   = (psys / nPCRThreads) + 1 ! slow system idx (make it 1 based)
-    end if
-
-    ! Kill overshoot threads
-    if (tRow > lhsDesc%n) then
-        return
-    end if
-
-    if (v > lhsDesc%nsysSlow) then
-        return
-    end if
-
-    ! Compute the row stride for the given stage
-    ! note stage 0 is the first stage
-    stageStride = 2**stage
-    rowStride = stageStride*lhsDesc%rowStride
-    rowStrideRHS1 = rhsDesc%rowStride(1)
-    rowStrideRHS2 = rhsDesc%rowStride(2)
-    rowStrideRHS3 = rhsDesc%rowStride(3)
-
-    ! Do PCR: idx terms
-    ni = rhsDesc%ni
-    ninj = ni*rhsDesc%nj
-    ninjnk = ninj*rhsDesc%nk
-    nRHSBeg = rhsDesc%nrhsBeg
-    nRHSEnd = rhsDesc%nrhsEnd
-
-    ii = rhsDesc%baseIJK(1) + (tRow-1)*rowStrideRHS1 + (u-1)*rhsDesc%fastStride(1) + (v-1)*rhsDesc%slowStride(1)
-    jj = rhsDesc%baseIJK(2) + (tRow-1)*rowStrideRHS2 + (u-1)*rhsDesc%fastStride(2) + (v-1)*rhsDesc%slowStride(2)
-    kk = rhsDesc%baseIJK(3) + (tRow-1)*rowStrideRHS3 + (u-1)*rhsDesc%fastStride(3) + (v-1)*rhsDesc%slowStride(3)
-    drhs = stageStride*rowStrideRHS1 + ni*stageStride*rowStrideRHS2 + ninj*stageStride*rowStrideRHS3
-    drhsBase = nPCRThreads*(rowStrideRHS1 + ni*rowStrideRHS2 + ninj*rowStrideRHS3)
-
-    rhsIdx = (ii-1) + (jj-1)*ni + (kk-1)*ninj + (rhsDesc%nrhsBeg-1)*ninjnk + 1
-    idx = 1 + (tRow-1)*lhsDesc%rowStride + (u-1)*lhsDesc%fastStride + (v-1)*lhsDesc%slowStride
-
-    do m=tRow,lhsDesc%n,nPCRThreads
-
-        ! Zero these out to start
-        aa = 0.0_realType
-        cc = 0.0_realType
-        k1 = 0.0_realType
-        k2 = 0.0_realType
-
-        ! do the self cell
-        bb = bTarget(idx)
-
-        ! check strides
-        hasBwdStride = (m .gt. stageStride)
-        hasFwdStride = (m .le. (lhsDesc%n-stageStride) )
-
-        if (hasBwdStride) then
-            ! do the cells with a backward stride
-            k1 = aTarget(idx)/bTarget(idx-rowStride)
-            aa = -aTarget(idx-rowStride)*k1
-            bb = bb - cTarget(idx-rowStride)*k1
-        end if 
-
-        if (hasFwdStride) then
-            ! do the cells with a forward stride
-            k2 = cTarget(idx)/bTarget(idx+rowStride)
-            bb = bb - aTarget(idx+rowStride)*k2
-            cc = -cTarget(idx+rowStride)*k2
+    end subroutine bTDForward
+
+    attributes(global) subroutine bTDBackSub(problemID, dir, scratchTarget, rhsTarget)
+        !
+        !       CUDA kernel that executes the backward substitution of a batched Thomas algorithm tridiagonal solve
+        !       along the specified direction over the blocks. lhs and rhs descriptors MUST be configured in device memory
+        !       for this kernel to work. Device arrays for the RHS and a scratch array must be passed in
+        !       as arguments. The solution is written in place to the RHS target array.
+        !
+        use constants, only: one
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir
+        real(kind=realType), device :: scratchTarget(*)
+        real(kind=realType), device :: rhsTarget(*)
+
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        integer(kind=intType) :: nbeg, nend
+        integer(kind=intType) :: u, v, m, l, backStart, psys, sys, nsysFast, idx, dom, sps, seg, j_sub
+        integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linp1
+
+        !
+        ! Hardcoded to single block
+        !
+        dom = 1
+        sps = 1 ! Hardcoded for now
+
+        !
+        ! Read the descriptors (hardcoded to one block for now!)
+        !
+        lhsDesc = d_lhsDescs(dir, dom, problemID)
+        rhsDesc = d_rhsDescs(dir, dom, problemID)
+
+        ! Non PCR setup
+        ! nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        ! sys = (blockIdx%x-1)*blockDim%x + threadIdx%x
+        ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
+        ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
+
+        !
+        ! Initialize GPU thread indices
+        !
+        ! PCR Setup
+        nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        sys = (blockIdx%x-1)*blockDim%x + threadIdx%x ! total system index (1 based)
+
+        if (lhsDesc%coalesceOnRow) then
+            ! Make j-sub the fastest axis
+            j_sub = mod(sys - 1, lhsDesc%nSub) ! the subsystem index (leave it 0 based)
+            psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
+            v   = (psys/nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys, nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u = mod(sys - 1, nsysFast) + 1 ! The fast system row (make it 1 based)
+            psys = (sys - 1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
+            j_sub = mod(psys, lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
+            v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
         end if
 
-        aBuffer(idx) = aa
-        bBuffer(idx) = bb
-        cBuffer(idx) = cc
+        ! Check if system out of bounds
+        if (v .gt. lhsDesc%nsysSlow) then
+            return
+        end if
 
-        ! do all rhs
-        do l=nRHSBeg,nRHSEnd
-            r = rhsTarget(rhsIdx)
-            
+        ! Handle non pow 2 block dims
+        nbeg = 1_intType
+        if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
+            nend = lhsDesc%nCeil
+        else
+            nend = lhsDesc%nFloor
+        end if
+
+        ! Compute step stride
+        stepStride = lhsDesc%nSub*lhsDesc%rowStride
+
+        ! Determine if the backsub should include the last row as the start point or not
+        ! NOTE: May not need this anymore
+        ! backStart = nend - merge(1_intType, 0_intType, nend == lhsDesc%n)
+        backStart = nend - 1_intType
+
+        ! Reset the indicies to nEnd - 1
+        ii = rhsDesc%baseIJK(1) + (backStart - 1)*rhsDesc%rowStride(1)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (backStart - 1)*rhsDesc%rowStride(2)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (backStart - 1)*rhsDesc%rowStride(3)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+        iii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub ! We are now indexing the RHS one row AHEAD here
+        jjj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
+        kkk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
+
+        idx = 1 + (backStart - 1)*stepStride + j_sub*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+
+        ! NOTE: Loop will never run if nend = nbeg (fully reduced subsystems)
+        do m = backStart, nbeg, -1
+            ! Back substitution
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                linp1 = (iii - 1) + (jjj - 1)*rhsDesc%ni + (kkk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+
+                ! recall that the current row's d_smoop is stored one row AHEAD in d_smoop
+                ! Note for the global final row of the system dwork(n+rowstride) should be populated with a zero from
+                rhsTarget(lin) = rhsTarget(lin) - scratchTarget(idx + stepStride)*rhsTarget(linp1)
+            end do
+
+            ! Decrement
+            idx = idx - stepStride !lhsDesc%rowStride
+            iii = ii
+            jjj = jj
+            kkk = kk
+            ii = ii - rhsDesc%rowStride(1)*lhsDesc%nSub
+            jj = jj - rhsDesc%rowStride(2)*lhsDesc%nSub
+            kk = kk - rhsDesc%rowStride(3)*lhsDesc%nSub
+        end do
+
+    end subroutine bTDBackSub
+
+    attributes(global) subroutine bTDBackSubOOP(problemID, dir, scratchTarget, rhsIn, rhsOut)
+        !
+        !       Out-of-place variation of bTDBackSub
+        !       This version of the routine reads rhs from one array and writes the result to another
+        !       rather than just writing the result in place
+        !       Example: For handling the case where we have an odd number of PCR stages and our PCR
+        !       reduced output is in the buffer residual rather than the actual ADflow residual dw
+        !
+        use constants, only: one
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir
+        real(kind=realType), device :: scratchTarget(*)
+        real(kind=realType), device :: rhsIn(*), rhsOut(*)
+
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        integer(kind=intType) :: nbeg, nend
+        integer(kind=intType) :: u, v, m, l, backStart, psys, sys, nsysFast, idx, dom, sps, seg, j_sub
+        integer(kind=intType) :: stepStride, ii, jj, kk, iii, jjj, kkk, lin, linp1
+
+        !
+        ! Hardcoded to single block
+        !
+        dom = 1
+        sps = 1 ! Hardcoded for now
+
+        !
+        ! Read the descriptors (hardcoded to one block for now!)
+        !
+        lhsDesc = d_lhsDescs(dir, dom, problemID)
+        rhsDesc = d_rhsDescs(dir, dom, problemID)
+
+        ! Non PCR setup
+        ! nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        ! sys = (blockIdx%x-1)*blockDim%x + threadIdx%x
+        ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
+        ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
+
+        !
+        ! Initialize GPU thread indices
+        !
+        ! PCR Setup
+        nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        sys = (blockIdx%x-1)*blockDim%x + threadIdx%x ! total system index (1 based)
+
+        if (lhsDesc%coalesceOnRow) then
+            ! Make j-sub the fastest axis
+            j_sub = mod(sys - 1, lhsDesc%nSub) ! the subsystem index (leave it 0 based)
+            psys = (sys - 1)/lhsDesc%nSub ! the parent system flat index (leave it 0 based)
+            v   = (psys/nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys, nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u = mod(sys - 1, nsysFast) + 1 ! The fast system row (make it 1 based)
+            psys = (sys - 1)/nsysFast ! not the parent system count but rather the fast system row we own, var reused
+            j_sub = mod(psys, lhsDesc%nSub) ! consequtive threads work the same sub system of their given system on a row (leave it 0 based)
+            v   = psys/lhsDesc%nSub + 1 ! slow system idx (make it 1 based)
+        end if
+
+        ! Check if system out of bounds
+        if (v .gt. lhsDesc%nsysSlow) then
+            return
+        end if
+
+        ! Handle non pow 2 block dims
+        nbeg = 1_intType
+        if (j_sub .lt. lhsDesc%raggedFloorSwitch) then
+            nend = lhsDesc%nCeil
+        else
+            nend = lhsDesc%nFloor
+        end if
+
+        ! Compute step stride
+        stepStride = lhsDesc%nSub*lhsDesc%rowStride
+
+        ! Determine if the backsub should include the last row as the start point or not
+        ! NOTE: May not need this anymore
+        ! backStart = nend - merge(1_intType, 0_intType, nend == lhsDesc%n)
+        backStart = nend - 1_intType
+
+        ! Reset the indicies to nEnd - 1
+        ii = rhsDesc%baseIJK(1) + (backStart - 1)*rhsDesc%rowStride(1)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (backStart - 1)*rhsDesc%rowStride(2)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (backStart - 1)*rhsDesc%rowStride(3)*lhsDesc%nSub + j_sub*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+        iii = ii + rhsDesc%rowStride(1)*lhsDesc%nSub ! We are now indexing the RHS one row AHEAD here
+        jjj = jj + rhsDesc%rowStride(2)*lhsDesc%nSub
+        kkk = kk + rhsDesc%rowStride(3)*lhsDesc%nSub
+
+        idx = 1 + (backStart - 1)*stepStride + j_sub*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+
+        ! for the out of place variation we need to explictly copy the last row (nend) in from the rhsIn to rhsOut
+        do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+            lin = (ii+rhsDesc%rowStride(1)*lhsDesc%nSub) + (jj+rhsDesc%rowStride(2)*lhsDesc%nSub-1)*rhsDesc%ni + &
+                  (kk+rhsDesc%rowStride(3)*lhsDesc%nSub-1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk
+            rhsOut(lin) = rhsIn(lin)
+        end do
+
+        ! NOTE: Loop will never run if nend = nbeg (fully reduced subsystems)
+        do m = backStart, nbeg, -1
+            ! Back substitution
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                linp1 = (iii - 1) + (jjj - 1)*rhsDesc%ni + (kkk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+
+                ! recall that the current row's d_smoop is stored one row AHEAD in d_smoop
+                ! Note for the global final row of the system dwork(n+rowstride) should be populated with a zero from
+                ! Note that we populate into rhsOut for the out-of-place backsub operation
+                rhsOut(lin) = rhsIn(lin) - scratchTarget(idx + stepStride)*rhsOut(linp1)
+            end do
+
+            ! Decrement
+            idx = idx - stepStride !lhsDesc%rowStride
+            iii = ii
+            jjj = jj
+            kkk = kk
+            ii = ii - rhsDesc%rowStride(1)*lhsDesc%nSub
+            jj = jj - rhsDesc%rowStride(2)*lhsDesc%nSub
+            kk = kk - rhsDesc%rowStride(3)*lhsDesc%nSub
+        end do
+
+    end subroutine bTDBackSubOOP
+
+    attributes(global) subroutine simplePCR(problemID, dir, stage, aTarget, bTarget, cTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
+        !
+        !       Original implementation of the CUDA kernel version of Parallel Cylic Reduction.
+        !       Here for reference. Use simplePCR_v2 instead.
+        !
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir, stage
+        real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), aBuffer(*), bBuffer(*), cBuffer(*)
+        real(kind=realType), device :: rhsTarget(*), rhsBuffer(*)
+
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        integer(kind=intType) :: ii, jj, kk, iii, jjj, kkk, iiii, jjjj, kkkk, lin, linp1, linm1
+        integer(kind=intType) :: dom, sps, stageStride, rowStride, rowStrideRHS1, rowStrideRHS2, rowStrideRHS3
+        integer(kind=intType) :: seg, nbeg, nend, mFirst, tRow, nsysFast, sys, psys, u, v, m, l, idx
+        real(kind=realType) :: k1, k2
+
+        !
+        ! Hardcoded to single block
+        !
+        dom = 1
+        sps = 1 ! Hardcoded for now
+
+        !
+        ! Read the descriptors (hardcoded to one block for now!)
+        !
+        lhsDesc = d_lhsDescs(dir, dom, problemID)
+        rhsDesc = d_rhsDescs(dir, dom, problemID)
+
+        ! This is in case we use multiple blocks per line; nominally it'll be 1 thread per line
+        ! seg = (blockIdx%y-1)*blockDim%y + threadIdx%y
+        ! nbeg = (seg-1)*lhsDesc%segLen + 1
+        ! nend = min(seg*lhsDesc%segLen,lhsDesc%n) ! max row in system this block handles
+
+        ! v   = ((sys-1) / nsysFast) + 1 ! slow system idx (make it 1 based)
+        ! u   = sys - (v-1)*nsysFast ! fast system idx (make it 1 based)
+
+        !
+        ! Initialize GPU thread indices
+        !
+        nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        sys = (blockIdx%x-1)*blockDim%x + threadIdx%x
+
+        if (lhsDesc%coalesceOnRow) then
+            ! Make the row the fastest axis. threadIdx%x walks the ROW
+            tRow = mod(sys - 1, lhsDesc%nPCRThreads) + 1 ! the row thread index (make it 1 based)
+            psys = (sys - 1)/lhsDesc%nPCRThreads ! the parent system flat index (leave it 0 based)
+            v   = (psys/nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys, nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u   = mod(sys - 1, nsysFast) + 1 ! fast system idx (make it 1 based)
+            psys = (sys - 1)/nsysFast
+            tRow = mod(psys, lhsDesc%nPCRThreads) + 1 ! the row thread (make it 1 based)
+            v   = (psys/lhsDesc%nPCRThreads) + 1 ! slow system idx (make it 1 based)
+        end if
+
+        ! Kill overshoot threads
+        if (tRow .gt. lhsDesc%n) then
+            return
+        end if
+
+        if (v .gt. lhsDesc%nsysSlow) then
+            return
+        end if
+
+        ! Compute the row stride for the given stage
+        ! note stage 0 is the first stage
+        stageStride = 2**stage
+        rowStride = stageStride*lhsDesc%rowStride
+        rowStrideRHS1 = stageStride*rhsDesc%rowStride(1)
+        rowStrideRHS2 = stageStride*rhsDesc%rowStride(2)
+        rowStrideRHS3 = stageStride*rhsDesc%rowStride(3)
+
+        ! Do PCR: idx terms
+        ii = rhsDesc%baseIJK(1) + (tRow - 1)*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (tRow - 1)*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (tRow - 1)*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+
+        idx = 1 + (tRow - 1)*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+        do m = tRow, lhsDesc%n, lhsDesc%nPCRThreads
+            ! Zero these out in case the segment this thread is working on isn't the actual first or last row
+            aBuffer(idx) = 0.0_realType
+            cBuffer(idx) = 0.0_realType
+
+            bBuffer(idx) = bTarget(idx)
+            ! do all rhs
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+
+                rhsBuffer(lin) = rhsTarget(lin)
+            end do
+
+            ! Increment
+            idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride !rowStride
+            ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1) ! rowStrideRHS1
+            jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2) ! rowStrideRHS2
+            kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3) ! rowStrideRHS3
+        end do
+
+        ! Do PCR: idx+rowStride terms
+        ii = rhsDesc%baseIJK(1) + (tRow - 1)*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (tRow - 1)*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (tRow - 1)*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+
+        iiii = ii + rowStrideRHS1 ! Indexing the row AFTER
+        jjjj = jj + rowStrideRHS2
+        kkkk = kk + rowStrideRHS3
+
+        idx = 1 + (tRow - 1)*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+        do m = tRow, lhsDesc%n - stageStride, lhsDesc%nPCRThreads
+            k2 = cTarget(idx)/bTarget(idx + rowStride)
+
+            cBuffer(idx) = -1_realType*cTarget(idx + rowStride)*k2
+            bBuffer(idx) = bBuffer(idx) - aTarget(idx + rowStride)*k2
+
+            ! do all rhs
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                linp1 = (iiii - 1) + (jjjj - 1)*rhsDesc%ni + (kkkk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+
+                rhsBuffer(lin) = rhsBuffer(lin) - rhsTarget(linp1)*k2
+            end do
+
+            ! Increment
+            idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride ! + rowStride
+            ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
+            jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
+            kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
+            iiii = iiii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1) ! rowStrideRHS1
+            jjjj = jjjj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2) ! rowStrideRHS2
+            kkkk = kkkk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3) ! rowStrideRHS3
+        end do
+
+        ! Do PCR: idx-rowStride terms
+        mFirst = tRow + (((1 + stageStride - tRow) + lhsDesc%nPCRThreads - 1)/lhsDesc%nPCRThreads)*lhsDesc%nPCRThreads
+        ii = rhsDesc%baseIJK(1) + (mFirst - 1)*rhsDesc%rowStride(1) + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (mFirst - 1)*rhsDesc%rowStride(2) + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (mFirst - 1)*rhsDesc%rowStride(3) + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+
+        iii = ii - rowStrideRHS1 ! Indexing the row BEFORE
+        jjj = jj - rowStrideRHS2
+        kkk = kk - rowStrideRHS3
+
+        idx = 1 + (mFirst - 1)*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+        do m = mFirst, lhsDesc%n, lhsDesc%nPCRThreads
+            k1 = aTarget(idx)/bTarget(idx - rowStride)
+
+            aBuffer(idx) = -1_realType*aTarget(idx - rowStride)*k1
+            bBuffer(idx) = bBuffer(idx) - cTarget(idx - rowStride)*k1 !- aTarget(idx+rowStride)*k2
+
+            ! do all rhs
+            do l = rhsDesc%nrhsBeg, rhsDesc%nrhsEnd
+                ! rhs has to be indexed as flat even though it is multi dimensional
+                lin = (ii - 1) + (jj - 1)*rhsDesc%ni + (kk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                linm1 = (iii - 1) + (jjj - 1)*rhsDesc%ni + (kkk - 1)*rhsDesc%ni*rhsDesc%nj + (l - 1)*rhsDesc%ni*rhsDesc%nj*rhsDesc%nk + 1
+                rhsBuffer(lin) = rhsBuffer(lin) - rhsTarget(linm1)*k1
+            end do
+
+            ! Increment
+            idx = idx + lhsDesc%nPCRThreads*lhsDesc%rowStride !  + rowStride
+            iii = iii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
+            jjj = jjj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
+            kkk = kkk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
+            ii = ii + lhsDesc%nPCRThreads*rhsDesc%rowStride(1)
+            jj = jj + lhsDesc%nPCRThreads*rhsDesc%rowStride(2)
+            kk = kk + lhsDesc%nPCRThreads*rhsDesc%rowStride(3)
+        end do
+
+    end subroutine simplePCR
+
+    attributes(global) subroutine simplePCR_v2(problemID, dir, stage, aTarget, bTarget, cTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
+        !
+        !       CUDA kernel implementing Parallel Cyclic Reduction (PCR) for use with the batch Thomas algorithm implementation.
+        !       lhs and rhs descriptors MUST be configured in device memory
+        !       for this kernel to work. Device arrays for the diagonals (upper, lower, and main), RHS, and a
+        !       scratch array must be allocated and passed in as arguments.
+        !
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir, stage
+        real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), aBuffer(*), bBuffer(*), cBuffer(*)
+        real(kind=realType), device :: rhsTarget(*), rhsBuffer(*)
+
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        type(rhsDescriptor) :: rhsDesc
+        integer(kind=intType) :: ii, jj, kk, rhsIdx, drhsBase, drhs
+        integer(kind=intType) :: stageStride, rowStride, rowStrideRHS1, rowStrideRHS2, rowStrideRHS3
+        integer(kind=intType) :: tRow, nPCRThreads, nsysFast, sys, psys, u, v, m, l, idx, ni, ninj, ninjnk, nRHSBeg, nRHSEnd
+        real(kind=realType) :: k1, k2, aa, bb, cc, r
+        logical :: hasFwdStride, hasBwdStride
+
+        !
+        ! Read the descriptors (hardcoded to one block for now!)
+        !
+        lhsDesc = d_lhsDescs(dir, 1, problemID)
+        rhsDesc = d_rhsDescs(dir, 1, problemID)
+
+        !
+        ! Initialize GPU thread indices
+        !
+        nsysFast = lhsDesc%nsysFast ! number of systems along fast axis
+        nPCRThreads = lhsDesc%nPCRThreads ! number of PCR threads
+        sys = (blockIdx%x-1)*blockDim%x + threadIdx%x
+
+        if (lhsDesc%coalesceOnRow) then
+            ! Make the row the fastest axis. threadIdx%x walks the ROW
+            tRow = mod(sys - 1, nPCRThreads) + 1 ! the row thread index (make it 1 based)
+            psys = (sys - 1)/nPCRThreads ! the parent system flat index (leave it 0 based)
+            v   = (psys/nsysFast) + 1 ! slow system idx (make it 1 based)
+            u   = mod(psys, nsysFast) + 1 ! fast system idx (make it 1 based)
+        else
+            ! Otherwise make u the fastest axis
+            u   = mod(sys - 1, nsysFast) + 1 ! fast system idx (make it 1 based)
+            psys = (sys - 1)/nsysFast
+            tRow = mod(psys, nPCRThreads) + 1 ! the row thread (make it 1 based)
+            v   = (psys/nPCRThreads) + 1 ! slow system idx (make it 1 based)
+        end if
+
+        ! Kill overshoot threads
+        if (tRow .gt. lhsDesc%n) then
+            return
+        end if
+
+        if (v .gt. lhsDesc%nsysSlow) then
+            return
+        end if
+
+        ! Compute the row stride for the given stage
+        ! note stage 0 is the first stage
+        stageStride = 2**stage
+        rowStride = stageStride*lhsDesc%rowStride
+        rowStrideRHS1 = rhsDesc%rowStride(1)
+        rowStrideRHS2 = rhsDesc%rowStride(2)
+        rowStrideRHS3 = rhsDesc%rowStride(3)
+
+        ! Do PCR: idx terms
+        ni = rhsDesc%ni
+        ninj = ni*rhsDesc%nj
+        ninjnk = ninj*rhsDesc%nk
+        nRHSBeg = rhsDesc%nrhsBeg
+        nRHSEnd = rhsDesc%nrhsEnd
+
+        ii = rhsDesc%baseIJK(1) + (tRow - 1)*rowStrideRHS1 + (u - 1)*rhsDesc%fastStride(1) + (v - 1)*rhsDesc%slowStride(1)
+        jj = rhsDesc%baseIJK(2) + (tRow - 1)*rowStrideRHS2 + (u - 1)*rhsDesc%fastStride(2) + (v - 1)*rhsDesc%slowStride(2)
+        kk = rhsDesc%baseIJK(3) + (tRow - 1)*rowStrideRHS3 + (u - 1)*rhsDesc%fastStride(3) + (v - 1)*rhsDesc%slowStride(3)
+        drhs = stageStride*rowStrideRHS1 + ni*stageStride*rowStrideRHS2 + ninj*stageStride*rowStrideRHS3
+        drhsBase = nPCRThreads*(rowStrideRHS1 + ni*rowStrideRHS2 + ninj*rowStrideRHS3)
+
+        rhsIdx = (ii - 1) + (jj - 1)*ni + (kk - 1)*ninj + (rhsDesc%nrhsBeg-1)*ninjnk + 1
+        idx = 1 + (tRow - 1)*lhsDesc%rowStride + (u - 1)*lhsDesc%fastStride + (v - 1)*lhsDesc%slowStride
+
+        do m = tRow, lhsDesc%n, nPCRThreads
+            ! Zero these out to start
+            aa = 0.0_realType
+            cc = 0.0_realType
+            k1 = 0.0_realType
+            k2 = 0.0_realType
+
+            ! do the self cell
+            bb = bTarget(idx)
+
+            ! check strides
+            hasBwdStride = (m .gt. stageStride)
+            hasFwdStride = (m .le. (lhsDesc%n - stageStride))
+
             if (hasBwdStride) then
-                r =  r - rhsTarget(rhsIdx - drhs)*k1
+                ! do the cells with a backward stride
+                k1 = aTarget(idx)/bTarget(idx - rowStride)
+                aa = -aTarget(idx - rowStride)*k1
+                bb = bb - cTarget(idx - rowStride)*k1
             end if
 
             if (hasFwdStride) then
-                r =  r - rhsTarget(rhsIdx + drhs)*k2
+                ! do the cells with a forward stride
+                k2 = cTarget(idx)/bTarget(idx + rowStride)
+                bb = bb - aTarget(idx + rowStride)*k2
+                cc = -cTarget(idx + rowStride)*k2
             end if
-            rhsBuffer(rhsIdx) = r
 
-            ! Increment rhs eqn
-            rhsIdx = rhsIdx + ninjnk
+            aBuffer(idx) = aa
+            bBuffer(idx) = bb
+            cBuffer(idx) = cc
+
+            ! do all rhs
+            do l = nRHSBeg, nRHSEnd
+                r = rhsTarget(rhsIdx)
+
+                if (hasBwdStride) then
+                    r = r - rhsTarget(rhsIdx - drhs)*k1
+                end if
+
+                if (hasFwdStride) then
+                    r = r - rhsTarget(rhsIdx + drhs)*k2
+                end if
+                rhsBuffer(rhsIdx) = r
+
+                ! Increment rhs eqn
+                rhsIdx = rhsIdx + ninjnk
+            end do
+
+            ! Increment
+            idx = idx + nPCRThreads*lhsDesc%rowStride !rowStride
+            ! Last term resets the rhs from the previous increments before we increment it by the PCR thread stride
+            rhsIdx = rhsIdx + drhsBase - (nRHSEnd - nRHSBeg + 1)*ninjnk
         end do
 
-        ! Increment
-        idx = idx + nPCRThreads*lhsDesc%rowStride  !rowStride
-        ! Last term resets the rhs from the previous increments before we increment it by the PCR thread stride
-        rhsIdx = rhsIdx + drhsBase - (nRHSEnd - nRHSBeg + 1)*ninjnk
-    end do
-    
+    end subroutine simplePCR_v2
 
-end subroutine simplePCR_v2
+    subroutine executeADIOnDirCUDA(problemID, dir, aTarget, bTarget, cTarget, scratchTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
+        !
+        !       This this master routine for calling a single directional pass of  CUDA ADI solver.
+        !       Must pass in the block direction and the target arrays for the diagonals, scratch, and RHS along with buffer equivalents.
+        !       lhs and rhs descriptors must be configured in device memory for the target problem.
+        !       The routine then executes the the number of PCR stages specified for the given direction in the lhs descriptor and
+        !       then launches the appropriate Thomas algorithm kernels to leave the final solution in the residual array dw
+        !
+        use utils, only: terminate
+        implicit none
 
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in), value :: problemID, dir
+        real(kind=realType), device :: aTarget(*), bTarget(*), cTarget(*), scratchTarget(*), rhsTarget(*)
+        real(kind=realType), device :: aBuffer(*), bBuffer(*), cBuffer(*), rhsBuffer(*)
 
-subroutine executePCRStage(dir,stage, grid_size, block_size)
-    implicit none
-    integer(kind=intType), intent(in), value :: stage, dir
-    type(dim3), intent(in), value :: block_size, grid_size
-    integer(kind=intType) :: istat, dom, sps
+        !
+        !       Local variables
+        !
+        type(lhsTDDescriptor) :: lhsDesc
+        ! type(rhsDescriptor) :: rhsDesc
+        type(dim3) :: grid_size, block_size
+        integer(kind=intType) :: dom, stage, numOfSystems
 
-    dom = 1
-    sps = 1
+        if ((dir .lt. 1) .or. (dir .gt. 3)) then
+            call terminate("cudaADI", "Tried to solve ADI along an invalid block direction!")
+        end if
 
-    if (mod(stage,2) .eq. 0) then
-        call simplePCR_v2<<<grid_size,block_size>>>(dir,stage,h_cudaDoms(dom,sps)%aIRS,h_cudaDoms(dom,sps)%bIRS, &
-                                                    h_cudaDoms(dom,sps)%cIRS,h_cudaDoms(dom,sps)%dw, &
-                                                    h_cudaDoms(dom,sps)%aIRSpcr,h_cudaDoms(dom,sps)%bIRSpcr, &
-                                                    h_cudaDoms(dom,sps)%cIRSpcr,h_cudaDoms(dom,sps)%dwpcr)
-    else
-        call simplePCR_v2<<<grid_size,block_size>>>(dir,stage,h_cudaDoms(dom,sps)%aIRSpcr,h_cudaDoms(dom,sps)%bIRSpcr, &
-                                                    h_cudaDoms(dom,sps)%cIRSpcr,h_cudaDoms(dom,sps)%dwpcr, &
-                                                    h_cudaDoms(dom,sps)%aIRS,h_cudaDoms(dom,sps)%bIRS, &
-                                                    h_cudaDoms(dom,sps)%cIRS,h_cudaDoms(dom,sps)%dw)
-    end if
-    ! istat = cudaDeviceSynchronize()
-    ! istat = cudaGetLastError()
-    ! if (istat /= 0) print *, "simplePCR launch failed, stage", stage, cudaGetErrorString(istat)
+        !
+        ! Harcoded to a single block for now
+        !
+        dom = 1
 
-    ! ping-pong the pointers
-    ! pTmp=>aCur; aCur=>aNxt; aNxt=>pTmp
-    ! pTmp=>bCur; bCur=>bNxt; bNxt=>pTmp
-    ! pTmp=>cCur; cCur=>cNxt; cNxt=>pTmp
-    ! dwTmp=>dwCur; dwCur=>dwNxt; dwNxt=>dwTmp
+        !
+        ! Get the descriptors for this block and direction
+        !
+        lhsDesc = h_lhsDescs(dir, dom, problemID)
 
-    
-end subroutine executePCRStage
+        !
+        ! Do PCR if needed
+        !
+        numOfSystems = lhsDesc%nsysFast * lhsDesc%nsysSlow
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(numOfSystems*lhsDesc%nPCRThreads) / block_size%x), 1, 1)
+        do stage = 0, lhsDesc%nPCRstages - 1
+            if (mod(stage, 2) .eq. 0) then
+                call simplePCR_v2<<<grid_size, block_size>>>(problemID, dir, stage, aTarget, bTarget, cTarget, rhsTarget, aBuffer, bBuffer, cBuffer, rhsBuffer)
+            else
+                call simplePCR_v2<<<grid_size, block_size>>>(problemID, dir, stage, aBuffer, bBuffer, cBuffer, rhsBuffer, aTarget, bTarget, cTarget, rhsTarget)
+            end if
+            ! istat = cudaDeviceSynchronize()
+            ! istat = cudaGetLastError()
+            ! if (istat /= 0) print *, "simplePCR launch failed, stage", stage, cudaGetErrorString(istat)
+        end do
 
+        !
+        ! Solve the batched Tridiagonal Systems with Thomas
+        !
+        block_size = dim3(256, 1, 1) ! max it out for now
+        grid_size  = dim3(ceiling(real(numOfSystems*lhsDesc%nSub) / block_size%x), 1, 1)
+        if (mod(lhsDesc%nPCRstages, 2) .eq. 0) then
+            call bTDForward<<<grid_size, block_size>>>(problemID, dir, aTarget, bTarget, cTarget, scratchTarget, rhsTarget)
 
-subroutine solveTriDiagADI(dir,nPCRStages, grid_size, block_size)
-    implicit none
-    integer(kind=intType), intent(in) :: nPCRStages, dir
-    type(dim3), intent(in) :: grid_size, block_size
-    integer(kind=intType) :: dom, sps
+            call bTDBackSub<<<grid_size, block_size>>>(problemID, dir, scratchTarget, rhsTarget)
+        else
+            call bTDForward<<<grid_size, block_size>>>(problemID, dir, aBuffer, bBuffer, cBuffer, scratchTarget, rhsBuffer)
 
-    dom = 1
-    sps = 1
-    
+            call bTDBackSubOOP<<<grid_size, block_size>>>(problemID, dir, scratchTarget, rhsBuffer, rhsTarget)
+        end if
 
-    if (mod(nPCRStages, 2) .eq. 0) then
-        call bTDForward<<<grid_size, block_size>>>(dir,h_cudaDoms(dom,sps)%aIRS,h_cudaDoms(dom,sps)%bIRS,&
-                                            h_cudaDoms(dom,sps)%cIRS,h_cudaDoms(dom,sps)%workIRS,&
-                                            h_cudaDoms(dom,sps)%dw)
-
-        call bTDBackSub<<<grid_size, block_size>>>(dir,h_cudaDoms(dom,sps)%workIRS,h_cudaDoms(dom,sps)%dw)
-    else
-        call bTDForward<<<grid_size, block_size>>>(dir,h_cudaDoms(dom,sps)%aIRSpcr,h_cudaDoms(dom,sps)%bIRSpcr,&
-                                            h_cudaDoms(dom,sps)%cIRSpcr,h_cudaDoms(dom,sps)%workIRS,&
-                                            h_cudaDoms(dom,sps)%dwpcr)
-
-        call bTDBackSubOOP<<<grid_size, block_size>>>(dir,h_cudaDoms(dom,sps)%workIRS,h_cudaDoms(dom,sps)%dwpcr,&
-                                                      h_cudaDoms(dom,sps)%dw)
-    end if
-end subroutine solveTriDiagADI
-
-
-
-    
+    end subroutine executeADIOnDirCUDA
 end module cudaADI

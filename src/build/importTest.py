@@ -27,4 +27,4 @@ except ImportError as e:
     print(f"Error: library {args.name} was not imported correctly")
     sys.exit(1)
 
-print(f"Module {name} was successfully imported")
+print("\033[1;32mModule %s has passed import test.\033[0m" % name)

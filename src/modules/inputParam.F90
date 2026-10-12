@@ -920,8 +920,4 @@ module inputCUDASolver
     real(kind=realType) :: thomasCostFloor = 44.0_realType
     logical :: matchPCRThreadToBlockSize
     logical :: verboseCudaPrint, verboseCudaADIPrint
-
-
-
-    
 end module inputCUDASolver

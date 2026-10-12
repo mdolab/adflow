@@ -404,12 +404,6 @@ python module libadflow
 
        module cudablock
 
-        subroutine debugcopynodalgradientstodevice
-        end subroutine debugcopynodalgradientstodevice
-
-        subroutine debugcopyresidualstodevice
-        end subroutine debugcopyresidualstodevice
-
         subroutine copycudaresidualtohost
         end subroutine copycudaresidualtohost
 
@@ -476,6 +470,12 @@ python module libadflow
 
         subroutine zerofwgpu
         end subroutine zerofwgpu
+
+        subroutine debugcopynodalgradientstodevice
+        end subroutine debugcopynodalgradientstodevice
+
+        subroutine debugcopyresidualstodevice
+        end subroutine debugcopyresidualstodevice
       end module cudadebug
 
        module nksolver

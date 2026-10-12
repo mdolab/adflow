@@ -1,45 +1,47 @@
 ! @File    :   cudaHaloExchange.cuf
 ! @Desc    :   This module contains the CUDA Fortran version of the halo exchange routines in
 !              haloExchange.F90.
-module cudaHaloExchange
 
+module cudaHaloExchange
+    !
+    !   CUDA Modules
+    !
     use cudafor
+
+    !
+    !   ADflow modules
+    !
     use precision, only: intType, realType
-    use cudaBlock, only: d_cudaDoms
+    use cudaBlock, only: cudaDoms => d_cudaDoms
 
     implicit none
-    save
 
-    ! Device mirror of the finest-grid-level (level=1) internal 1-to-1 halo copy list --
-    ! communication::internalCell_1st(1) on the host. Populated once by
-    ! allocateCudaHaloComm1st, read directly by whalo1to1Kernel. ncopy1st is a plain host
-    ! integer (not device) -- it's used to size kernel launches on the host and gets passed
-    ! into the kernel as a `value` argument, so it never needs its own device copy.
+    !
+    !   Module variables
+    !
+
+    ! 1st halo donor and receiver lists on CUDA
     integer(kind=intType), save :: ncopy1st = 0
     integer(kind=intType), device, allocatable, dimension(:) :: donorBlock1st, haloBlock1st
     integer(kind=intType), device, allocatable, dimension(:, :) :: donorIndices1st, haloIndices1st
 
-
+    ! 2nd halo donor and receiver lists on CUDA
     integer(kind=intType), save :: ncopy2nd = 0
     integer(kind=intType), device, allocatable, dimension(:) :: donorBlock2nd, haloBlock2nd
     integer(kind=intType), device, allocatable, dimension(:, :) :: donorIndices2nd, haloIndices2nd
 
-    ! Same idea as above, for the overset interpolation list -- communication::internalOverset(1,1)
-    ! on the host. donorInterpOverset holds the 8 trilinear weights per entry.
+    ! Overset interpolation lists on CUDA
     integer(kind=intType), save :: ncopyOverset = 0
     integer(kind=intType), device, allocatable, dimension(:) :: donorBlockOverset, haloBlockOverset
     integer(kind=intType), device, allocatable, dimension(:, :) :: donorIndicesOverset, haloIndicesOverset
     real(kind=realType), device, allocatable, dimension(:, :) :: donorInterpOverset
 
-    ! Flattened across ALL blocks (blockPointers::nOrphans/orphans, one block at a time via
-    ! setPointers) so orphanAverageKernel needs a single launch instead of one per block.
+    ! Orphan cell lists on CUDA
     integer(kind=intType), save :: nOrphansTotal = 0
     integer(kind=intType), device, allocatable, dimension(:) :: orphanBlock
     integer(kind=intType), device, allocatable, dimension(:, :) :: orphanIndices
 
-    ! Flattened across all periodic transforms in communication::internalCell_1st(1)%periodicData
-    ! -- one entry per halo cell, with that transform's 3x3 rotation matrix duplicated onto
-    ! every one of its halo cells (avoids a second level of indirection in the kernel).
+    ! Periodic boundary data on CUDA
     integer(kind=intType), save :: nPeriodic1st = 0
     integer(kind=intType), device, allocatable, dimension(:) :: periodicBlock1st
     integer(kind=intType), device, allocatable, dimension(:, :) :: periodicIndices1st
@@ -49,10 +51,8 @@ contains
 
     subroutine allocateCudaHaloComm1st
         !
-        !       Mirrors communication::internalCell_1st(1) (the finest-grid-level internal
-        !       1-to-1 halo copy list) to the device. Runs once per process -- guarded by
-        !       the allocated() check below, so subsequent calls (e.g. every whalo1to1 call)
-        !       are a cheap no-op. Same lifecycle pattern as cudaBlock::allocateCudaBCData.
+        !       Allocate the 1st halo donors and list
+        !       NOTE: Harcoded to a single block
         !
         use communication, only: internalCell_1st
         implicit none
@@ -71,13 +71,10 @@ contains
 
     end subroutine allocateCudaHaloComm1st
 
-
     subroutine allocateCudaHaloComm2nd
         !
-        !       Mirrors communication::internalCell_2nd(1) (the finest-grid-level internal
-        !       1-to-1 halo copy list) to the device. Runs once per process -- guarded by
-        !       the allocated() check below, so subsequent calls (e.g. every whalo1to1 call)
-        !       are a cheap no-op. Same lifecycle pattern as cudaBlock::allocateCudaBCData.
+        !       Allocate the 2nd halo donors and list
+        !       NOTE: Harcoded to a single block
         !
         use communication, only: internalCell_2nd
         implicit none
@@ -132,7 +129,9 @@ contains
     !     use blockPointers, only: nDom, bnOrphans => nOrphans, borphans => orphans
     !     use utils, only: setPointers
     !     implicit none
-
+    !     !
+    !     !      Local variables.
+    !     !
     !     integer(kind=intType) :: nn, n, ii, total
     !     integer(kind=intType), allocatable :: hOrphanBlock(:)
     !     integer(kind=intType), allocatable :: hOrphanIndices(:, :)
@@ -180,7 +179,9 @@ contains
     !     !
     !     use communication, only: internalCell_1st
     !     implicit none
-
+    !     !
+    !     !      Local variables.
+    !     !
     !     integer(kind=intType) :: nn, n, ii, total
 
     !     integer(kind=intType), allocatable :: hBlock(:)
@@ -228,7 +229,9 @@ contains
     !     !
     !     use constants, only: intType
     !     implicit none
-
+    !     !
+    !     !      Function arguments and function type.
+    !     !
     !     integer(kind=intType), intent(in) :: start, end
     !     logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
     !     integer(kind=intType) :: nVar
@@ -244,8 +247,8 @@ contains
     subroutine whalo1(level, start, end, commPressure, commGamma, &
                       commViscous)
         !
-        !       whalo1 exchanges all the 1st level internal halo's for the
-        !       cell centered variables. GPU counterpart of haloExchange::whalo1.
+        !       CUDA kernel version of whalo1. exchanges all the 1st level internal halo's for the
+        !       cell centered variables.
         !
         use constants
         use cudaFlowVarRefState, only: viscous, eddyModel
@@ -275,7 +278,7 @@ contains
 
         ! Exchange the 1 to 1 matching 1st level cell halo's (local copy only, see file header).
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis,.false.)
+                       commLamVis, commEddyVis, .false.)
 
         ! Exchange the overset cells.
         ! call wOverset(level, start, end, commPressure, commVarGamma, &
@@ -299,8 +302,8 @@ contains
     subroutine whalo2(level, start, end, commPressure, commGamma, &
                       commViscous)
         !
-        !       whalo2 exchanges all the 2nd level internal halo's for the
-        !       cell centered variables. GPU counterpart of haloExchange::whalo2.
+        !       CUDA kernel version of whalo2 exchanges all the 2nd level internal halo's for the
+        !       cell centered variables.
         !
         use constants
         use cudaFlowVarRefState, only: viscous, eddyModel
@@ -357,9 +360,9 @@ contains
                 !                 ceiling(real(bjl - 2 + 1) / block_size%y), &
                 !                 ceiling(real(bkl - 2 + 1) / block_size%z))
                 block_size = dim3(8, 8, 8)
-                grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
-                                ceiling(real(bjl - 1) / block_size%y), &
-                                ceiling(real(bkl - 1) / block_size%z))
+                grid_size = dim3(ceiling(real(bil - 1) / block_size%x), &
+                                 ceiling(real(bjl - 1) / block_size%y), &
+                                 ceiling(real(bkl - 1) / block_size%z))
                 call computeEtotBlock<<<grid_size, block_size>>>(2, bil, 2, bjl, 2, bkl, correctForK)
                 ! istat = cudaDeviceSynchronize()
             end do
@@ -405,10 +408,7 @@ contains
     subroutine whalo1to1(level, start, end, commPressure, &
                          commVarGamma, commLamVis, commEddyVis, secondHalo)
         !
-        !       GPU counterpart of haloExchange::whalo1to1. Periodic correction only covers
-        !       internalCell_1st's periodic list (see allocateCudaHaloCommPeriodic1st) --
-        !       commPatternCell_1st's periodic list (the MPI-paired case) is skipped, per the
-        !       "everything on one processor" assumption (see file header).
+        !       CUDA kernel version of whalo1to1.
         !
         use constants
         implicit none
@@ -435,20 +435,20 @@ contains
 
         ! nVar = cudaCommVarCount(start, end, commPressure, commVarGamma, commLamVis, commEddyVis)
         ! if (nVar == 0) return
-        if ((.not. secondHalo ).and. (ncopy1st == 0)) return
+        if ((.not. secondHalo) .and. (ncopy1st == 0)) return
         if (secondHalo .and. (ncopy2nd == 0)) return
 
         block_size = dim3(256, 1, 1)
         if (secondHalo) then
             grid_size = dim3(ceiling(real(ncopy2nd) / block_size%x), 1, 1)
             call whalo1to1Kernel2nd<<<grid_size, block_size>>>(start, end, commPressure, &
-                                                        commVarGamma, commLamVis, commEddyVis, ncopy2nd)
+                                                               commVarGamma, commLamVis, commEddyVis, ncopy2nd)
         else
             grid_size = dim3(ceiling(real(ncopy1st) / block_size%x), 1, 1)
             call whalo1to1Kernel<<<grid_size, block_size>>>(start, end, commPressure, &
-                                                        commVarGamma, commLamVis, commEddyVis, ncopy1st)
+                                                            commVarGamma, commLamVis, commEddyVis, ncopy1st)
         end if
-        
+
         ! istat = cudaDeviceSynchronize()
 
         ! Only a momentum variable in [start,end] needs the periodic velocity rotation.
@@ -524,69 +524,31 @@ contains
 
     ! end subroutine wOverset
 
-    ! subroutine computeEtotBlock(dom, sps, iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, correctForK)
-    !     !
-    !     !       GPU counterpart of flowUtils::computeEtotBlock. Recomputes total energy
-    !     !       (rhoE) from density, velocity, and pressure over the given cell range of
-    !     !       block `dom`/spectral mode `sps`. Needed after whalo1/whalo2 when both
-    !     !       pressure and rhoE were exchanged/interpolated independently, since the two
-    !     !       are related nonlinearly and can drift apart (see the `bothPAndE` block in
-    !     !       haloExchange::whalo1/whalo2). Only the cpModel == cpConstant path is ported
-    !     !       (same scope as cudaBCRoutines::computeEtot) -- cpTempCurveFits is out of scope
-    !     !       until commVarGamma (see whalo1) is ported.
-    !     !
-    !     use constants
-    !     implicit none
-    !     !
-    !     !      Subroutine arguments.
-    !     !
-    !     integer(kind=intType), intent(in) :: dom, sps
-    !     integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-    !     logical, intent(in) :: correctForK
-    !     !
-    !     !      Local variables.
-    !     !
-    !     type(dim3) :: grid_size, block_size
-    !     integer(kind=intType) :: istat
-
-    !     block_size = dim3(8, 8, 4)
-    !     grid_size = dim3(ceiling(real(iEnd - iBeg + 1) / block_size%x), &
-    !                      ceiling(real(jEnd - jBeg + 1) / block_size%y), &
-    !                      ceiling(real(kEnd - kBeg + 1) / block_size%z))
-    !     call computeEtotBlockKernel<<<grid_size, block_size>>>(dom, sps, iBeg, iEnd, jBeg, jEnd, &
-    !                                                            kBeg, kEnd, correctForK)
-    !     istat = cudaDeviceSynchronize()
-
-    ! end subroutine computeEtotBlock
-
-    ! ===================================================================
+    !
     !   Actual implementation of each of the halo exchange routines
-    ! ===================================================================
+    !
 
     attributes(global) subroutine whalo1to1Kernel(start, end, commPressure, &
                                                    commVarGamma, commLamVis, commEddyVis, nCopy)
         !
-        !       One thread per local copy entry: copies the donor cell's flow state into the
-        !       corresponding halo cell for cell-centered variables start:end (and optionally
-        !       pressure/gamma/laminar/eddy viscosity). Mirrors the `localCopy` loop inside
-        !       haloExchange::whalo1to1RealGeneric, reading from the module-level
-        !       donorBlock1st/donorIndices1st/haloBlock1st/haloIndices1st mirror (populated by
-        !       allocateCudaHaloComm1st) instead of internal(level)%... . `sps` is hardcoded
-        !       to 1 (single-spectral harness, see whalo1to1's header); `level` was dropped
-        !       from the argument list since it's unused here for the same reason.
+        !       CUDA kernel verison of the whalo1to1 routine which performs the 1st level halo
+        !       exchange on GPU.
         !
         use constants
-        use cudaBlock, only: d_cudaDoms
         implicit none
-
+        !
+        !      Subroutine arguments.
+        !
         integer(kind=intType), intent(in), value :: start, end, nCopy
         logical, intent(in), value :: commPressure, commVarGamma, commLamVis, commEddyVis
-
+        !
+        !      Local variables.
+        !
         integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
         integer(kind=intType) :: ii, kk
         integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
-        real(kind=realType) :: tempReal 
+        real(kind=realType) :: tempReal
 
         ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
 
@@ -604,65 +566,58 @@ contains
             j2 = haloIndices1st(ii, 2)
             k2 = haloIndices1st(ii, 3)
 
-            do kk=start,end
-                tempReal = d_cudaDoms(d1, sps)%w(i1, j1, k1, kk)
-                d_cudaDoms(d2, sps)%w(i2, j2, k2, kk) = tempReal
+            do kk = start, end
+                tempReal = cudaDoms(d1, sps)%w(i1, j1, k1, kk)
+                cudaDoms(d2, sps)%w(i2, j2, k2, kk) = tempReal
             end do
 
             if (commPressure) then
-                tempReal = d_cudaDoms(d1, sps)%p(i1, j1, k1)
-                d_cudaDoms(d2, sps)%p(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%p(i1, j1, k1)
+                cudaDoms(d2, sps)%p(i2, j2, k2) = tempReal
             end if
             if (commVarGamma) then
-                tempReal = d_cudaDoms(d1, sps)%gamma(i1, j1, k1)
-                d_cudaDoms(d2, sps)%gamma(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%gamma(i1, j1, k1)
+                cudaDoms(d2, sps)%gamma(i2, j2, k2) = tempReal
             end if
             if (commLamVis) then
-                tempReal = d_cudaDoms(d1, sps)%rlv(i1, j1, k1)
-                d_cudaDoms(d2, sps)%rlv(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%rlv(i1, j1, k1)
+                cudaDoms(d2, sps)%rlv(i2, j2, k2) = tempReal
             end if
             if (commEddyVis) then
-                tempReal = d_cudaDoms(d1, sps)%rev(i1, j1, k1)
-                d_cudaDoms(d2, sps)%rev(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%rev(i1, j1, k1)
+                cudaDoms(d2, sps)%rev(i2, j2, k2) = tempReal
             end if
 
         end if
 
-
-        
-
     end subroutine whalo1to1Kernel
 
-
     attributes(global) subroutine whalo1to1Kernel2nd(start, end, commPressure, &
-                                                   commVarGamma, commLamVis, commEddyVis, nCopy)
+                                                     commVarGamma, commLamVis, commEddyVis, nCopy)
         !
-        !       One thread per local copy entry: copies the donor cell's flow state into the
-        !       corresponding halo cell for cell-centered variables start:end (and optionally
-        !       pressure/gamma/laminar/eddy viscosity). Mirrors the `localCopy` loop inside
-        !       haloExchange::whalo1to1RealGeneric, reading from the module-level
-        !       donorBlock1st/donorIndices1st/haloBlock1st/haloIndices1st mirror (populated by
-        !       allocateCudaHaloComm1st) instead of internal(level)%... . `sps` is hardcoded
-        !       to 1 (single-spectral harness, see whalo1to1's header); `level` was dropped
-        !       from the argument list since it's unused here for the same reason.
+        !       CUDA kernel verison of the whalo1to1 routine which performs the 2nd level halo
+        !       exchange on GPU.
         !
         use constants
-        use cudaBlock, only: d_cudaDoms
         implicit none
-
+        !
+        !      Subroutine arguments.
+        !
         integer(kind=intType), intent(in), value :: start, end, nCopy
         logical, intent(in), value :: commPressure, commVarGamma, commLamVis, commEddyVis
-
+        !
+        !      Local variables.
+        !
         integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
         integer(kind=intType) :: ii, kk
         integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
-        real(kind=realType) :: tempReal 
+        real(kind=realType) :: tempReal
 
         ii = (blockIdx%x - 1) * blockDim%x + threadIdx%x
 
-
         if (ii <= nCopy) then
+
             d1 = donorBlock2nd(ii)
             i1 = donorIndices2nd(ii, 1)
             j1 = donorIndices2nd(ii, 2)
@@ -672,31 +627,31 @@ contains
             i2 = haloIndices2nd(ii, 1)
             j2 = haloIndices2nd(ii, 2)
             k2 = haloIndices2nd(ii, 3)
-            
-            do kk=start,end
-                tempReal = d_cudaDoms(d1, sps)%w(i1, j1, k1, kk)
-                d_cudaDoms(d2, sps)%w(i2, j2, k2, kk) = tempReal
+
+            do kk = start, end
+                tempReal = cudaDoms(d1, sps)%w(i1, j1, k1, kk)
+                cudaDoms(d2, sps)%w(i2, j2, k2, kk) = tempReal
             end do
 
             if (commPressure) then
-                tempReal = d_cudaDoms(d1, sps)%p(i1, j1, k1)
-                d_cudaDoms(d2, sps)%p(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%p(i1, j1, k1)
+                cudaDoms(d2, sps)%p(i2, j2, k2) = tempReal
             end if
             if (commVarGamma) then
-                tempReal = d_cudaDoms(d1, sps)%gamma(i1, j1, k1)
-                d_cudaDoms(d2, sps)%gamma(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%gamma(i1, j1, k1)
+                cudaDoms(d2, sps)%gamma(i2, j2, k2) = tempReal
             end if
             if (commLamVis) then
-                tempReal = d_cudaDoms(d1, sps)%rlv(i1, j1, k1)
-                d_cudaDoms(d2, sps)%rlv(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%rlv(i1, j1, k1)
+                cudaDoms(d2, sps)%rlv(i2, j2, k2) = tempReal
             end if
             if (commEddyVis) then
-                tempReal = d_cudaDoms(d1, sps)%rev(i1, j1, k1)
-                d_cudaDoms(d2, sps)%rev(i2, j2, k2) = tempReal
+                tempReal = cudaDoms(d1, sps)%rev(i1, j1, k1)
+                cudaDoms(d2, sps)%rev(i2, j2, k2) = tempReal
             end if
+
         end if
 
-    
     end subroutine whalo1to1Kernel2nd
 
     ! attributes(global) subroutine correctPeriodicVelocityKernel(nPeriodic)
@@ -710,9 +665,13 @@ contains
     !     use constants
     !     use cudaBlock, only: d_cudaDoms
     !     implicit none
-
+    !     !
+    !     !      Subroutine arguments.
+    !     !
     !     integer(kind=intType), intent(in), value :: nPeriodic
-
+    !     !
+    !     !      Local variables.
+    !     !
     !     integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
     !     integer(kind=intType) :: ii, mm, i, j, k
     !     real(kind=realType) :: vx, vy, vz
@@ -756,10 +715,14 @@ contains
     !     use constants
     !     use cudaBlock, only: d_cudaDoms
     !     implicit none
-
+    !     !
+    !     !      Subroutine arguments.
+    !     !
     !     integer(kind=intType), intent(in), value :: start, end, nOverset
     !     logical, intent(in), value :: commPressure, commVarGamma, commLamVis, commEddyVis
-
+    !     !
+    !     !      Local variables.
+    !     !
     !     integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
     !     integer(kind=intType) :: ii, v
     !     integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
@@ -872,10 +835,14 @@ contains
     !     use cudaBlock, only: d_cudaDoms
     !     use cudaFlowVarRefState, only: wInf, pInfCorr, gammaInf, muInf, eddyVisInfRatio
     !     implicit none
-
+    !     !
+    !     !      Subroutine arguments.
+    !     !
     !     integer(kind=intType), intent(in), value :: wstart, wend, nOrphans
     !     logical, intent(in), value :: calcPressure, calcGamma, calcLamVis, calcEddyVis
-
+    !     !
+    !     !      Local variables.
+    !     !
     !     integer(kind=intType), parameter :: sps = 1 ! single-spectral harness
     !     integer(kind=intType) :: ii, dm
     !     integer(kind=intType) :: oi, oj, ok, ni, nj, nk, l, m, dl
@@ -971,55 +938,5 @@ contains
     !     end if
 
     ! end subroutine orphanAverageKernel
-
-    ! attributes(global) subroutine computeEtotBlockKernel(dom, sps, iBeg, iEnd, jBeg, jEnd, &
-    !                                                      kBeg, kEnd, correctForK)
-    !     !
-    !     !       One thread per (i,j,k) cell in the given range: recomputes rhoE from
-    !     !       rho/velocity/p (and, if correctForK, the turbulent kinetic energy). Ports
-    !     !       flowUtils::computeEtotBlock's cpConstant branch -- the same formula already
-    !     !       implemented for BC halo layers in cudaBCRoutines::computeEtot, generalized to
-    !     !       an explicit 3D (i,j,k) range instead of a boundary face layer. cpTempCurveFits
-    !     !       is out of scope, same as cudaBCRoutines::computeEtot.
-    !     !
-    !     use constants
-    !     use cudaInputPhysics, only: gammaConstant
-    !     use cudaBlock, only: d_cudaDoms
-    !     implicit none
-
-    !     integer(kind=intType), intent(in), value :: dom, sps
-    !     integer(kind=intType), intent(in), value :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-    !     logical, intent(in), value :: correctForK
-
-    !     integer(kind=intType) :: i, j, k
-    !     real(kind=realType) :: ovgm1, factK
-
-    !     i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + iBeg - 1
-    !     j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + jBeg - 1
-    !     k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + kBeg - 1
-
-    !     if (i <= iEnd .and. j <= jEnd .and. k <= kEnd) then
-
-    !         ovgm1 = one / (gammaConstant - one)
-
-    !         if (.not. correctForK) then
-    !             d_cudaDoms(dom, sps)%w(i, j, k, irhoE) = ovgm1 * d_cudaDoms(dom, sps)%P(i, j, k) &
-    !                                 + half * d_cudaDoms(dom, sps)%w(i, j, k, irho) * ( &
-    !                                     d_cudaDoms(dom, sps)%w(i, j, k, ivx)**2 &
-    !                                     + d_cudaDoms(dom, sps)%w(i, j, k, ivy)**2 &
-    !                                     + d_cudaDoms(dom, sps)%w(i, j, k, ivz)**2)
-    !         else
-    !             factK = ovgm1 * (five * third - gammaConstant)
-    !             d_cudaDoms(dom, sps)%w(i, j, k, irhoE) = ovgm1 * d_cudaDoms(dom, sps)%P(i, j, k) &
-    !                                 + half * d_cudaDoms(dom, sps)%w(i, j, k, irho) * ( &
-    !                                     d_cudaDoms(dom, sps)%w(i, j, k, ivx)**2 &
-    !                                     + d_cudaDoms(dom, sps)%w(i, j, k, ivy)**2 &
-    !                                     + d_cudaDoms(dom, sps)%w(i, j, k, ivz)**2) &
-    !                                 - factK * d_cudaDoms(dom, sps)%w(i, j, k, irho) * d_cudaDoms(dom, sps)%w(i, j, k, itu1)
-    !         end if
-
-    !     end if
-
-    ! end subroutine computeEtotBlockKernel
 
 end module cudaHaloExchange

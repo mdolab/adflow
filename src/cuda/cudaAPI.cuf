@@ -1,50 +1,72 @@
+! @File    :   cudaAPI.cuf
+! @Desc    :   This module contains the top level routines that set up and tear down
+!              the CUDA device data used by the GPU solver
+
 module cudaAPI
+    !
+    !   CUDA Modules
+    !
     use cudafor
+
+    !
+    !   ADflow modules
+    !
     use constants, only: intType
+
     implicit none
-    contains
+
+contains
+
     subroutine setupCudaAPI
-        ! This routine setups the CUDA device memory allocation and copies all data block and BC on this rank to 
-        ! the device.
+        !
+        !       This routine setups the CUDA device memory allocation and copies all data block and BC on this rank to
+        !       the device.
+        !
         use utils, only: setPointers
         use cudaBlock, only: allocateCudaBlock, allocateCudaBCData, copyCudaConstantsToDevice, copyCudaBlockToDevice, copyCudaBCDataToDevice
         use cudaBCRoutines, only: applyAllBC
         use cudaPreprocess, only: cudaPreprocessing
         use BCRoutines, only: applyAllBC_block
         use cudaBCDataMod, only: copyCudaBCDataMod
-
         implicit none
 
+        !
+        !       Local variables
+        !
         integer(kind=intType) :: ierr
-        
-        ! TODO: Reafactor for general purpose
+
+        ! TODO: Refactor for multiblock
         call setPointers(1, 1, 1) ! harcoded to a single block for now
         ! call applyAllBC_block(.True.) ! ensure halos are valid (well only for a single block)
-        
+
         ! set the CUDA shared mem config
         ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
-
 
         call allocateCudaBlock             ! one-time (guarded) allocation of the device mirrors
         call allocateCudaBCData            ! allocate bc device mirrors
         call copyCudaConstantsToDevice     ! scalar / reference-state data host->device
         call copyCudaBlockToDevice         ! block field values host->device
-        call copyCudaBCDataToDevice         ! bc field values host->device
+        call copyCudaBCDataToDevice        ! bc field values host->device
         call copyCudaBCDataMod             ! copy prescribed BC data
 
         ! call applyAllBC(.True.) ! ensure halos are valid (well only for a single block)
 
         call cudaPreprocessing
-    
+
     end subroutine setupCudaAPI
 
     subroutine destroyCudaAPI
+        !
+        !       This routine deallocates the CUDA device data
+        !
         use cudaBlock, only: deallocateCudaBlock, deallocateCudaBCData
+        use cudaADI, only: destroyDeviceADIDescriptors
         implicit none
-        ! This routine deallocates the CUDA device data
 
         call deallocateCudaBlock             ! deallocate the block
         call deallocateCudaBCData            ! deallocate bcs
+        call destroyDeviceADIDescriptors     ! destroy ADI device descriptor data
 
     end subroutine destroyCudaAPI
+
 end module cudaAPI

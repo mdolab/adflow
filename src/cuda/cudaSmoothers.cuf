@@ -1,189 +1,26 @@
 ! @File    :   cudaSmoothers.cuf
-! @Desc    :   CUDA FORTRAN port of solver/smoothers.F90  
+! @Desc    :   CUDA FORTRAN port of solver/smoothers.F90
 
 module cudaSmoothers
+    !
+    !   CUDA Modules
+    !
+    use cudafor
+
+    !
+    !   ADflow modules
+    !
     use precision, only: realType, intType
     use cudaBlock, only: cudaDoms => d_cudaDoms, h_cudaDoms
     use constants
-    use cudafor
+
     implicit none
 
 contains
 
-    !=================================================================
-    !  Device kernels
-    !=================================================================
-
-    attributes(global) subroutine rkStoreZerothStage()
-        !
-        !  Store the zeroth Runge-Kutta stage state: wn = w (flow vars) and pn = p, over
-        !  the owned cells. Replaces the CPU nn/sps store loops in RungeKuttaSmoother.
-        !
-        ! use constants, only: irho
-        use cudaFlowVarRefState, only: nwf
-        implicit none
-
-        integer(kind=intType) :: i, j, k, l, dom, sps
-
-        dom = 1
-        sps = 1
-
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
-
-        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
-            .and. k <= cudaDoms(dom,sps)%kl) then
-
-            do l = 1, nwf
-                cudaDoms(dom,sps)%wn(i, j, k, l) = cudaDoms(dom,sps)%w(i, j, k, l)
-            end do
-            cudaDoms(dom,sps)%pn(i, j, k) = cudaDoms(dom,sps)%p(i, j, k)
-
-        end if
-
-    end subroutine rkStoreZerothStage
-
-    !=================================================================
-
-    attributes(global) subroutine rkStageUpdateDw(dtScale)
-        !
-        !  Scale the residual dw by the local time step for one RK stage (steady /
-        !  timeSpectral). dtScale = currentCfl * etaRk(rkStage), already multiplied by the
-        !  low-speed-preconditioner factor on the host, so this kernel is branch-free.
-        !  Mirrors CPU executeRkStage lines ~196-218.
-        !
-        use constants, only: irho, imx, imy, imz, irhoE
-        implicit none
-
-        real(kind=realType), value, intent(in) :: dtScale
-
-        integer(kind=intType) :: i, j, k, dom, sps
-        real(kind=realType) :: dt
-
-        dom = 1
-        sps = 1
-
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
-
-        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
-            .and. k <= cudaDoms(dom,sps)%kl) then
-
-            dt = dtScale * cudaDoms(dom,sps)%dtl(i, j, k) ! Remeber that dtl is dt/(CFL*vol) so CFL and vol are baked in!
-
-            ! if ((i .eq. 29) .and. (j .eq. 33) .and. (k .eq. 10)) then
-            !     print *, "dt CHECK GPU", cudaDoms(dom,sps)%dtl(i, j, k)
-            !     print *, "dtScale CHECK GPU", dtScale
-            ! end if
-
-            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
-            !         print *, "GPU STATE UPdATE BEFORE Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
-            ! end if
-
-            cudaDoms(dom,sps)%dw(i, j, k, irho)  = cudaDoms(dom,sps)%dw(i, j, k, irho)  * dt
-            cudaDoms(dom,sps)%dw(i, j, k, imx)   = cudaDoms(dom,sps)%dw(i, j, k, imx)   * dt
-            cudaDoms(dom,sps)%dw(i, j, k, imy)   = cudaDoms(dom,sps)%dw(i, j, k, imy)   * dt
-            cudaDoms(dom,sps)%dw(i, j, k, imz)   = cudaDoms(dom,sps)%dw(i, j, k, imz)   * dt
-            cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) * dt
-
-            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
-            !         print *, "GPU STATE UPdATE AFTER Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
-            ! end if
-
-        end if
-
-    end subroutine rkStageUpdateDw
-
-    !=================================================================
-
-    attributes(global) subroutine rkStageUpdateState(correctForK)
-        !
-        !  Compute the new state vector from the scaled updates dw and the saved zeroth
-        !  stage (wn, pn). Updates density (clamped), velocities, and pressure (clamped),
-        !  over the owned cells. Mirrors CPU executeRkStage lines ~298-346.
-        !
-        use constants, only: irho, ivx, ivy, ivz, irhoE, imx, imy, imz, itu1, &
-                             one, zero, five, third
-        use cudaFlowVarRefState, only: rhoInf, pInfCorr
-        implicit none
-
-        logical, value, intent(in) :: correctForK
-
-        real(kind=realType), parameter :: fiveThird = five * third
-
-        integer(kind=intType) :: i, j, k, dom, sps
-        real(kind=realType) :: gm1, gm53, ovr, v2, dp, factK, ru, rv, rw
-
-        dom = 1
-        sps = 1
-
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
-
-        if (i <= cudaDoms(dom,sps)%il .and. j <= cudaDoms(dom,sps)%jl &
-            .and. k <= cudaDoms(dom,sps)%kl) then
-
-            factK = zero
-
-            ! Store gamma - 1 and gamma - 5/3 a bit easier.
-            gm1  = cudaDoms(dom,sps)%gamma(i, j, k) - one
-            gm53 = cudaDoms(dom,sps)%gamma(i, j, k) - fiveThird
-
-            ! Compute the pressure update from the conservative updates.
-            ovr = one / cudaDoms(dom,sps)%w(i, j, k, irho)
-            v2 = cudaDoms(dom,sps)%w(i, j, k, ivx)**2 &
-                 + cudaDoms(dom,sps)%w(i, j, k, ivy)**2 &
-                 + cudaDoms(dom,sps)%w(i, j, k, ivz)**2
-            if (correctForK) factK = gm53 * cudaDoms(dom,sps)%w(i, j, k, itu1)
-
-            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
-            !     print *, "GPU STATE UPdATE", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
-            ! end if
-
-
-            dp = (ovr * cudaDoms(dom,sps)%p(i, j, k) + factK &
-                  - gm1 * (ovr * cudaDoms(dom,sps)%w(i, j, k, irhoE) - v2)) &
-                 * cudaDoms(dom,sps)%dw(i, j, k, irho) &
-                 + gm1 * (cudaDoms(dom,sps)%dw(i, j, k, irhoE) &
-                          - cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%dw(i, j, k, imx) &
-                          - cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%dw(i, j, k, imy) &
-                          - cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%dw(i, j, k, imz))
-
-            ! Compute the density. Correct for negative values.
-            cudaDoms(dom,sps)%w(i, j, k, irho) = cudaDoms(dom,sps)%wn(i, j, k, irho) &
-                                                 - cudaDoms(dom,sps)%dw(i, j, k, irho)
-            cudaDoms(dom,sps)%w(i, j, k, irho) = max(cudaDoms(dom,sps)%w(i, j, k, irho), &
-                                                     1.e-4_realType * rhoInf)
-
-            ! Compute the velocities.
-            ru = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivx) &
-                 - cudaDoms(dom,sps)%dw(i, j, k, imx)
-            rv = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivy) &
-                 - cudaDoms(dom,sps)%dw(i, j, k, imy)
-            rw = cudaDoms(dom,sps)%wn(i, j, k, irho) * cudaDoms(dom,sps)%wn(i, j, k, ivz) &
-                 - cudaDoms(dom,sps)%dw(i, j, k, imz)
-
-            ovr = one / cudaDoms(dom,sps)%w(i, j, k, irho)
-            cudaDoms(dom,sps)%w(i, j, k, ivx) = ovr * ru
-            cudaDoms(dom,sps)%w(i, j, k, ivy) = ovr * rv
-            cudaDoms(dom,sps)%w(i, j, k, ivz) = ovr * rw
-
-            ! Compute the pressure. Correct for negative values.
-            cudaDoms(dom,sps)%p(i, j, k) = cudaDoms(dom,sps)%pn(i, j, k) - dp
-            cudaDoms(dom,sps)%p(i, j, k) = max(cudaDoms(dom,sps)%p(i, j, k), &
-                                               1.e-4_realType * pInfCorr)
-
-
-        end if
-
-    end subroutine rkStageUpdateState
-
-    !=================================================================
-    !  Host drivers
-    !=================================================================
+    !
+    !   Host drivers
+    !
 
     subroutine RungeKuttaSmoother
         !
@@ -204,6 +41,9 @@ contains
         use cudaResidual, only: calculateCudaResidual
         use iteration, only: rkStage
         implicit none
+        !
+        !      Local variables.
+        !
         type(dim3) :: grid_size, block_size
         integer(kind=intType) :: istat
 
@@ -211,18 +51,9 @@ contains
         ! Single block (dom=sps=1), consistent with the residual kernels.
         ! call setPointers(1, 1, 1) ! Already done this
         block_size = dim3(8, 8, 8)
-        grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
-                          ceiling(real(bjl - 1) / block_size%y), &
-                          ceiling(real(bkl - 1) / block_size%z))
-
-
-        ! print '(A)',            '--------------------------------------------------'
-        ! print '(A)',            ' CUDA kernel launch configuration'
-        ! print '(A)',            '--------------------------------------------------'
-        ! print '(A,I0,A,I0,A,I0)', ' Thread block size      : ', block_size%x, ' x ', block_size%y, ' x ', block_size%z
-        ! print '(A,I0,A,I0,A,I0)', ' Grid size              : ', grid_size%x, ' x ', grid_size%y, ' x ', grid_size%z
-        ! print '(A)',            '--------------------------------------------------'
-
+        grid_size = dim3(ceiling(real(bil - 1) / block_size%x), &
+                         ceiling(real(bjl - 1) / block_size%y), &
+                         ceiling(real(bkl - 1) / block_size%z))
 
         call rkStoreZerothStage<<<grid_size, block_size>>>()
         ! istat = cudaDeviceSynchronize()
@@ -236,7 +67,7 @@ contains
             ! Compute the residuals for the next stage. calculateCudaResidual is the
             ! device analog of the CPU initres + sourceTerms + residual sequence.
             ! Do not update the time step mid stage
-            call calculateCudaResidual(.False.,.False., 1, nwf)
+            call calculateCudaResidual(.False., .False., 1, nwf)
 
         end do
 
@@ -244,8 +75,6 @@ contains
         call executeRkStage(nRKStages)
 
     end subroutine RungeKuttaSmoother
-
-    !=================================================================
 
     subroutine executeRkStage(rkStage)
         !
@@ -259,7 +88,7 @@ contains
         use inputDiscretization, only: lowSpeedPreconditioner
         use inputPhysics, only: equationMode
         use iteration, only: currentLevel, groundLevel, exchangePressureEarly
-        use blockPointers, only: bil => il, bjl => jl, bkl => kl, bw=>w
+        use blockPointers, only: bil => il, bjl => jl, bkl => kl, bw => w
         use utils, only: setPointers, terminate
         use cudaBCRoutines, only: applyAllBC
         use cudaHaloExchange, only: whalo1, whalo2
@@ -268,9 +97,13 @@ contains
         !       (computeEtotBlock / computeLamViscosity / computeEddyViscosity) are
         !       provided elsewhere and pulled in when available (see TODOs below).
         implicit none
-
+        !
+        !      Subroutine arguments.
+        !
         integer(kind=intType), intent(in) :: rkStage
-
+        !
+        !      Local variables.
+        !
         type(dim3) :: grid_size, block_size
         integer(kind=intType) :: istat
         real(kind=realType) :: currentCfl, dtScale
@@ -308,7 +141,7 @@ contains
         ! if (kPresent .and. (currentLevel <= groundLevel)) then
         !     correctForK = .true.
         ! else
-            correctForK = .false.
+        correctForK = .false.
         ! end if
 
         ! cfl number times the RK coefficient. Fold the low-speed-preconditioner
@@ -327,9 +160,9 @@ contains
 
         ! Launch configuration over the owned cells (2..il, 2..jl, 2..kl).
         block_size = dim3(8, 8, 8)
-        grid_size  = dim3(ceiling(real(bil - 1) / block_size%x), &
-                          ceiling(real(bjl - 1) / block_size%y), &
-                          ceiling(real(bkl - 1) / block_size%z))
+        grid_size = dim3(ceiling(real(bil - 1) / block_size%x), &
+                         ceiling(real(bjl - 1) / block_size%y), &
+                         ceiling(real(bkl - 1) / block_size%z))
 
         ! Scale the residual updates.
         call rkStageUpdateDw<<<grid_size, block_size>>>(dtScale)
@@ -347,7 +180,7 @@ contains
         ! Total energy + laminar / eddy viscosity in the owned cells.
         call computeEtotBlock<<<grid_size, block_size>>>(2_intType, bil, 2_intType, bjl, 2_intType, bkl, correctForK)
         ! istat = cudaDeviceSynchronize()
-        call computeLamViscosity<<<grid_size, block_size>>>(.false.,correctForK)
+        call computeLamViscosity<<<grid_size, block_size>>>(.false., correctForK)
         ! istat = cudaDeviceSynchronize()
         call computeEddyViscosity<<<grid_size, block_size>>>(.false.)
         ! istat = cudaDeviceSynchronize()
@@ -368,5 +201,180 @@ contains
         end if
 
     end subroutine executeRkStage
+
+    !
+    !   Device kernels
+    !
+
+    attributes(global) subroutine rkStoreZerothStage()
+        !
+        !       Store the zeroth Runge-Kutta stage state: wn = w (flow vars) and pn = p, over
+        !       the owned cells. Replaces the CPU nn/sps store loops in RungeKuttaSmoother.
+        !
+        ! use constants, only: irho
+        use cudaFlowVarRefState, only: nwf
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k, l, dom, sps
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom, sps)%il .and. j <= cudaDoms(dom, sps)%jl &
+            .and. k <= cudaDoms(dom, sps)%kl) then
+
+            do l = 1, nwf
+                cudaDoms(dom, sps)%wn(i, j, k, l) = cudaDoms(dom, sps)%w(i, j, k, l)
+            end do
+            cudaDoms(dom, sps)%pn(i, j, k) = cudaDoms(dom, sps)%p(i, j, k)
+
+        end if
+
+    end subroutine rkStoreZerothStage
+
+    attributes(global) subroutine rkStageUpdateDw(dtScale)
+        !
+        !       Scale the residual dw by the local time step for one RK stage (steady /
+        !       timeSpectral). dtScale = currentCfl * etaRk(rkStage), already multiplied by the
+        !       low-speed-preconditioner factor on the host, so this kernel is branch-free.
+        !       Mirrors CPU executeRkStage lines ~196-218.
+        !
+        use constants, only: irho, imx, imy, imz, irhoE
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        real(kind=realType), value, intent(in) :: dtScale
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k, dom, sps
+        real(kind=realType) :: dt
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom, sps)%il .and. j <= cudaDoms(dom, sps)%jl &
+            .and. k <= cudaDoms(dom, sps)%kl) then
+
+            dt = dtScale * cudaDoms(dom, sps)%dtl(i, j, k) ! Remeber that dtl is dt/(CFL*vol) so CFL and vol are baked in!
+
+            ! if ((i .eq. 29) .and. (j .eq. 33) .and. (k .eq. 10)) then
+            !     print *, "dt CHECK GPU", cudaDoms(dom,sps)%dtl(i, j, k)
+            !     print *, "dtScale CHECK GPU", dtScale
+            ! end if
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !         print *, "GPU STATE UPdATE BEFORE Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
+
+            cudaDoms(dom, sps)%dw(i, j, k, irho)  = cudaDoms(dom, sps)%dw(i, j, k, irho)  * dt
+            cudaDoms(dom, sps)%dw(i, j, k, imx)   = cudaDoms(dom, sps)%dw(i, j, k, imx)   * dt
+            cudaDoms(dom, sps)%dw(i, j, k, imy)   = cudaDoms(dom, sps)%dw(i, j, k, imy)   * dt
+            cudaDoms(dom, sps)%dw(i, j, k, imz)   = cudaDoms(dom, sps)%dw(i, j, k, imz)   * dt
+            cudaDoms(dom, sps)%dw(i, j, k, irhoE) = cudaDoms(dom, sps)%dw(i, j, k, irhoE) * dt
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !         print *, "GPU STATE UPdATE AFTER Dt", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
+
+        end if
+
+    end subroutine rkStageUpdateDw
+
+    attributes(global) subroutine rkStageUpdateState(correctForK)
+        !
+        !       Compute the new state vector from the scaled updates dw and the saved zeroth
+        !       stage (wn, pn). Updates density (clamped), velocities, and pressure (clamped),
+        !       over the owned cells. Mirrors CPU executeRkStage lines ~298-346.
+        !
+        use constants, only: irho, ivx, ivy, ivz, irhoE, imx, imy, imz, itu1, &
+                             one, zero, five, third
+        use cudaFlowVarRefState, only: rhoInf, pInfCorr
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        logical, value, intent(in) :: correctForK
+        !
+        !      Local variables.
+        !
+        real(kind=realType), parameter :: fiveThird = five * third
+
+        integer(kind=intType) :: i, j, k, dom, sps
+        real(kind=realType) :: gm1, gm53, ovr, v2, dp, factK, ru, rv, rw
+
+        dom = 1
+        sps = 1
+
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
+
+        if (i <= cudaDoms(dom, sps)%il .and. j <= cudaDoms(dom, sps)%jl &
+            .and. k <= cudaDoms(dom, sps)%kl) then
+
+            factK = zero
+
+            ! Store gamma - 1 and gamma - 5/3 a bit easier.
+            gm1  = cudaDoms(dom, sps)%gamma(i, j, k) - one
+            gm53 = cudaDoms(dom, sps)%gamma(i, j, k) - fiveThird
+
+            ! Compute the pressure update from the conservative updates.
+            ovr = one / cudaDoms(dom, sps)%w(i, j, k, irho)
+            v2 = cudaDoms(dom, sps)%w(i, j, k, ivx)**2 &
+                 + cudaDoms(dom, sps)%w(i, j, k, ivy)**2 &
+                 + cudaDoms(dom, sps)%w(i, j, k, ivz)**2
+            if (correctForK) factK = gm53 * cudaDoms(dom, sps)%w(i, j, k, itu1)
+
+            ! if ((i.eq.19).and.(j.eq.27).and.(k.eq.3)) then
+            !     print *, "GPU STATE UPdATE", cudaDoms(dom,sps)%dw(i, j, k, irhoE)
+            ! end if
+
+            dp = (ovr * cudaDoms(dom, sps)%p(i, j, k) + factK &
+                  - gm1 * (ovr * cudaDoms(dom, sps)%w(i, j, k, irhoE) - v2)) &
+                 * cudaDoms(dom, sps)%dw(i, j, k, irho) &
+                 + gm1 * (cudaDoms(dom, sps)%dw(i, j, k, irhoE) &
+                          - cudaDoms(dom, sps)%w(i, j, k, ivx) * cudaDoms(dom, sps)%dw(i, j, k, imx) &
+                          - cudaDoms(dom, sps)%w(i, j, k, ivy) * cudaDoms(dom, sps)%dw(i, j, k, imy) &
+                          - cudaDoms(dom, sps)%w(i, j, k, ivz) * cudaDoms(dom, sps)%dw(i, j, k, imz))
+
+            ! Compute the density. Correct for negative values.
+            cudaDoms(dom, sps)%w(i, j, k, irho) = cudaDoms(dom, sps)%wn(i, j, k, irho) &
+                                                  - cudaDoms(dom, sps)%dw(i, j, k, irho)
+            cudaDoms(dom, sps)%w(i, j, k, irho) = max(cudaDoms(dom, sps)%w(i, j, k, irho), &
+                                                      1.e-4_realType * rhoInf)
+
+            ! Compute the velocities.
+            ru = cudaDoms(dom, sps)%wn(i, j, k, irho) * cudaDoms(dom, sps)%wn(i, j, k, ivx) &
+                 - cudaDoms(dom, sps)%dw(i, j, k, imx)
+            rv = cudaDoms(dom, sps)%wn(i, j, k, irho) * cudaDoms(dom, sps)%wn(i, j, k, ivy) &
+                 - cudaDoms(dom, sps)%dw(i, j, k, imy)
+            rw = cudaDoms(dom, sps)%wn(i, j, k, irho) * cudaDoms(dom, sps)%wn(i, j, k, ivz) &
+                 - cudaDoms(dom, sps)%dw(i, j, k, imz)
+
+            ovr = one / cudaDoms(dom, sps)%w(i, j, k, irho)
+            cudaDoms(dom, sps)%w(i, j, k, ivx) = ovr * ru
+            cudaDoms(dom, sps)%w(i, j, k, ivy) = ovr * rv
+            cudaDoms(dom, sps)%w(i, j, k, ivz) = ovr * rw
+
+            ! Compute the pressure. Correct for negative values.
+            cudaDoms(dom, sps)%p(i, j, k) = cudaDoms(dom, sps)%pn(i, j, k) - dp
+            cudaDoms(dom, sps)%p(i, j, k) = max(cudaDoms(dom, sps)%p(i, j, k), &
+                                                1.e-4_realType * pInfCorr)
+
+        end if
+
+    end subroutine rkStageUpdateState
 
 end module cudaSmoothers
