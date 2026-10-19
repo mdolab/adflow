@@ -5951,7 +5951,11 @@ class ADFLOW(AeroSolver):
             "pcrcostratiocoefffour": [float, 0.00269697],
             "thomascostfloor": [float, 44.0],
             "matchpcrthreadtoblocksize": [bool,False],
+            "occupancytarget" : [float, 0.5],
+            "regallocunit" : [int, 256],
+            "maxlaunchcandidates" : [int, 5],
             "verbosecudaprint": [bool,False],
+            "verbosecudalaunchconfigsprint": [bool,False],
             "verbosecudaadiprint": [bool,False],
         }
 
@@ -6419,6 +6423,10 @@ class ADFLOW(AeroSolver):
             "pcrcostratiocoefffour": ["cuda","pcrcostratiocoefffour"],
             "thomascostfloor": ["cuda","thomascostfloor"],
             "matchpcrthreadtoblocksize": ["cuda","matchpcrthreadtoblocksize"],
+            "occupancytarget" : ["cuda","occupancytarget"],
+            "regallocunit" : ["cuda","regallocunit"],
+            "maxlaunchcandidates" : ["cuda","maxlaunchcandidates"],
+            "verbosecudalaunchconfigsprint": ["cuda","verbosecudalaunchconfigsprint"],
             "verbosecudaprint": ["cuda","verbosecudaprint"],
             "verbosecudaadiprint": ["cuda","verbosecudaadiprint"],
 

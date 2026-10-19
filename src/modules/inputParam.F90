@@ -919,5 +919,17 @@ module inputCUDASolver
     real(kind=realType) :: pcrCostRatioCoeffOne, pcrCostRatioCoeffTwo, pcrCostRatioCoeffThree, pcrCostRatioCoeffFour
     real(kind=realType) :: thomasCostFloor = 44.0_realType
     logical :: matchPCRThreadToBlockSize
-    logical :: verboseCudaPrint, verboseCudaADIPrint
+    logical :: verboseCudaPrint, verboseCudaLaunchConfigsPrint, verboseCudaADIPrint
+    logical :: verboseLCCandidatePrint = .false. ! Not exposed to f2py
+
+    ! Kernel Launch parameter auto sizing
+    real(kind=realType) :: occupancyTarget  = 0.5
+    integer(kind=intType) :: regAllocUnit = 256
+    integer(kind=intType) :: maxLaunchCandidates = 5
+
+    ! CUDA unused
+    real(kind=realType) :: tieTol = 0.01
+    real(kind=realType) :: alphaCoal = 1.0
+
+
 end module inputCUDASolver

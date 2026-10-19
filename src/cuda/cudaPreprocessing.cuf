@@ -4,6 +4,11 @@
 
 module cudaPreprocess
     !
+    !   Fortran Modules
+    !
+    use, intrinsic :: iso_c_binding
+
+    !
     !   CUDA Modules
     !
     use cudafor
@@ -27,11 +32,12 @@ module cudaPreprocess
 contains
 
     subroutine cudaPreprocessing
-        use inputCUDASolver, only: verboseCudaPrint, verboseCudaADIPrint
+        use inputCUDASolver, only: verboseCudaPrint, verboseCudaADIPrint, verboseCudaLaunchConfigsPrint
         implicit none
 
         call preprocessingGetDeviceInfo
         call printCUDADeviceInfo(verbose=verboseCudaPrint)
+        call preprocessingLaunchConfigs(verbose=verboseCudaLaunchConfigsPrint)
         call preprocessingADI(verbose=verboseCudaADIPrint)
 
     end subroutine cudaPreprocessing
@@ -43,6 +49,7 @@ contains
         implicit none
 
         integer(kind=intType) :: i, istat
+        integer :: attrValue
 
         istat = cudaGetDeviceCount(deviceCount)
 
@@ -81,6 +88,14 @@ contains
             if (istat /= cudaSuccess) then
                 print *, "Error getting properties for device ", i, ": ", cudaGetErrorString(istat)
             end if
+
+            ! NOTE: nvfortran's cudaGetDeviceProperties leaves these fields at zero (as seen on HPC SDK 26.5)
+            ! so query them directly as device attributes
+            istat = cudaDeviceGetAttribute(attrValue, cudaDevAttrMaxBlocksPerMultiprocessor, i)
+            if (istat == cudaSuccess) cudaDeviceInfo(i)%maxBlocksPerMultiProcessor = attrValue
+
+            istat = cudaDeviceGetAttribute(attrValue, cudaDevAttrReservedSharedMemoryPerBlock, i)
+            if (istat == cudaSuccess) cudaDeviceInfo(i)%reservedSharedMemPerBlock = attrValue
         end do
 
     end subroutine preprocessingGetDeviceInfo
@@ -373,7 +388,7 @@ contains
         use constants
         implicit none
 
-        integer, intent(in) :: major, minor
+        integer(kind=intType), intent(in) :: major, minor
         integer(kind=intType) :: cores
 
         select case (major)
@@ -404,6 +419,513 @@ contains
         end select
 
     end function coresPerSM
+
+    subroutine preprocessingLaunchConfigs(verbose)
+        ! 
+        !       Determines all the kernel launch configs for all the blocks
+        !
+        use constants
+        use communication, only: myID
+        use blockPointers, only: nDom, bib => ib, bjb => jb, bkb => kb, bie => ie, bje => je, bke => ke, &
+                                 bnx => nx, bny => ny, bnz => nz
+        use cudaIteration, only: currentLevel
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowVarRefState, only: nwf
+        use inputCUDASolver, only: occupancyTarget, alphaCoal, regAllocUnit, tieTol
+        use cudaConfigs, only: getKernelWorkExtents, getKernelAttributes, cudaLaunchClassDesc, &
+                               cudaKernelLaunchConfig, cudaLaunchDesc, cudaLaunchConfigs
+        use inputCUDASolver, only: maxLaunchCandidates
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        logical, intent(in) :: verbose
+
+
+        !
+        !       Local variables
+        !
+        integer(kind=intType) :: i, j, ni, nj, nk
+
+
+
+        ! First allocate the kernel class descriptions
+        if (.not. allocated(cudaLaunchDesc)) then
+            allocate(cudaLaunchDesc(nLaunchConfigs))
+        end if
+
+
+        ! Loop over all the kernels and get the attributes
+        kernelLoop: do i = 1, nLaunchConfigs
+            call getKernelAttributes(cudaLaunchDesc(i), i)
+        end do kernelLoop
+
+
+        ! Allocate the configs for each block
+        if (.not. allocated(cudaLaunchConfigs)) then
+            allocate(cudaLaunchConfigs(nDom, nLaunchConfigs))
+        end if
+
+        ! Don't bother storing all the candidates anymore
+        ! Approach just keep track of the best one so far
+        ! Scoring is cheap enough so this is fine
+
+        ! Allocate the candidate array if needed
+        ! if (.not. allocated(cudaCandidateConfigs)) then
+        !     allocate(cudaCandidateConfigs((maxLaunchCandidates + 1) ** 3, nDoms, nLaunchConfigs))
+        ! end if
+
+        ! if (.not. allocated(totalLaunchCandidatesConfigs)) then
+        !     allocate(totalLaunchCandidatesConfigs(nDoms, nLaunchConfigs))
+        ! end if
+
+    
+        ! Loop over the kernel and blocks and setup the launch configs
+        kernelLoop2: do i = 1, nLaunchConfigs
+            blockLoop: do j = 1, nDom
+                call computeAndSetLaunchConfig(j, i)
+            end do blockLoop
+        end do kernelLoop2
+
+        ! Report the selected configurations if requested. The work
+        ! extents are recomputed here since they are not stored.
+        if (verbose) then
+            call printLaunchConfigHeader
+            do i = 1, nLaunchConfigs
+                do j = 1, nDom
+                    call getKernelWorkExtents(j, 1, i, ni, nj, nk)
+                    call printLaunchConfigRow(j, 1, ni, nj, nk, cudaLaunchDesc(i), &
+                                              cudaLaunchConfigs(j, i))
+                end do
+            end do
+            call printLaunchConfigFooter
+        end if
+
+    end subroutine preprocessingLaunchConfigs
+
+
+    subroutine computeAndSetLaunchConfig(dom, index)
+        use cudaConfigs, only: cudaLaunchClassDesc
+        use cudaFluxes, only: inviscidDissFluxScalar, inviscidCentralFluxCellCentered_v4
+        use cudaResidual, only: computeSS
+        use blockPointers, only: bnx => nx, bny => ny, bnz => nz, bil => il, bjl => jl, bkl => kl
+        use utils, only: setPointers
+        use cudaConfigs, only: getKernelWorkExtents, cudaLaunchClassDesc, cudaKernelLaunchConfig, cudaLaunchDesc, cudaLaunchConfigs
+        use inputCUDASolver, only: maxLaunchCandidates, verboseLCCandidatePrint
+        use utils, only: terminate
+        implicit none
+        !
+        !   Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: index, dom
+        
+
+        !
+        !   Local variables
+        !
+        integer(kind=intType) :: i, j, k, ll
+        integer(kind=intType) :: ni, nj, nk, devID, maxICands, maxJCands, maxKCands
+        integer(kind=intType), allocatable, dimension(:) :: iCandDimList, jCandDimList, kCandDimList
+        type(cudaKernelLaunchConfig) :: candidateLaunchConfig, bestLaunchConfig
+
+        ! one device only for now
+        devID = 0
+
+        ! Hardcoded sps and grid level
+        call getKernelWorkExtents(dom, 1, index, ni, nj, nk)
+
+        ! Figure out how many candidates max we can use for each
+        maxICands = min(floor(real(min(cudaDeviceInfo(devID)%maxThreadsDim(1), cudaDeviceInfo(devID)%maxThreadsPerBlock)  / &
+                            threadsPerWarp, kind=realType)), maxLaunchCandidates) + 1
+        maxJCands = min(floor(log(real(cudaDeviceInfo(devID)%maxThreadsDim(2)))/log(2.0_realType)), maxLaunchCandidates) + 1
+        maxKCands = min(floor(log(real(cudaDeviceInfo(devID)%maxThreadsDim(3)))/log(2.0_realType)), maxLaunchCandidates) + 1
+        
+        ! Allocate the candidate dim lists
+        allocate(iCandDimList(maxICands))
+        allocate(jCandDimList(maxJCands))
+        allocate(kCandDimList(maxKCands))
+
+        ! The work extent is the first candidate size for all lists
+        iCandDimList(1) = ni
+        jCandDimList(1) = nj
+        kCandDimList(1) = nk
+
+        ! Now loop over all the candidate dims
+
+        dimILoop: do i = 2, maxICands
+            ! Note the i goes by threadsPerWarp to help the mem coalescing situation
+            iCandDimList(i) = threadsPerWarp * (i - 1)
+        end do dimILoop
+
+        ! The rest are just powers of 2
+        dimJLoop: do i = 2, maxJCands
+            jCandDimList(i) = 2**(i - 2)
+        end do dimJLoop
+
+        dimKLoop: do i = 2, maxKCands
+            kCandDimList(i) = 2**(i - 2)
+        end do dimKLoop
+
+
+        ! Now find the best candidate by looping over them all
+        ll = 0
+        bestLaunchConfig%totalScore = zero ! clear the scores
+        bestLaunchConfig%laneScore = zero
+        bestLaunchConfig%occScore = zero
+        bestLaunchConfig%waveScore = zero
+        bestLaunchConfig%edgeScore = zero
+        do i = 1, maxICands
+            do j = 1, maxJCands
+                do k = 1, maxKCands
+
+                    
+                    ! First set the block size
+                    candidateLaunchConfig%block_size%x =  iCandDimList(i)
+                    candidateLaunchConfig%block_size%y =  jCandDimList(j)
+                    candidateLaunchConfig%block_size%z =  kCandDimList(k)
+
+                    ! Then set the grid
+                    candidateLaunchConfig%grid_size%x =  ceiling(real(ni)/iCandDimList(i))
+                    candidateLaunchConfig%grid_size%y =  ceiling(real(nj)/jCandDimList(j))
+                    candidateLaunchConfig%grid_size%z =  ceiling(real(nk)/kCandDimList(k))
+
+                    ! Score the candidate
+                    call scoreConfig(candidateLaunchConfig, cudaLaunchDesc(index), ni, nj, nk)
+
+                    ! Check if the candidate is valid
+                    call checkLaunchConfigValid(candidateLaunchConfig)
+
+                    ! DEBUG: dump every candidate as it is checked
+                    if (verboseLCCandidatePrint) then
+                        if (ll .eq. 0) then
+                            print "(a,i0,3a,3(i0,1x),a,i0,a,i0,a,3(i0,1x))", "# DEBUG LC dom=", dom, &
+                                " kernel=", trim(cudaLaunchDesc(index)%name), " n=", ni, nj, nk, &
+                                " regs=", cudaLaunchDesc(index)%kernelRegisters, &
+                                " smem=", int(cudaLaunchDesc(index)%sharedMemPerBlock, kind=intType), &
+                                " strides=", cudaLaunchDesc(index)%strides
+                            print "(a)", "# DEBUG    ll     bx    by    bz     gx    gy    gz   thr  res&
+                                &   lane    occ   wave   edge  total valid  best"
+                        end if
+                        print "(a,i6,3i6,1x,3i6,i6,i5,5f7.3,l6,f7.3)", "# DEBUG", ll, &
+                            candidateLaunchConfig%block_size%x, candidateLaunchConfig%block_size%y, &
+                            candidateLaunchConfig%block_size%z, candidateLaunchConfig%grid_size%x, &
+                            candidateLaunchConfig%grid_size%y, candidateLaunchConfig%grid_size%z, &
+                            candidateLaunchConfig%block_size%x * candidateLaunchConfig%block_size%y * &
+                            candidateLaunchConfig%block_size%z, candidateLaunchConfig%resBlocks, &
+                            candidateLaunchConfig%laneScore, candidateLaunchConfig%occScore, &
+                            candidateLaunchConfig%waveScore, candidateLaunchConfig%edgeScore, &
+                            candidateLaunchConfig%totalScore, candidateLaunchConfig%isValid, &
+                            bestLaunchConfig%totalScore
+                    end if
+
+                    ! The first candidate is always the best so far
+                    if (ll .eq. 0) then
+                        bestLaunchConfig = candidateLaunchConfig
+                    else if ((candidateLaunchConfig%isValid) .and. &
+                             (candidateLaunchConfig%totalScore .gt. bestLaunchConfig%totalScore)) then
+                        ! If the candidate is better and valid then it's the new best
+                        bestLaunchConfig = candidateLaunchConfig
+                    end if
+                    ! Other wise we move on to the next one
+
+                    ! Increment
+                    ll = ll + 1
+                end do
+            end do
+        end do
+
+
+        ! check if the best candidate is valid
+        if (.not. bestLaunchConfig%isValid) then
+            call terminate("cudapreprocessing", &
+                            "Failed to find valid launch params")
+        end if
+
+        ! the best candidate is now the one for this block
+        cudaLaunchConfigs(dom, index) = bestLaunchConfig
+    end subroutine computeAndSetLaunchConfig
+
+    subroutine checkLaunchConfigValid(config)
+        use cudaConfigs, only: cudaKernelLaunchConfig
+        implicit none
+        !
+        !   Subroutine arguments
+        !
+        type(cudaKernelLaunchConfig), intent(inout) :: config
+
+        !
+        !   Local variables
+        !
+        integer(kind=intType) :: blockNumThread, devID
+
+        ! One device for now
+        devID = 0
+
+
+        blockNumThread = config%block_size%x * config%block_size%y * config%block_size%z
+
+        ! Block dim limits already checked at construction. just check total threads, grid size, 
+        ! and resident blocks
+        config%isValid = &
+            ! Block limits
+            (blockNumThread       .le. cudaDeviceInfo(devID)%maxThreadsPerBlock) .and. &
+            ! Grid limits
+            (config%grid_size%x   .le. cudaDeviceInfo(devID)%maxGridSize(1))     .and. &
+            (config%grid_size%y   .le. cudaDeviceInfo(devID)%maxGridSize(2))     .and. &
+            (config%grid_size%z   .le. cudaDeviceInfo(devID)%maxGridSize(3))     .and. &
+            ! Resident blocks per SM
+            (config%resBlocks     .gt. 0_intType)
+
+
+        ! Zero scores if invalid
+        if (.not. config%isValid) then
+            config%totalScore = zero
+            config%laneScore = zero
+            config%occScore = zero
+            config%waveScore = zero
+            config%edgeScore = zero
+        end if
+
+    end subroutine checkLaunchConfigValid
+
+    subroutine scoreConfig(config, kernelDesc, ni, nj, nk)
+        !
+        !       Computes the score of a candidate launch config for a given block
+        !       Scoring considerations: lane usage, occupancy, wave efficinecy, block shape
+        !       NOTE: We hardcode device params from the first device only right now
+        !
+        use cudaConfigs, only: cudaKernelLaunchConfig, cudaLaunchClassDesc
+        use inputCUDASolver, only: occupancyTarget, regAllocUnit
+        implicit none
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: ni, nj, nk
+        type(cudaLaunchClassDesc), intent(in) :: kernelDesc
+        type(cudaKernelLaunchConfig), intent(inout) :: config
+
+        !
+        !       Local variables
+        !
+        real(kind=realType) :: occupancy, dimPenalty
+        integer(kind=intType) :: resBlocksWarps, resBlocksRegs, resBlocksSmem, resBlocksMax, regsPerWarp
+        integer(kind=intType) :: devID, numBlocks, numStencilDirs, blockSlots, warpsPerBlock, threadsPerBlock
+        integer(kind=intType) :: sharedMemPerMultiprocessor, reservedSharedMemPerBlock, kernelSharedMemPerBlock
+        integer(kind=intType) :: i
+        
+
+        devID = 0 ! Hardcoded to first device for now
+
+        
+        !
+        !   Store some info about the config a bit easier
+        !
+        numBlocks = config%grid_size%x * config%grid_size%y * config%grid_size%z
+        threadsPerBlock = config%block_size%x * config%block_size%y * config%block_size%z
+        ! NOTE: integer ceiling, a partial warp still occupies a full warp slot
+        warpsPerBlock = (threadsPerBlock + threadsPerWarp - 1) / threadsPerWarp
+
+        !
+        !   Score active threads per warp
+        !
+        config%laneScore = real(ni * nj * nk, kind=realType) / (numBlocks * warpsPerBlock * threadsPerWarp)
+
+        !
+        !   Score occupancy
+        !
+        ! first get the max number of resident blocks based on warps (integer division floor)
+        resBlocksWarps = cudaDeviceInfo(devID)%maxThreadsPerMultiProcessor / threadsPerWarp / warpsPerBlock
+
+        ! print *, "resBlocksWarps",resBlocksWarps
+        ! print *, "maxThreadsPerMultiProcessor", cudaDeviceInfo(devID)%maxThreadsPerMultiProcessor
+
+        ! now get the max number of resident blocks based on registers (kernel dependent)
+        ! NOTE: Integer ceiling formula is applied in addition to integer division floor
+        regsPerWarp = ((kernelDesc%kernelRegisters * threadsPerWarp + regAllocUnit - 1) / regAllocUnit) * regAllocUnit
+        resBlocksRegs = (numSubPartitions * (cudaDeviceInfo(devID)%regsPerMultiprocessor / numSubPartitions) / regsPerWarp) / warpsPerBlock
+
+        ! lastly get the max number of resident blocks based on shared memory
+        ! NOTE: note this is all in c-type t_size so we have to case to 4 byte integer
+        kernelSharedMemPerBlock = int(kernelDesc%sharedMemPerBlock, kind=intType)
+
+
+        ! We need to check if the kernel is actually using shared memoery or else it should not be factored at all
+        if (kernelSharedMemPerBlock .gt. 0) then
+            sharedMemPerMultiprocessor = int(cudaDeviceInfo(devID)%sharedMemPerMultiprocessor, kind=intType)
+            reservedSharedMemPerBlock = int(cudaDeviceInfo(devID)%reservedSharedMemPerBlock, kind=intType)
+            resBlocksSmem = sharedMemPerMultiprocessor / &
+                            (kernelSharedMemPerBlock + reservedSharedMemPerBlock)
+    
+            ! finally get the resident blocks on the SM, 0 is an invalid result but we check for this later
+            config%resBlocks = min(resBlocksWarps, resBlocksRegs, resBlocksSmem, cudaDeviceInfo(devID)%maxBlocksPerMultiProcessor)
+        else
+            ! finally get the resident blocks on the SM, 0 is an invalid result but we check for this later
+            config%resBlocks = min(resBlocksWarps, resBlocksRegs, cudaDeviceInfo(devID)%maxBlocksPerMultiProcessor)
+        end if 
+
+        ! A block that cannot be resident (too many threads) cannot run at all, get outta here
+        if (config%resBlocks .le. 0_intType) then
+            return
+        end if
+
+        ! compute the final occupancy efficiency
+        occupancy = real(config%resBlocks, kind=realType) * warpsPerBlock / (cudaDeviceInfo(devID)%maxThreadsPerMultiProcessor / threadsPerWarp)
+        config%occScore = min(one, occupancy / occupancyTarget)
+
+        ! 
+        !   Score waves
+        !
+        ! NOTE: use of integer ceiling formula
+        blockSlots = config%resBlocks * cudaDeviceInfo(devID)%multiProcessorCount
+        config%waveScore = real(numBlocks, kind=realType) / (((numBlocks + blockSlots - 1) / blockSlots) * blockSlots)
+
+        !
+        !   Score edges
+        !
+        numStencilDirs = 0_intType
+        dimPenalty = 0_realType
+        do i = 1, 3
+            if (kernelDesc%strides(i) .gt. 0_intType) then
+                numStencilDirs = numStencilDirs + 1
+                select case(i)
+                    case(1)
+                        dimPenalty = dimPenalty + (1 + real(kernelDesc%strides(1), kind=realType) / min(ni, config%block_size%x))
+                    case(2)
+                        dimPenalty = dimPenalty + (1 + real(kernelDesc%strides(2), kind=realType)  / min(nj, config%block_size%y))
+                    case(3)
+                        dimPenalty = dimPenalty + (1 + real(kernelDesc%strides(3), kind=realType)  / min(nk, config%block_size%z))
+                end select
+            end if
+        end do
+
+        if (numStencilDirs .eq. 0_intType) then
+            config%edgeScore = 1_intType
+        else
+            config%edgeScore = numStencilDirs / dimPenalty
+        end if
+
+        !
+        !   Total score
+        !
+        config%totalScore = config%laneScore * config%occScore * config%waveScore * config%edgeScore
+
+    end subroutine scoreConfig
+
+    subroutine printLaunchConfigHeader
+        !
+        !       printLaunchConfigHeader writes the heading of the table with
+        !       the launch configuration of every block and kernel class. The
+        !       scoring parameters and the attributes of each kernel class
+        !       (registers, static shared memory and stencil reach), which
+        !       are shared by all blocks, are listed first.
+        !
+        use constants
+        use communication, only: myID
+        use inputCUDASolver, only: occupancyTarget, regAllocUnit
+        use cudaConfigs, only: cudaLaunchDesc
+        implicit none
+        !
+        !      Working variables.
+        !
+        integer(kind=intType) :: i
+
+        if (myID /= 0) return
+
+        print "(a)", "#"
+        print "(a,i0,a)", "#--- Kernel launch configurations of the blocks on rank ", &
+             myID, " ---"
+        print "(2a)", "#   Device                         : ", &
+             trim(cudaDeviceInfo(currentDevice)%name)
+        print "(a,i0)", "#   Streaming multiprocessors      : ", &
+             cudaDeviceInfo(currentDevice)%multiProcessorCount
+        print "(a,f5.2)", "#   Occupancy target               : ", occupancyTarget
+        print "(a,i0)", "#   Register allocation unit       : ", regAllocUnit
+        print "(a)", "#"
+        print "(a)", "#   kernel        regs  smem [B]   reach i  j  k"
+
+        do i = 1, nLaunchConfigs
+            print "(a,a10,i8,i10,3x,3i3)", "#   ", cudaLaunchDesc(i)%name, &
+                 cudaLaunchDesc(i)%kernelRegisters, cudaLaunchDesc(i)%sharedMemPerBlock, &
+                 cudaLaunchDesc(i)%strides
+        end do
+
+        print "(a)", "#"
+        print "(a)", "#  dom  sps  kernel        ni    nj    nk         block          grid&
+             & thr/blk blk/SM    occ E_lane  E_occ E_wave E_edge  score"
+
+    end subroutine printLaunchConfigHeader
+
+    subroutine printLaunchConfigRow(dom, sps, ni, nj, nk, kernelDesc, config)
+        !
+        !       Writes a single line of the launch configuration table: the
+        !       block and spectral instance, the kernel class, the work extents
+        !       the launch has to cover, the selected block and grid sizes,
+        !       the threads per block, the resident blocks per SM and the
+        !       resulting theoretical occupancy, followed by the individual
+        !       score terms and the total score of the selected config.
+        !
+        use constants
+        use communication, only: myID
+        use cudaConfigs, only: cudaKernelLaunchConfig, cudaLaunchClassDesc
+        implicit none
+        !
+        !      Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: dom, sps, ni, nj, nk
+        type(cudaLaunchClassDesc), intent(in) :: kernelDesc
+        type(cudaKernelLaunchConfig), intent(in) :: config
+        !
+        !      Working variables.
+        !
+        integer(kind=intType) :: threadsPerBlock, warpsPerBlock, maxWarpsPerSM
+        real(kind=realType) :: occupancy
+        character(len=14) :: blockString, gridString
+
+        if (myID /= 0) return
+
+        ! Theoretical occupancy of the selected config. A partial warp
+        ! still occupies a full warp slot on the SM.
+
+        threadsPerBlock = config%block_size%x * config%block_size%y * config%block_size%z
+        warpsPerBlock = (threadsPerBlock + threadsPerWarp - 1) / threadsPerWarp
+        maxWarpsPerSM = cudaDeviceInfo(currentDevice)%maxThreadsPerMultiProcessor / threadsPerWarp
+        occupancy = real(config%resBlocks * warpsPerBlock, realType) / real(maxWarpsPerSM, realType)
+
+        ! Write the block and grid sizes as x-separated triplets, right
+        ! aligned in their columns.
+
+        write (blockString, "(i0,a,i0,a,i0)") config%block_size%x, "x", &
+            config%block_size%y, "x", config%block_size%z
+        write (gridString, "(i0,a,i0,a,i0)") config%grid_size%x, "x", &
+            config%grid_size%y, "x", config%grid_size%z
+
+        print "(a1,i5,i5,2x,a10,3i6,2a14,i8,i7,f7.2,5f7.3)", "#", &
+             dom, sps, kernelDesc%name, ni, nj, nk, &
+             adjustr(blockString), adjustr(gridString), &
+             threadsPerBlock, config%resBlocks, occupancy, &
+             config%laneScore, config%occScore, config%waveScore, &
+             config%edgeScore, config%totalScore
+
+    end subroutine printLaunchConfigRow
+
+    subroutine printLaunchConfigFooter
+        !
+        !       printLaunchConfigFooter closes the launch configuration table.
+        !
+        use constants
+        use communication, only: myID
+        implicit none
+
+        if (myID /= 0) return
+
+        print "(a)", "#"
+
+    end subroutine printLaunchConfigFooter
+
+
+
+
 
     subroutine preprocessingADI(verbose)
         !

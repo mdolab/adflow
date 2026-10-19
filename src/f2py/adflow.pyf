@@ -1407,8 +1407,10 @@ python module libadflow
          integer(kind=inttype) :: maxpcrstages, minrowsperpcrthread, pcroccupancytarget
          real(kind=realtype) :: pcrcostratiocoeffone, pcrcostratiocoefftwo, pcrcostratiocoeffthree, pcrcostratiocoefffour
          real(kind=realtype) :: thomascostfloor
+         real(kind=realtype) :: occupancytarget
+         integer(kind=inttype) :: regallocunit, maxlaunchcandidates
          logical :: matchpcrthreadtoblocksize
-         logical :: verbosecudaprint, verbosecudaadiprint
+         logical :: verbosecudaprint, verbosecudaadiprint, verbosecudalaunchconfigsprint
        end module inputcudasolver
 
        module inputunsteady ! in :test:inputParam.f90

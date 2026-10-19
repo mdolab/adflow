@@ -1,0 +1,324 @@
+! @File    :   cudaConfigs.cuf
+! @Desc    :   This module contains the data types and storage for residual kernel launch parameters.
+!               Launch paramters for solver specific kernels (i.e. ADI, NK, etc.) are handled in that solvers module.
+
+
+module cudaConfigs
+    !
+    !   Fortran Modules
+    !
+    use, intrinsic :: iso_c_binding
+
+    !
+    !   CUDA Modules
+    !
+
+    use cudafor
+
+    ! 
+    !   ADflow modules
+    !
+
+    use precision, only: realType, intType
+    use cudaBlock, only: cudaDoms=>d_cudaDoms, h_cudaDoms
+    use constants
+    
+    implicit none
+
+
+    type cudaLaunchClassDesc
+        character(len=10) :: name
+        integer(kind=intType) :: kernelRegisters
+        integer(c_size_t) :: sharedMemPerBlock
+        integer(kind=intType), dimension(3) :: strides
+    end type cudaLaunchClassDesc 
+
+
+    type cudaKernelLaunchConfig
+        type(dim3) :: grid_size,  block_size
+        real(kind=realType) :: laneScore, occScore, waveScore, edgeScore, totalScore
+        integer(kind=intType) :: resBlocks ! per SM
+        logical :: isValid
+    end type cudaKernelLaunchConfig
+
+
+    type(cudaLaunchClassDesc), allocatable, dimension(:) :: cudaLaunchDesc
+    type(cudaKernelLaunchConfig), allocatable, dimension(:,:) :: cudaLaunchConfigs
+    ! type(cudaKernelLaunchConfig), allocatable, dimension(:,:,:) :: cudaCandidateConfigs
+    ! integer(type=intType), allocatable, dimension(:,:) :: totalLaunchCandidatesConfigs
+
+contains
+
+    subroutine getKernelAttributes(descriptor, index)
+        use cudaFluxes, only: inviscidDissFluxScalar, inviscidCentralFluxCellCentered_v4
+        use cudaResidual, only: computeSS
+        use cudaResidual, only: computeSpeedOfSoundSquared_v2, computeEtotBlock, computeLamViscosity, &
+                                computeEddyViscosity, allNodalGradients_v2, scaleNodalGradients_v2, &
+                                timeStep, sumDwandFw_v2, computeDSS, multiplyfwsfil, &
+                                saSource, saAdvection, saViscous, saResScale, saEddyViscosity, rflField
+        use cudaFluxes, only: viscousFlux
+        use cudaSmoothers, only: rkStoreZerothStage, rkStageUpdateDw, rkStageUpdateState
+        implicit none
+
+        !
+        !       Subroutine arguments
+        !
+        integer(kind=intType), intent(in) :: index
+        type(cudaLaunchClassDesc), intent(inout) ::  descriptor
+
+        !
+        !       Local variables
+        !
+        type(cudaFuncAttributes) :: attributes
+        integer(kind=intType) :: i, istat
+
+        select case (index)
+            case (DoubleHaloLC)
+                descriptor%name = "Double halo standard"
+                istat = cudaFuncGetAttributes(attributes, computeSS) ! uses a dummy function
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (SingleHaloLC)
+                descriptor%name = "Single halo standard"
+                istat = cudaFuncGetAttributes(attributes, allNodalGradients_v2) ! uses a dummy function
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (NoHaloLC)
+                descriptor%name = "No halo standard"
+                istat = cudaFuncGetAttributes(attributes, computeEtotBlock) ! uses a dummy function
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (InvCentralKMarchLC)
+                ! TEMP
+                descriptor%name = "InvCenKMarch"
+                istat = cudaFuncGetAttributes(attributes, inviscidCentralFluxCellCentered_v4)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [1, 1, 1]
+            case (JSTLC)
+                descriptor%name = "InvDissJST"
+                istat = cudaFuncGetAttributes(attributes, inviscidDissFluxScalar)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [3, 3, 3]
+
+            !
+            !   Residual kernels (cudaResidual)
+            !   strides = stencil reach, (max - min) read offset per direction
+            !
+            case (SpeedOfSoundLC)
+                descriptor%name = "SoundSpd2"
+                istat = cudaFuncGetAttributes(attributes, computeSpeedOfSoundSquared_v2)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (EtotBlockLC)
+                descriptor%name = "EtotBlock"
+                istat = cudaFuncGetAttributes(attributes, computeEtotBlock)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (LamViscosityLC)
+                descriptor%name = "LamVisc"
+                istat = cudaFuncGetAttributes(attributes, computeLamViscosity)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (EddyViscosityLC)
+                descriptor%name = "EddyVisc"
+                istat = cudaFuncGetAttributes(attributes, computeEddyViscosity)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (NodalGradientsLC)
+                descriptor%name = "NodalGrad"
+                istat = cudaFuncGetAttributes(attributes, allNodalGradients_v2)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [1, 1, 1]
+            case (ScaleNodalGradientsLC)
+                descriptor%name = "ScaleGrad"
+                istat = cudaFuncGetAttributes(attributes, scaleNodalGradients_v2)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [1, 1, 1]
+            case (TimeStepLC)
+                descriptor%name = "timeStep"
+                istat = cudaFuncGetAttributes(attributes, timeStep)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+            case (SumDwandFwLC)
+                descriptor%name = "sumDwFw"
+                istat = cudaFuncGetAttributes(attributes, sumDwandFw_v2)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (ComputeSSLC)
+                descriptor%name = "computeSS"
+                istat = cudaFuncGetAttributes(attributes, computeSS)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (ComputeDSSLC)
+                descriptor%name = "computeDSS"
+                istat = cudaFuncGetAttributes(attributes, computeDSS)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+            case (MultiplyFwSfilLC)
+                descriptor%name = "mulFwSfil"
+                istat = cudaFuncGetAttributes(attributes, multiplyfwsfil)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (SASourceLC)
+                descriptor%name = "saSource"
+                istat = cudaFuncGetAttributes(attributes, saSource)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+            case (SAAdvectionLC)
+                descriptor%name = "saAdvect"
+                istat = cudaFuncGetAttributes(attributes, saAdvection)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [4, 4, 4]
+            case (SAViscousLC)
+                descriptor%name = "saViscous"
+                istat = cudaFuncGetAttributes(attributes, saViscous)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+            case (SAResScaleLC)
+                descriptor%name = "saResScale"
+                istat = cudaFuncGetAttributes(attributes, saResScale)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (SAEddyViscosityLC)
+                descriptor%name = "saEddyVisc"
+                istat = cudaFuncGetAttributes(attributes, saEddyViscosity)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (RFLFieldLC)
+                descriptor%name = "rflField"
+                istat = cudaFuncGetAttributes(attributes, rflField)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+
+            !
+            !   Flux kernels (cudaFluxes)
+            !
+            case (ViscousFluxLC)
+                descriptor%name = "viscFlux"
+                istat = cudaFuncGetAttributes(attributes, viscousFlux)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [2, 2, 2]
+
+            !
+            !   Smoother kernels (cudaSmoothers)
+            !
+            case (RKStoreZerothStageLC)
+                descriptor%name = "rkStore0"
+                istat = cudaFuncGetAttributes(attributes, rkStoreZerothStage)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (RKStageUpdateDwLC)
+                descriptor%name = "rkUpdDw"
+                istat = cudaFuncGetAttributes(attributes, rkStageUpdateDw)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+            case (RKStageUpdateStateLC)
+                descriptor%name = "rkUpdState"
+                istat = cudaFuncGetAttributes(attributes, rkStageUpdateState)
+                descriptor%kernelRegisters = attributes%numRegs
+                descriptor%sharedMemPerBlock = attributes%sharedSizeBytes
+                descriptor%strides = [0, 0, 0]
+        end select
+
+    end subroutine getKernelAttributes
+
+
+    subroutine getKernelWorkExtents(dom, sps, index, ni, nj, nk)
+        use blockPointers, only: bnx => nx, bny => ny, bnz => nz, &
+                                 bil => il, bjl => jl, bkl => kl, &
+                                 bie => ie, bje => je, bke => ke, &
+                                 bib => ib, bjb => jb, bkb => kb
+        use utils, only: setPointers
+        implicit none
+        integer(kind=intType), intent(in) :: dom, index, sps
+        integer(kind=intType), intent(out) :: ni, nj, nk
+
+        call setPointers(dom, 1, sps) ! Hardcoded to grid level 1
+        select case (index)
+            case (InvCentralKMarchLC)
+                ! TEMP
+                ni = bib
+                nj = bjb
+                nk = bkb
+
+            ! Map starts at 0, guard 0..ib
+            case (DoubleHaloLC, ComputeSSLC)
+                ni = bib + 1
+                nj = bjb + 1
+                nk = bkb + 1
+
+            case (JSTLC)
+                ni = bib
+                nj = bjb
+                nk = bkb
+
+            ! Map starts at 0, guard 1..ie (index 0 is idle until the map is changed)
+            case (MultiplyFwSfilLC)
+                ni = bie + 1
+                nj = bje + 1
+                nk = bke + 1
+
+            ! Map starts at 1, guard 1..ie (allNodalGradients_v2 and timeStep: union of their sections)
+            case (SingleHaloLC, SpeedOfSoundLC, NodalGradientsLC, TimeStepLC, ComputeDSSLC)
+                ni = bie
+                nj = bje
+                nk = bke
+
+            ! Map starts at 1, guard 1..il (viscousFlux: union of its face sections)
+            case (ScaleNodalGradientsLC, ViscousFluxLC)
+                ni = bil
+                nj = bjl
+                nk = bkl
+
+            ! Map starts at 2, guard 2..il (interior cells)
+            ! computeEtotBlock: both call sites pass 2..il
+            ! computeLamViscosity/computeEddyViscosity: launched with includeHalos = .false.
+            case (NoHaloLC, EtotBlockLC, LamViscosityLC, EddyViscosityLC, SumDwandFwLC, &
+                  SASourceLC, SAAdvectionLC, SAViscousLC, SAResScaleLC, SAEddyViscosityLC, RFLFieldLC, &
+                  RKStoreZerothStageLC, RKStageUpdateDwLC, RKStageUpdateStateLC)
+                ni = bnx
+                nj = bny
+                nk = bnz
+        end select
+    end subroutine getKernelWorkExtents
+
+
+    subroutine getLC(block_size, grid_size, dom, index)
+        !
+        !   Subroutine arguments
+        !
+        type(dim3), intent(inout) :: block_size,grid_size
+        integer(kind=intType), intent(in) :: dom, index
+        block_size = cudaLaunchConfigs(dom, index)%block_size
+        grid_size = cudaLaunchConfigs(dom, index)%grid_size
+    end subroutine getLC
+
+
+
+
+end module cudaConfigs

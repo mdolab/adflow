@@ -528,10 +528,42 @@ module constants
 
     ! CUDA ADI Problem Types
     integer(kind=intType), parameter :: nADIProblems = 3
-    
     integer(kind=intType), parameter :: IRSProblem = 1
     integer(kind=intType), parameter :: DADIProblem = 2
     integer(kind=intType), parameter :: TurbDADIProblem = 3
+
+    ! CUDA Launch Config Types
+    integer(kind=intType), parameter :: nLaunchConfigs = 24
+    integer(kind=intType), parameter :: DoubleHaloLC = 1, & ! Generic extents
+    SingleHaloLC = 2, & 
+    NoHaloLC = 3, & 
+    InvCentralKMarchLC = 4, &  ! Residual kernels (cudaResidual and cudaFluxes)
+    JSTLC = 5, &
+    SpeedOfSoundLC = 6, &
+    EtotBlockLC = 7, &
+    LamViscosityLC = 8, &
+    EddyViscosityLC = 9, &
+    NodalGradientsLC = 10, &
+    ScaleNodalGradientsLC = 11, &
+    TimeStepLC = 12, &
+    SumDwandFwLC = 13, &
+    ComputeSSLC = 14, &
+    ComputeDSSLC = 15, &
+    MultiplyFwSfilLC = 16, &
+    SASourceLC = 17, &
+    SAAdvectionLC = 18, &
+    SAViscousLC = 19, &
+    SAResScaleLC = 20, &
+    SAEddyViscosityLC = 21, &
+    RFLFieldLC = 22, &
+    ViscousFluxLC = 23, &
+    RKStoreZerothStageLC = 24, & ! Smoother kernels (cudaSmoothers)
+    RKStageUpdateDwLC = 25, &
+    RKStageUpdateStateLC = 26
+
+    ! CUDA param
+    integer(kind=intType), parameter :: threadsPerWarp = 32
+    integer(kind=intType), parameter :: numSubPartitions = 4
 
 
 end module constants
