@@ -372,7 +372,13 @@ contains
         use communication
         use inputIO
         use su_cgns
-        use outputMod
+        ! Keep the "only" list on outputMod. ifx 2025.2 and later crash
+        ! with an internal compiler error on the complex build of this
+        ! routine when outputMod is used without it, because the internal
+        ! procedures below call the integer max/min, which complexify
+        ! extends with a generic interface.
+        use outputMod, only: nBlocksCGNSblock, blocksCGNSblock, nSurfSolToWrite, fileIDs, cgnsBases, &
+                             copyDataBufSinglePrecision, copyDataBufDoublePrecision, storeSurfsolInBuffer
         use utils, only: terminate, convertToLowerCase
         use sorting, only: bsearchStrings
         implicit none
