@@ -372,11 +372,9 @@ contains
         use communication
         use inputIO
         use su_cgns
-        ! Keep the "only" list on outputMod. ifx 2025.2 and later crash
-        ! with an internal compiler error on the complex build of this
-        ! routine when outputMod is used without it, because the internal
-        ! procedures below call the integer max/min, which complexify
-        ! extends with a generic interface.
+        ! The "only" list on outputMod is required because without it, ifx 2025.2 and later crash with an internal
+        ! compiler error on the complex build. This is a bug in the intel compiler caused by the internal procedures
+        ! below calling the integer max/min, which complexify extends with a generic interface.
         use outputMod, only: nBlocksCGNSblock, blocksCGNSblock, nSurfSolToWrite, fileIDs, cgnsBases, &
                              copyDataBufSinglePrecision, copyDataBufDoublePrecision, storeSurfsolInBuffer
         use utils, only: terminate, convertToLowerCase
