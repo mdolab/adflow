@@ -296,7 +296,7 @@ module constants
     integer(kind=intType), parameter :: kMin = 5
     integer(kind=intType), parameter :: kMax = 6
 
-    integer(kind=intType) :: myIntStack(32)
+    integer(kind=intType) :: myIntStack(200)
     integer(kind=intType) :: myIntPtr = 0
 
     ! BC specific input variable counts
