@@ -581,12 +581,17 @@ module inputPhysics
     !                      KS-aggregation, but rather an exact max computation.
     ! SAKappa, SAcb1, SAcb2, SAsigma, SAcv1, SAcw2, SAcw3, SAct1, SAct2, SAct3, SAct4, SAcrot
     !                      Spalart-Allmaras turbulence model constants
+    ! useSABCM:            Whether or not to use the SA-BCM transition model.
+    ! SABCMSmooth:         Whether or not to use the differentiable form of SA-BCM.
+    ! SABCMChi1, SABCMChi2, SABCMRho, SABCMTanhCenter, SABCMTanhWidth
+    !                      SA-BCM transition model constants
 
     integer(kind=intType) :: equations, equationMode, flowType
     integer(kind=intType) :: turbModel, cpModel, turbProd
     integer(kind=intType) :: rvfN
     logical :: rvfB
     logical :: useQCR, useRotationSA, useft2SA
+    logical :: useSABCM, SABCMSmooth
 
     logical :: wallFunctions, wallDistanceNeeded
 
@@ -611,6 +616,8 @@ module inputPhysics
     real(kind=realType), dimension(:), allocatable :: sepSenMaxFamily
     real(kind=realType) :: SAKappa, SAcb1, SAcb2, SAsigma, SAcv1
     real(kind=realType) :: SAcw2, SAcw3, SAct1, SAct2, SAct3, SAct4, SAcrot
+    real(kind=realType) :: SABCMChi1, SABCMChi2, SABCMRho
+    real(kind=realType) :: SABCMTanhCenter, SABCMTanhWidth
 
 #ifndef USE_TAPENADE
     real(kind=realType) :: alphad, betad
