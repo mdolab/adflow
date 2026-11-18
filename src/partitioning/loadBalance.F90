@@ -1262,59 +1262,63 @@ contains
             case (Symm)
                 bcPrior(i) = 4
 
-            case (SymmPolar)
+            case (AntiSymm)
                 bcPrior(i) = 5
 
-            case (FarField)
+            case (SymmPolar)
                 bcPrior(i) = 6
 
-            case (SupersonicInflow)
+            case (FarField)
                 bcPrior(i) = 7
 
-            case (SubsonicInflow)
+            case (SupersonicInflow)
                 bcPrior(i) = 8
 
-            case (SupersonicOutflow)
+            case (SubsonicInflow)
                 bcPrior(i) = 9
 
-            case (SubsonicOutflow)
+            case (SupersonicOutflow)
                 bcPrior(i) = 10
 
-            case (MassBleedInflow)
+            case (SubsonicOutflow)
                 bcPrior(i) = 11
 
-            case (MassBleedOutflow)
+            case (MassBleedInflow)
                 bcPrior(i) = 12
 
-            case (mDot)
+            case (MassBleedOutflow)
                 bcPrior(i) = 13
 
-            case (bcThrust)
+            case (mDot)
                 bcPrior(i) = 14
 
-            case (Extrap)
+            case (bcThrust)
                 bcPrior(i) = 15
 
-            case (SlidingInterface)
-                bcPrior(i) = 19
+            case (Extrap)
+                bcPrior(i) = 16
 
-            case (OversetOuterBound)
+            ! TODO: original code was also skipping 4 values. check why
+            case (SlidingInterface)
                 bcPrior(i) = 20
 
-            case (DomainInterfaceAll)
+            case (OversetOuterBound)
                 bcPrior(i) = 21
 
-            case (DomainInterfaceRhoUVW)
+            case (DomainInterfaceAll)
                 bcPrior(i) = 22
 
-            case (DomainInterfaceP)
+            case (DomainInterfaceRhoUVW)
                 bcPrior(i) = 23
 
-            case (DomainInterfaceRho)
+            case (DomainInterfaceP)
                 bcPrior(i) = 24
 
-            case (DomainInterfaceTotal)
+            case (DomainInterfaceRho)
                 bcPrior(i) = 25
+
+            case (DomainInterfaceTotal)
+                bcPrior(i) = 26
 
             end select
 
