@@ -1648,7 +1648,7 @@ contains
         use constants
         use ADjointPETSc, only: dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
         use inputAdjoint, only: approxPC
-        use amg, only: destroyAMG
+        use amg, only: destroyAMG, amgOwnerAdjoint
         use utils, only: EChk
         implicit none
 
@@ -1668,7 +1668,7 @@ contains
             call KSPDestroy(adjointKSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAMG()
+            call destroyAMG(amgOwnerAdjoint)
 
             adjointPETScVarsAllocated = .False.
         end if

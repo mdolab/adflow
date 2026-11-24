@@ -1,6 +1,7 @@
 import unittest
 import os
 import copy
+import numpy as np
 from parameterized import parameterized_class
 from adflow import ADFLOW
 from adflow import ADFLOW_C
@@ -200,6 +201,68 @@ class TestAMGCoarseMatrixAssembly(unittest.TestCase):
         self.assertAlmostEqual(timeStepNorms[1] / timeStepNorms[0], 1.0, places=12)
         self.assertAlmostEqual(fullNorms[1] / fullNorms[0], 1.0, places=12)
         self.assertNotAlmostEqual(fullNorms[0] / timeStepNorms[0], 1.0, places=6)
+
+
+class TestAMGWithKeptAdjointMemory(unittest.TestCase):
+    N_PROCS = 2
+
+    def setUp(self):
+        self.options = copy.copy(adflowDefOpts)
+        self.options["outputDirectory"] = os.path.join(baseDir, self.options["outputDirectory"])
+        self.options.update(commonTestOptions)
+        self.options["useMatrixFreedrdw"] = True
+        self.ap = copy.deepcopy(ap_naca0012_time_acc)
+
+    def checkKeptAdjointMatchesFreshAdjoint(self, solver):
+        """Solve the adjoint after a flow solve that keeps the adjoint memory, and compare it with a fresh adjoint."""
+        solver(self.ap)
+        solver.evalFunctionsSens(self.ap, {}, evalFuncs=["cd"])
+
+        self.ap.alpha += 0.1
+        solver(self.ap, relaseAdjointMemory=False)
+        funcs = {}
+        solver.checkSolutionFailure(self.ap, funcs)
+        self.assertFalse(funcs["fail"])
+
+        sensKept = {}
+        solver.evalFunctionsSens(self.ap, sensKept, evalFuncs=["cd"])
+        solver.checkAdjointFailure(self.ap, sensKept)
+        self.assertFalse(sensKept["fail"])
+        self.assertEqual(solver.adflow.amg.amgowner, solver.adflow.amg.amgowneradjoint)
+
+        solver.releaseAdjointMemory()
+        sensFresh = {}
+        solver.evalFunctionsSens(self.ap, sensFresh, evalFuncs=["cd"])
+
+        for funcName, funcSens in sensFresh.items():
+            if funcName == "fail":
+                continue
+            for dvName, dvSens in funcSens.items():
+                np.testing.assert_allclose(sensKept[funcName][dvName], dvSens, rtol=1e-8)
+
+    def test_adjoint_reuses_hierarchy_after_asm_flow_solve(self):
+        """
+        Given an adjoint with a two-level multigrid preconditioner and NK/ANK solvers with additive Schwarz,
+        when the flow is re-solved while keeping the adjoint memory and the adjoint is solved again,
+        then the adjoint converges, still owns the multigrid hierarchy, and matches a freshly set up adjoint.
+        """
+        self.options.update(
+            {
+                "ANKGlobalPreconditioner": "additive Schwarz",
+                "NKGlobalPreconditioner": "additive Schwarz",
+                "adjointAMGLevels": 2,
+            }
+        )
+        self.checkKeptAdjointMatchesFreshAdjoint(ADFLOW(options=self.options))
+
+    def test_adjoint_rebuilds_hierarchy_after_multigrid_flow_solve(self):
+        """
+        Given a one-level multigrid adjoint preconditioner and two-level multigrid NK/ANK preconditioners,
+        when the flow is re-solved while keeping the adjoint memory and the adjoint is solved again,
+        then the adjoint converges, owns the multigrid hierarchy again, and matches a freshly set up adjoint.
+        """
+        self.options.update({"ANKAMGLevels": 2, "NKAMGLevels": 2, "adjointAMGLevels": 1})
+        self.checkKeptAdjointMatchesFreshAdjoint(ADFLOW(options=self.options))
 
 
 # Run the flow convergence tests in complex mode

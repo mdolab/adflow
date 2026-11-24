@@ -4031,7 +4031,14 @@ class ADFLOW(AeroSolver):
         self.adflow.anksolver.destroyanksolver()
         self._setAeroDVs()
 
-        if not self.adjointSetup or reform:
+        # The adjoint, NK and ANK share one multigrid hierarchy. If an NK or ANK solve replaced the adjoint's
+        # hierarchy while the adjoint memory was kept, the adjoint's PETSc objects have to be recreated.
+        isAdjointHierarchyMissing = (
+            self.getOption("globalPreconditioner").lower() == "multigrid"
+            and self.adflow.amg.amgowner != self.adflow.amg.amgowneradjoint
+        )
+
+        if not self.adjointSetup or reform or isAdjointHierarchyMissing:
             # Create any PETSc variables if necessary
             self.adflow.adjointapi.createpetscvars()
 

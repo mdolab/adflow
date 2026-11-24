@@ -70,9 +70,17 @@ module amg
 
     logical :: amgSetup = .False.
     integer :: bs
+
+    ! The adjoint, NK and ANK solvers share this one hierarchy, so record which solver it was built for.
+    ! NK and ANK are never set up at the same time, but either can be set up while the adjoint keeps its memory.
+    integer(kind=intType), parameter :: amgOwnerNone = 0
+    integer(kind=intType), parameter :: amgOwnerAdjoint = 1
+    integer(kind=intType), parameter :: amgOwnerNK = 2
+    integer(kind=intType), parameter :: amgOwnerANK = 3
+    integer(kind=intType) :: amgOwner = amgOwnerNone
 contains
 
-    subroutine setupAMG(inputMat, nCell, blockSize, levels, nSmooth)
+    subroutine setupAMG(inputMat, nCell, blockSize, levels, nSmooth, owner)
 
         use blockPointers
         use communication
@@ -80,6 +88,8 @@ contains
         use haloExchange, only: whalo1to1intgeneric
         use adjointVars, only: nCellsLocal
         integer(kind=intType), intent(in) :: nCell, blockSize, levels, nSmooth
+        ! The solver this hierarchy is for: amgOwnerAdjoint, amgOwnerNK or amgOwnerANK
+        integer(kind=intType), intent(in) :: owner
         Mat, target :: inputMat
 
         VecScatter :: scat
@@ -95,7 +105,12 @@ contains
         integer(kind=intType), dimension(:), allocatable :: indicesToGet
 
         if (amgSetup) then
-            return
+            if (amgOwner == owner) then
+                return
+            end if
+
+            ! The hierarchy was built for another solver's matrix and number of levels, so replace it
+            call destroyAMG(amgOwner)
         end if
 
         ! Set some module variables
@@ -427,13 +442,16 @@ contains
 
         end do
         amgSetup = .True.
+        amgOwner = owner
 
     end subroutine setupAMG
 
-    subroutine destroyAMG
+    subroutine destroyAMG(owner)
 
+        ! Only the solver the hierarchy was built for may destroy it
+        integer(kind=intType), intent(in) :: owner
         integer(kind=intType) :: lvl, ierr, i, j
-        if (amgSetup) then
+        if (amgSetup .and. amgOwner == owner) then
             do lvl = 1, amgLevels
                 ! Destroy all of our vectors/matrices
                 if (lvl > 1) then
@@ -460,6 +478,7 @@ contains
             deallocate (A, res, rhs, sol, sol2, kspLevels)
             deallocate (coarseIndices, coarseOversetIndices, interps)
             amgSetup = .False.
+            amgOwner = amgOwnerNone
 
         end if
     end subroutine destroyAMG

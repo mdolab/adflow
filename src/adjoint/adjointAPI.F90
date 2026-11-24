@@ -1142,7 +1142,7 @@ contains
                             visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
         use utils, only: EChk, setPointers
         use adjointUtils, only: myMatCreate, destroyPETScVars, statePreAllocation
-        use amg, only: setupAMG
+        use amg, only: setupAMG, amgOwnerAdjoint
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1240,7 +1240,7 @@ contains
             deallocate (nnzDiagonal, nnzOffDiag)
         end if
 
-        call setupAMG(drdwpret, nDimW / nState, nState, adjAMGLevels, adjAMGNSmooth)
+        call setupAMG(drdwpret, nDimW / nState, nState, adjAMGLevels, adjAMGNSmooth, amgOwnerAdjoint)
 
         ! Create the KSP Object
         call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)

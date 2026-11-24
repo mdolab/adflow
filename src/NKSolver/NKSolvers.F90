@@ -96,7 +96,7 @@ contains
         use ADjointVars, only: nCellsLocal
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use amg, only: setupAMG
+        use amg, only: setupAMG, amgOwnerNK
         implicit none
 
         ! Working Variables
@@ -189,7 +189,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (NK_precondType == 'mg') then
-                call setupAMG(drdwpre, nDimW / nw, nw, NK_AMGLevels, NK_AMGNSmooth)
+                call setupAMG(drdwpre, nDimW / nw, nw, NK_AMGLevels, NK_AMGNSmooth, amgOwnerNK)
             end if
 
             !  Create the linear solver context
@@ -472,7 +472,7 @@ contains
 
         use constants
         use utils, only: EChk
-        use amg, only: destroyAMG
+        use amg, only: destroyAMG, amgOwnerNK
         implicit none
         integer(kind=intType) :: ierr
 
@@ -508,7 +508,7 @@ contains
             call KSPDestroy(NK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAMG()
+            call destroyAMG(amgOwnerNK)
 
             NK_solverSetup = .False.
         end if
@@ -1736,7 +1736,7 @@ contains
         use NKSolver, only: destroyNKSolver, linearResidualMonitor
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use amg, only: setupAMG
+        use amg, only: setupAMG, amgOwnerANK
         implicit none
 
         ! Working Variables
@@ -1821,7 +1821,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (ANK_precondType == 'mg') then
-                call setupAMG(drdwpre, nDimW / nState, nState, ANK_AMGLevels, ANK_AMGNSmooth)
+                call setupAMG(drdwpre, nDimW / nState, nState, ANK_AMGLevels, ANK_AMGNSmooth, amgOwnerANK)
             end if
 
             !  Create the linear solver context
@@ -2803,7 +2803,7 @@ contains
 
         use constants
         use utils, only: EChk
-        use amg, only: destroyAMG
+        use amg, only: destroyAMG, amgOwnerANK
         implicit none
         integer(kind=intType) :: ierr
 
@@ -2833,7 +2833,7 @@ contains
             call KSPDestroy(ANK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAMG()
+            call destroyAMG(amgOwnerANK)
 
             ANK_SolverSetup = .False.
 
