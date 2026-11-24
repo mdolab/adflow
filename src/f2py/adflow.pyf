@@ -309,12 +309,12 @@ python module libadflow
 
 
        module amg
+         use constants
 
-         subroutine setupamg
-         end subroutine setupamg
-
-         subroutine destroyamg
-         end subroutine destroyamg
+         subroutine getcoarsematnorm(lvl,frobeniusnorm)
+           integer(kind=inttype) intent(in) :: lvl
+           real(kind=alwaysrealtype) intent(out) :: frobeniusnorm
+         end subroutine getcoarsematnorm
 
        end module amg
 
@@ -435,6 +435,9 @@ python module libadflow
          subroutine destroynksolver
          end subroutine destroynksolver
 
+         subroutine formjacobiannk
+         end subroutine formjacobiannk
+
          subroutine getfreestreamresidual(rhores,totalrres) ! in :test:NKSolvers.F90:nksolver
            real(kind=realtype) intent(out) :: rhores
            real(kind=realtype) intent(out) :: totalrres
@@ -493,6 +496,13 @@ python module libadflow
          character(len=maxstringlen) :: ank_chartimesteptype
          subroutine destroyanksolver
          end subroutine destroyanksolver
+
+         subroutine computetimestepmat(usepc)
+           logical intent(in) :: usepc
+         end subroutine computetimestepmat
+
+         subroutine formjacobianank
+         end subroutine formjacobianank
 
        end module anksolver
 

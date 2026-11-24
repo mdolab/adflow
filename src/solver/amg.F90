@@ -464,6 +464,47 @@ contains
         end if
     end subroutine destroyAMG
 
+    subroutine zeroCoarseMats
+        ! Zero the coarse-level matrices so the next preconditioner assembly replaces their values instead of
+        ! adding to the previous ones.
+
+        integer(kind=intType) :: lvl, ierr
+
+        if (.not. amgSetup) then
+            return
+        end if
+
+        do lvl = 2, amgLevels
+            call MatZeroEntries(A(lvl), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+        end do
+
+    end subroutine zeroCoarseMats
+
+    subroutine getCoarseMatNorm(lvl, frobeniusNorm)
+        ! Return the Frobenius norm of the coarse-level matrix A(lvl). This is a hook for the tests.
+        ! A negative norm means there is no coarse matrix on this level.
+
+        integer(kind=intType), intent(in) :: lvl
+        real(kind=alwaysRealType), intent(out) :: frobeniusNorm
+        integer(kind=intType) :: ierr
+
+        if (.not. amgSetup .or. lvl < 2 .or. lvl > amgLevels) then
+            frobeniusNorm = -one
+            return
+        end if
+
+        ! Flush any values added since the last assembly, e.g. by computeTimeStepMat on its own
+        call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call MatNorm(A(lvl), NORM_FROBENIUS, frobeniusNorm, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine getCoarseMatNorm
+
     subroutine applyShellPC(pc, x, y, ierr)
         use communication
         ! Input/Output

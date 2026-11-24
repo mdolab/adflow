@@ -375,6 +375,7 @@ contains
         use inputADjoint, only: viscPC
         use utils, only: EChk
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+        use amg, only: zeroCoarseMats
         implicit none
 
         ! Local Variables
@@ -402,6 +403,11 @@ contains
             useCoarseMats = .True.
         else
             useCoarseMats = .False.
+        end if
+
+        ! setupStateResidualMatrix adds into the coarse matrices, so clear the previous update's values first
+        if (useCoarseMats) then
+            call zeroCoarseMats()
         end if
 
         call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
@@ -2047,7 +2053,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
         use utils, only: EChk, setPointers
-        use amg, only: coarseIndices, A
+        use amg, only: coarseIndices, A, zeroCoarseMats
         implicit none
 
         ! Input variables
@@ -2070,6 +2076,12 @@ contains
         ! Zero out the time step matrix before we start
         call MatZeroEntries(timeStepMat, ierr)
         call EChk(ierr, __FILE__, __LINE__)
+
+        ! An ANK preconditioner update starts here, followed by FormJacobianANK, and both add into the coarse
+        ! matrices. Clear the previous update's values here so the time step terms added below are kept.
+        if (useCoarseMats .and. usePC) then
+            call zeroCoarseMats()
+        end if
 
         do nn = 1, nDom
             do sps = 1, nTimeIntervalsSpectral

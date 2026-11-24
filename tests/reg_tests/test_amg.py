@@ -147,6 +147,61 @@ class TestAMGReal(unittest.TestCase):
         self.assertFalse(funcsSens["fail"])
 
 
+class TestAMGCoarseMatrixAssembly(unittest.TestCase):
+    N_PROCS = 2
+
+    def setUp(self):
+        self.options = copy.copy(adflowDefOpts)
+        self.options["outputDirectory"] = os.path.join(baseDir, self.options["outputDirectory"])
+        self.options.update(commonTestOptions)
+        self.ap = copy.deepcopy(ap_naca0012_time_acc)
+
+    def test_nk_coarse_matrix_is_reassembled_not_accumulated(self):
+        """
+        Given a flow solve that ends in the NK solver with a two-level multigrid preconditioner,
+        when the NK preconditioner matrix is assembled twice in a row for the same state,
+        then the coarse-level matrix has the same nonzero norm after each assembly.
+        """
+        solver = ADFLOW(options=self.options)
+        solver(self.ap)
+
+        norms = []
+        for _ in range(2):
+            solver.adflow.nksolver.formjacobiannk()
+            norms.append(solver.adflow.amg.getcoarsematnorm(2))
+
+        self.assertGreater(norms[0], 0.0)
+        self.assertAlmostEqual(norms[1] / norms[0], 1.0, places=12)
+
+    def test_ank_coarse_matrix_is_reassembled_not_accumulated(self):
+        """
+        Given a flow solve that ends in the ANK solver with a two-level multigrid preconditioner,
+        when the ANK time-step terms, and then the full ANK preconditioner, are each assembled twice in a row,
+        then the coarse-level matrix has the same nonzero norm after each repeat,
+        and the full preconditioner's coarse matrix differs from the time-step terms alone.
+        """
+        self.options.update({"useNKSolver": False, "L2Convergence": 1e-8})
+        solver = ADFLOW(options=self.options)
+        solver(self.ap)
+        ank = solver.adflow.anksolver
+
+        timeStepNorms = []
+        for _ in range(2):
+            ank.computetimestepmat(True)
+            timeStepNorms.append(solver.adflow.amg.getcoarsematnorm(2))
+
+        fullNorms = []
+        for _ in range(2):
+            ank.computetimestepmat(True)
+            ank.formjacobianank()
+            fullNorms.append(solver.adflow.amg.getcoarsematnorm(2))
+
+        self.assertGreater(timeStepNorms[0], 0.0)
+        self.assertAlmostEqual(timeStepNorms[1] / timeStepNorms[0], 1.0, places=12)
+        self.assertAlmostEqual(fullNorms[1] / fullNorms[0], 1.0, places=12)
+        self.assertNotAlmostEqual(fullNorms[0] / timeStepNorms[0], 1.0, places=6)
+
+
 # Run the flow convergence tests in complex mode
 @parameterized_class(test_params)
 class TestAMGComplex(unittest.TestCase):
