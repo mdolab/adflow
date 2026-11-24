@@ -124,10 +124,9 @@ class BasicTests(unittest.TestCase):
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sakappa, 0.40, rtol=1e-14)
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sacv1, 7.5, rtol=1e-14)
 
-    def test_previously_dropped_options_reach_fortran(self):
+    def test_nondefault_options_reach_fortran(self):
         """
-        Given a solver created with non-default values for options whose Fortran variables used to be unreachable
-        (the adjoint multigrid coarse-level options and nSaveVolume),
+        Given a solver created with non-default values for the adjoint multigrid coarse-level options and nSaveVolume,
         when the Fortran modules are read back,
         then each mapped Fortran variable holds the value that was set.
         """
