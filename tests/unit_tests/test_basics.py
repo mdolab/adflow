@@ -44,6 +44,10 @@ class BasicTests(unittest.TestCase):
             # Fetch the variable value from the module
             fortranValue = getattr(module, variable)
 
+            # f2py returns Fortran module variables as arrays. Anything else means the variable is missing from the
+            # f2py interface and setattr stored the value in a Python attribute that Fortran never sees.
+            self.assertIsInstance(fortranValue, np.ndarray, f"Option {optionName} does not reach Fortran")
+
             # Now check if the set parameter is correct in fortran
             if type(value) is bool:
                 fortranValue = bool(fortranValue)
@@ -123,36 +127,6 @@ class BasicTests(unittest.TestCase):
 
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sakappa, 0.40, rtol=1e-14)
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sacv1, 7.5, rtol=1e-14)
-
-    def test_nondefault_options_reach_fortran(self):
-        """
-        Given a solver created with non-default values for the adjoint multigrid coarse-level options and nSaveVolume,
-        when the Fortran modules are read back,
-        then each mapped Fortran variable holds the value that was set.
-        """
-        gridFile = "input_files/cube_4x4x4.cgns"
-        options = {
-            "gridfile": os.path.join(baseDir, "../../", gridFile),
-            "ILUFillCoarse": 3,
-            "ASMOverlapCoarse": 2,
-            "innerPreconItsCoarse": 4,
-            "nSaveVolume": 5,
-        }
-        CFDSolver = ADFLOW(options=options, debug=False)
-
-        fortranVariables = {
-            "ILUFillCoarse": (CFDSolver.adflow.inputadjoint, "filllevelcoarse"),
-            "ASMOverlapCoarse": (CFDSolver.adflow.inputadjoint, "overlapcoarse"),
-            "innerPreconItsCoarse": (CFDSolver.adflow.inputadjoint, "innerpreconitscoarse"),
-            "nSaveVolume": (CFDSolver.adflow.inputiteration, "nsavevolume"),
-        }
-        for optionName, (module, variable) in fortranVariables.items():
-            with self.subTest(option=optionName):
-                fortranValue = getattr(module, variable)
-                # f2py returns Fortran module scalars as 0-d arrays. Anything else means the variable is missing
-                # from the f2py interface and setattr stored the value in a Python attribute that Fortran never sees.
-                self.assertIsInstance(fortranValue, np.ndarray)
-                self.assertEqual(fortranValue, options[optionName])
 
     def test_option_without_fortran_variable_raises(self):
         """
