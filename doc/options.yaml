@@ -1562,6 +1562,7 @@ outerPreconIts:
 adjointAMGLevels:
   desc: >
     The number of levels to use for the adjoint solver's algebraic multigrid preconditioner.
+    At most 10 levels are supported.
 
 adjointAMGNSmooth:
   desc: >
