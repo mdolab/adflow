@@ -180,28 +180,34 @@ class TestAMGCoarseMatrixAssembly(unittest.TestCase):
         Given a flow solve that ends in the ANK solver with a two-level multigrid preconditioner,
         when the ANK time-step terms, and then the full ANK preconditioner, are each assembled twice in a row,
         then the coarse-level matrix has the same nonzero norm after each repeat,
-        and the full preconditioner's coarse matrix differs from the time-step terms alone.
+        and the full preconditioner's coarse matrix differs from both the time-step terms alone and the Jacobian alone.
         """
         self.options.update({"useNKSolver": False, "L2Convergence": 1e-8})
         solver = ADFLOW(options=self.options)
         solver(self.ap)
         ank = solver.adflow.anksolver
+        amg = solver.adflow.amg
 
         timeStepNorms = []
         for _ in range(2):
             ank.computetimestepmat(True)
-            timeStepNorms.append(solver.adflow.amg.getcoarsematnorm(2))
+            timeStepNorms.append(amg.getcoarsematnorm(2))
 
         fullNorms = []
         for _ in range(2):
             ank.computetimestepmat(True)
             ank.formjacobianank()
-            fullNorms.append(solver.adflow.amg.getcoarsematnorm(2))
+            fullNorms.append(amg.getcoarsematnorm(2))
+
+        amg.zerocoarsemats()
+        ank.formjacobianank()
+        jacobianNorm = amg.getcoarsematnorm(2)
 
         self.assertGreater(timeStepNorms[0], 0.0)
         self.assertAlmostEqual(timeStepNorms[1] / timeStepNorms[0], 1.0, places=12)
         self.assertAlmostEqual(fullNorms[1] / fullNorms[0], 1.0, places=12)
         self.assertNotAlmostEqual(fullNorms[0] / timeStepNorms[0], 1.0, places=6)
+        self.assertNotAlmostEqual(fullNorms[0] / jacobianNorm, 1.0, places=6)
 
 
 class TestAMGWithKeptAdjointMemory(unittest.TestCase):
@@ -213,6 +219,9 @@ class TestAMGWithKeptAdjointMemory(unittest.TestCase):
         self.options.update(commonTestOptions)
         self.options["useMatrixFreedrdw"] = True
         self.ap = copy.deepcopy(ap_naca0012_time_acc)
+        # Give the adjoint derivatives to compare
+        self.ap.addDV("alpha")
+        self.ap.addDV("mach")
 
     def checkKeptAdjointMatchesFreshAdjoint(self, solver):
         """Solve the adjoint after a flow solve that keeps the adjoint memory, and compare it with a fresh adjoint."""
@@ -234,12 +243,17 @@ class TestAMGWithKeptAdjointMemory(unittest.TestCase):
         solver.releaseAdjointMemory()
         sensFresh = {}
         solver.evalFunctionsSens(self.ap, sensFresh, evalFuncs=["cd"])
+        solver.checkAdjointFailure(self.ap, sensFresh)
+        self.assertFalse(sensFresh["fail"])
 
+        numCompared = 0
         for funcName, funcSens in sensFresh.items():
             if funcName == "fail":
                 continue
             for dvName, dvSens in funcSens.items():
                 np.testing.assert_allclose(sensKept[funcName][dvName], dvSens, rtol=1e-8)
+                numCompared += 1
+        self.assertGreater(numCompared, 0)
 
     def test_adjoint_reuses_hierarchy_after_asm_flow_solve(self):
         """

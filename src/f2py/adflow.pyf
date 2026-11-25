@@ -315,6 +315,9 @@ python module libadflow
          integer(kind=inttype) :: amgowner
          integer(kind=inttype) parameter,optional :: amgowneradjoint=1_inttype
 
+         subroutine zerocoarsemats
+         end subroutine zerocoarsemats
+
          subroutine getcoarsematnorm(lvl,frobeniusnorm)
            integer(kind=inttype) intent(in) :: lvl
            real(kind=alwaysrealtype) intent(out) :: frobeniusnorm
