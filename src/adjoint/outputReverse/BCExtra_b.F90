@@ -126,5 +126,24 @@ contains
           END IF
        END DO
     END if
+
+    ! ------------------------------------
+    !  AntiSymmetry Boundary Condition
+    ! ------------------------------------
+    if (secondHalo) then
+       DO mm=1,nbocos
+          IF (bctype(mm) .EQ. antiSymm) THEN
+             CALL setBCPointers_d(mm, .false.)
+             CALL BCAntiSymm2ndhalo_b(mm)
+          END IF
+       END DO
+    END if
+
+    DO mm=1,nbocos
+        IF (bctype(mm) .EQ. antiSymm) THEN
+          CALL setBCPointers_d(mm, .false.)
+          CALL BCAntiSymm1sthalo_b(mm)
+        END IF
+    END DO
   end subroutine applyAllBC_block_b
 end module BCExtra_b

@@ -1195,7 +1195,7 @@ bocos:do nn=1,nbocos
       select case  (bctype(nn)) 
       case (nswalladiabatic, nswallisothermal) 
         call pushcontrol2b(2)
-      case (symm, symmpolar, eulerwall) 
+      case (symm, antisymm, symmpolar, eulerwall) 
         call pushcontrol2b(3)
       case (farfield) 
         call pushcontrol2b(1)
@@ -1316,7 +1316,7 @@ bocos:do nn=1,nbocos
         call bcturbwall(nn)
 !=============================================================
 !=============================================================
-      case (symm, symmpolar, eulerwall) 
+      case (symm, antisymm, symmpolar, eulerwall) 
 ! symmetry, polar symmetry or inviscid wall. treatment of
 ! the turbulent equations is identical.
         call bcturbsymm(nn)
