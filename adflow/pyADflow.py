@@ -1202,6 +1202,7 @@ class ADFLOW(AeroSolver):
         self.rootChangedOptions = self.comm.bcast(self.rootChangedOptions, root=0)
         for key, val in self.rootChangedOptions.items():
             self.setOption(key, val)
+        self._checkAMGOptions()
         startCallTime = time.time()
 
         # Get option about adjoint memory
@@ -4030,6 +4031,7 @@ class ADFLOW(AeroSolver):
         self.adflow.nksolver.destroynksolver()
         self.adflow.anksolver.destroyanksolver()
         self._setAeroDVs()
+        self._checkAMGOptions()
 
         # The adjoint, NK and ANK share one multigrid hierarchy. If an NK or ANK solve replaced the adjoint's
         # hierarchy while the adjoint memory was kept, the adjoint's PETSc objects have to be recreated.
@@ -4047,6 +4049,27 @@ class ADFLOW(AeroSolver):
             self.adflow.adjointapi.setupallresidualmatricesfwd()
             self.adflow.adjointapi.setuppetscksp()
             self.adjointSetup = True
+
+    def _checkAMGOptions(self):
+        """
+        Check that each solver's multigrid options are consistent with each other.
+        This can't be done in setOption because the options can be set in any order.
+        """
+        maxLevels = int(self.adflow.constants.maxamglevels)
+        for levelsName, nSmoothName in [
+            ("NKAMGLevels", "NKAMGNSmooth"),
+            ("ANKAMGLevels", "ANKAMGNSmooth"),
+            ("adjointAMGLevels", "adjointAMGNSmooth"),
+        ]:
+            levels = self.getOption(levelsName)
+            nSmooth = self.getOption(nSmoothName)
+            if levels > maxLevels:
+                raise Error(f"Option {levelsName} is {levels}, but at most {maxLevels} multigrid levels are supported.")
+            if isinstance(nSmooth, list) and len(nSmooth) != levels:
+                raise Error(
+                    f"Option {nSmoothName} has {len(nSmooth)} entries but {levelsName} is {levels}. "
+                    "Give one smoothing iteration count per level, or a single integer for every level."
+                )
 
     def releaseAdjointMemory(self):
         """
@@ -5603,6 +5626,24 @@ class ADFLOW(AeroSolver):
                     module = self.moduleMap[self.optionMap[name][0]]
                     variable = self.optionMap[name][1]
                     setattr(module, variable, tmp_turbresscalar)
+            elif name in ["nkamgnsmooth", "ankamgnsmooth", "adjointamgnsmooth"]:
+                # Fortran stores one smoothing iteration count per multigrid level. An integer applies to every
+                # level, and a list gives one count per level.
+                maxLevels = int(self.adflow.constants.maxamglevels)
+                if isinstance(value, list):
+                    isIntegerList = all(isinstance(nSmooth, int) and not isinstance(nSmooth, bool) for nSmooth in value)
+                    if not isIntegerList or not 1 <= len(value) <= maxLevels:
+                        raise Error(
+                            f"Option {name} must be an integer or a list of 1 to {maxLevels} integers, "
+                            f"one per multigrid level. Received {value}."
+                        )
+                    # Entries beyond the last level are never used
+                    nSmoothPerLevel = value + [value[-1]] * (maxLevels - len(value))
+                else:
+                    nSmoothPerLevel = [value] * maxLevels
+                module = self.moduleMap[self.optionMap[name][0]]
+                variable = self.optionMap[name][1]
+                setattr(module, variable, nSmoothPerLevel)
             elif name == "oversetpriority":
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
@@ -5810,7 +5851,7 @@ class ADFLOW(AeroSolver):
             "NKInnerPreconItsCoarse": [int, 1],
             "NKOuterPreconIts": [int, 1],
             "NKAMGLevels": [int, 2],
-            "NKAMGNSmooth": [int, 1],
+            "NKAMGNSmooth": [(int, list), 1],
             "NKLS": [str, ["cubic", "none", "non-monotone"]],
             "NKFixedStep": [float, 0.25],
             "RKReset": [bool, False],
@@ -5835,7 +5876,7 @@ class ADFLOW(AeroSolver):
             "ANKInnerPreconItsCoarse": [int, 1],
             "ANKOuterPreconIts": [int, 1],
             "ANKAMGLevels": [int, 2],
-            "ANKAMGNSmooth": [int, 1],
+            "ANKAMGNSmooth": [(int, list), 1],
             "ANKCFL0": [float, 5.0],
             "ANKCFLMin": [float, 1.0],
             "ANKCFLLimit": [float, 1e5],
@@ -5919,7 +5960,7 @@ class ADFLOW(AeroSolver):
             "innerPreconItsCoarse": [int, 1],
             "outerPreconIts": [int, 3],
             "adjointAMGLevels": [int, 2],
-            "adjointAMGNSmooth": [int, 1],
+            "adjointAMGNSmooth": [(int, list), 1],
             "applyAdjointPCSubspaceSize": [int, 20],
             "frozenTurbulence": [bool, False],
             "useMatrixFreedrdw": [bool, True],
@@ -6443,6 +6484,9 @@ class ADFLOW(AeroSolver):
             "isosurface",
             "turbresscale",
             "restartfile",
+            "nkamgnsmooth",
+            "ankamgnsmooth",
+            "adjointamgnsmooth",
             "oversetpriority",
         }
 

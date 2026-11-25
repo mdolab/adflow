@@ -1565,7 +1565,11 @@ adjointAMGLevels:
 
 adjointAMGNSmooth:
   desc: >
-    The number of smoothing iterations at each level for the adjoint solver's algebraic multigrid preconditioner.
+    The number of smoothing iterations on each level of the adjoint solver's algebraic multigrid preconditioner.
+    An integer sets the same number for every level.
+    A list sets one number per level, from the finest to the coarsest, and must have :py:data:`adjointAMGLevels` entries.
+    The coarsest level is the coarse-grid solve, so its value sets the number of Richardson iterations of that solve.
+    Smoothing is applied only after the coarse-grid correction.
 
 applyAdjointPCSubspaceSize:
   desc: >

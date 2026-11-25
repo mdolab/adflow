@@ -40,7 +40,7 @@ module NKSolver
     integer(kind=intType) :: NK_innerPreConItsCoarse
     integer(kind=intType) :: NK_outerPreConIts
     integer(kind=intType) :: NK_AMGLevels
-    integer(kind=intType) :: NK_AMGNSmooth
+    integer(kind=intType), dimension(maxAMGLevels) :: NK_AMGNSmooth
     integer(kind=intType) :: NK_LS
     character(len=maxStringLen) :: NK_precondType
     logical :: NK_useEW
@@ -1677,7 +1677,7 @@ module ANKSolver
     integer(kind=intType) :: ANK_innerPreConItsCoarse
     integer(kind=intType) :: ANK_outerPreConIts
     integer(kind=intType) :: ANK_AMGLevels
-    integer(kind=intType) :: ANK_AMGNSmooth
+    integer(kind=intType), dimension(maxAMGLevels) :: ANK_AMGNSmooth
     character(len=maxStringLen) :: ANK_precondType
     real(kind=realType) :: ANK_rtol
     real(kind=realType) :: ANK_atol_buffer

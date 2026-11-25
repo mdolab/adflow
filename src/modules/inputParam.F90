@@ -833,7 +833,9 @@ module inputADjoint
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
     integer(kind=intType) :: innerPreConIts, innerPreConItsCoarse
-    integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
+    integer(kind=intType) :: adjAMGLevels
+    ! Smoothing iterations on each AMG level, the last used level being the coarse solve
+    integer(kind=intType), dimension(maxAMGLevels) :: adjAMGNSmooth
 
     logical :: printTiming
     integer(kind=intType) :: subKSPSubspaceSize

@@ -5,6 +5,7 @@ import numpy as np
 from parameterized import parameterized_class
 from adflow import ADFLOW
 from adflow import ADFLOW_C
+from adflow.pyADflow import Error
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_naca0012_time_acc
 
@@ -263,6 +264,83 @@ class TestAMGWithKeptAdjointMemory(unittest.TestCase):
         """
         self.options.update({"ANKAMGLevels": 2, "NKAMGLevels": 2, "adjointAMGLevels": 1})
         self.checkKeptAdjointMatchesFreshAdjoint(ADFLOW(options=self.options))
+
+
+class TestAMGSmoothingIterations(unittest.TestCase):
+    N_PROCS = 2
+
+    def setUp(self):
+        self.options = copy.copy(adflowDefOpts)
+        self.options["outputDirectory"] = os.path.join(baseDir, self.options["outputDirectory"])
+        self.options.update(commonTestOptions)
+        self.ap = copy.deepcopy(ap_naca0012_time_acc)
+
+    def getLevelMaxIts(self, solver, levels):
+        """Return the maximum Richardson iteration count of each level's KSP in the current AMG hierarchy."""
+        return [int(solver.adflow.amg.getlevelkspmaxits(lvl)) for lvl in range(1, levels + 1)]
+
+    def solveAdjointAndGetLevelMaxIts(self, levels):
+        solver = ADFLOW(options=self.options)
+        solver(self.ap)
+        solver.evalFunctionsSens(self.ap, {}, evalFuncs=["cd"])
+        return self.getLevelMaxIts(solver, levels)
+
+    def test_adjoint_levels_use_their_own_smoothing_iterations(self):
+        """
+        Given a two-level adjoint multigrid preconditioner with adjointAMGNSmooth set to a list,
+        when the adjoint is solved,
+        then each level, including the coarse solve, uses its own entry of the list.
+        """
+        self.options.update({"adjointAMGLevels": 2, "adjointAMGNSmooth": [2, 5]})
+        self.assertEqual(self.solveAdjointAndGetLevelMaxIts(2), [2, 5])
+
+    def test_integer_smoothing_iterations_apply_to_every_level(self):
+        """
+        Given a two-level adjoint multigrid preconditioner with adjointAMGNSmooth set to an integer,
+        when the adjoint is solved,
+        then every level, including the coarse solve, uses that number of iterations.
+        """
+        self.options.update({"adjointAMGLevels": 2, "adjointAMGNSmooth": 2})
+        self.assertEqual(self.solveAdjointAndGetLevelMaxIts(2), [2, 2])
+
+    def test_nk_levels_use_their_own_smoothing_iterations(self):
+        """
+        Given a two-level NK multigrid preconditioner with NKAMGNSmooth set to a list,
+        when a flow solve ends in the NK solver,
+        then each level, including the coarse solve, uses its own entry of the list.
+        """
+        self.options.update({"NKAMGLevels": 2, "NKAMGNSmooth": [2, 5]})
+        solver = ADFLOW(options=self.options)
+        solver(self.ap)
+        self.assertEqual(self.getLevelMaxIts(solver, 2), [2, 5])
+
+    def test_ank_levels_use_their_own_smoothing_iterations(self):
+        """
+        Given a two-level ANK multigrid preconditioner with ANKAMGNSmooth set to a list,
+        when a flow solve ends in the ANK solver,
+        then each level, including the coarse solve, uses its own entry of the list.
+        """
+        self.options.update({"useNKSolver": False, "L2Convergence": 1e-8, "ANKAMGLevels": 2, "ANKAMGNSmooth": [2, 5]})
+        solver = ADFLOW(options=self.options)
+        solver(self.ap)
+        self.assertEqual(self.getLevelMaxIts(solver, 2), [2, 5])
+
+    def test_smoothing_iterations_list_must_match_levels(self):
+        """
+        Given adjointAMGNSmooth set to a list with more entries than adjointAMGLevels,
+        when the flow is solved,
+        then an Error is raised before the solve starts.
+        """
+        self.options.update({"adjointAMGLevels": 2, "adjointAMGNSmooth": [1, 1, 1]})
+        solver = ADFLOW(options=self.options)
+        with self.assertRaises(Error):
+            solver(self.ap)
+
+    def test_smoothing_iterations_list_must_hold_integers(self):
+        """Assert that setting NKAMGNSmooth to a list containing a non-integer raises an Error."""
+        solver = ADFLOW(options=self.options)
+        with self.assertRaises(Error):
+            solver.setOption("NKAMGNSmooth", [1, 2.0])
 
 
 # Run the flow convergence tests in complex mode

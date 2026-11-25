@@ -17,6 +17,9 @@ module constants
     integer, parameter :: maxCGNSNameLen = 32
     integer, parameter :: maxIterTypelen = 8
 
+    ! Maximum number of levels in the algebraic multigrid preconditioner
+    integer(kind=intType), parameter :: maxAMGLevels = 10
+
     ! Numerical constants
 
     real(kind=realType), parameter :: pi = 3.1415926535897931_realType

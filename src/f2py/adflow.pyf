@@ -13,6 +13,7 @@ python module libadflow
          use precision
          integer parameter,optional :: maxstringlen   = 256
          integer parameter,optional :: maxcgnsnamelen =  32
+         integer(kind=inttype) parameter,optional :: maxamglevels=10_inttype
          integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
          integer(kind=inttype) parameter,optional :: nsequations=2_inttype
          integer(kind=inttype) parameter,optional :: ransequations=3_inttype
@@ -319,6 +320,11 @@ python module libadflow
            real(kind=alwaysrealtype) intent(out) :: frobeniusnorm
          end subroutine getcoarsematnorm
 
+         subroutine getlevelkspmaxits(lvl,maxits)
+           integer(kind=inttype) intent(in) :: lvl
+           integer(kind=inttype) intent(out) :: maxits
+         end subroutine getlevelkspmaxits
+
        end module amg
 
        module flowutils
@@ -375,7 +381,7 @@ python module libadflow
          integer(kind=inttype) :: nk_innerpreconitscoarse
          integer(kind=inttype) :: nk_outerpreconits
          integer(kind=inttype) :: nk_amglevels
-         integer(kind=inttype) :: nk_amgnsmooth
+         integer(kind=inttype), dimension(10) :: nk_amgnsmooth
          integer(kind=inttype) :: nk_jacobianlag
          logical :: usenksolver
          logical :: nk_adpc
@@ -456,7 +462,7 @@ python module libadflow
          integer(kind=inttype) :: ank_innerpreconitscoarse
          integer(kind=inttype) :: ank_outerpreconits
          integer(kind=inttype) :: ank_amglevels
-         integer(kind=inttype) :: ank_amgnsmooth
+         integer(kind=inttype), dimension(10) :: ank_amgnsmooth
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
@@ -1254,7 +1260,7 @@ python module libadflow
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
          integer(kind=inttype) :: adjamglevels
-         integer(kind=inttype) :: adjamgnsmooth
+         integer(kind=inttype), dimension(10) :: adjamgnsmooth
          logical :: approxpc
          logical :: adpc
          logical :: viscpc

@@ -32,8 +32,9 @@ module amg
     ! The number of outer iterations
     integer(kind=intType) amgOuterIts
 
-    ! The number of smoothing iterations
-    integer(kind=intType) amgNSmooth
+    ! The number of smoothing iterations on each level. On the coarsest level, this is the number of iterations of the
+    ! coarse solve.
+    integer(kind=intType), dimension(maxAMGLevels) :: amgNSmooth
 
     ! The number of local ILU iterations
     integer(kind=intType) amgLocalPreConIts
@@ -87,7 +88,8 @@ contains
         use utils, only: setPointers
         use haloExchange, only: whalo1to1intgeneric
         use adjointVars, only: nCellsLocal
-        integer(kind=intType), intent(in) :: nCell, blockSize, levels, nSmooth
+        integer(kind=intType), intent(in) :: nCell, blockSize, levels
+        integer(kind=intType), dimension(maxAMGLevels), intent(in) :: nSmooth
         ! The solver this hierarchy is for: amgOwnerAdjoint, amgOwnerNK or amgOwnerANK
         integer(kind=intType), intent(in) :: owner
         Mat, target :: inputMat
@@ -524,6 +526,25 @@ contains
 
     end subroutine getCoarseMatNorm
 
+    subroutine getLevelKSPMaxIts(lvl, maxIts)
+        ! Return the maximum number of iterations of the KSP on level lvl. This is a hook for the tests.
+        ! A negative value means there is no KSP on this level.
+
+        integer(kind=intType), intent(in) :: lvl
+        integer(kind=intType), intent(out) :: maxIts
+        real(kind=alwaysRealType) :: rTol, aTol, dTol
+        integer(kind=intType) :: ierr
+
+        if (.not. amgSetup .or. lvl < 1 .or. lvl > amgLevels) then
+            maxIts = -1
+            return
+        end if
+
+        call KSPGetTolerances(kspLevels(lvl), rTol, aTol, dTol, maxIts, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine getLevelKSPMaxIts
+
     subroutine applyShellPC(pc, x, y, ierr)
         use communication
         ! Input/Output
@@ -616,7 +637,7 @@ contains
 
             call KSPSetTolerances(kspLevels(lvl), PETSC_DEFAULT_REAL, &
                                   PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-                                  amgNSmooth, ierr)
+                                  amgNSmooth(lvl), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call KSPgetPC(kspLevels(lvl), globalPC, ierr)
