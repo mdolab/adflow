@@ -1240,7 +1240,7 @@ contains
         integer(kind=intType), intent(inout) :: n
 
         ! Working Paramters
-        integer(kind=intType) :: fSize
+        integer(kind=intType) :: fSize, i
         type(fringeType), dimension(:), pointer :: tmpFringePtr
         fSize = size(fringeList)
 
@@ -1255,8 +1255,14 @@ contains
             ! Allocate new space
             allocate (fringeList(int(1.5 * fSize)))
 
-            ! Copy exsitng values
-            fringeList(1:fSize) = tmpFringePtr(1:fSize)
+            ! Copy values to new array. Note: we deliberately use an explicit loop here rather than whole-array
+            ! assignment (`fringeList(1:fSize) = tmpFringePtr(1:fSize)`). Because fringeList and tmpFringePtr are both
+            ! pointers, a whole-array copy forces the compiler to materialise a temporary array. Under -Ofast, `
+            ! -fstack-arrays` is enabled which means this temporary array will be stack allocated. Depending on the size
+            ! of the mesh, the fringe list can exceed the default stack size, leading to a stack overflow.
+            do i = 1, fSize
+                fringeList(i) = tmpFringePtr(i)
+            end do
 
             ! Free original memory
             deallocate (tmpFringePtr)
@@ -1274,6 +1280,7 @@ contains
 
         use constants
         use block, only: fringeType
+        use utils, only: reallocateInteger2, reallocateReal2
 
         implicit none
 
@@ -1285,8 +1292,6 @@ contains
 
         ! Working Paramters
         integer(kind=intType) :: fSize
-        integer(kind=intType), dimension(:, :), pointer :: tmpInt
-        real(kind=realType), dimension(:, :), pointer :: tmpReal
         fSize = size(intBuffer, 2)
 
         ! Increment n for next item
@@ -1294,20 +1299,9 @@ contains
 
         if (n > fSize) then
 
-            ! Pointers to existing data:
-            tmpInt => intBuffer
-            tmpReal => realBuffer
-
-            ! Allocate new space
-            allocate (intBuffer(5, int(1.5 * fSize)))
-            allocate (realBuffer(4, int(1.5 * fSize)))
-
-            ! Copy exsitng values
-            intBuffer(:, 1:fSize) = tmpInt(:, 1:fSize)
-            realBuffer(:, 1:fSize) = tmpReal(:, 1:fSize)
-
-            ! Free original memory
-            deallocate (tmpInt, tmpReal)
+            ! Increase the buffer sizes by 50%.
+            call reallocateInteger2(intBuffer, 5, int(1.5 * fSize), 5, fSize, .true.)
+            call reallocateReal2(realBuffer, 4, int(1.5 * fSize), 4, fSize, .true.)
 
         end if
 
