@@ -10,7 +10,7 @@ subroutine getForces(forces, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(inout) :: forces(3, npts)
@@ -86,7 +86,7 @@ subroutine getForces(forces, npts, sps)
     ! scatter.
     dimLoop: do iDim = 1, 3
 
-        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecGetArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Copy in the values we already have to the exchange.
@@ -94,7 +94,7 @@ subroutine getForces(forces, npts, sps)
         localPtr = forces(iDim, 1:ii)
 
         ! Restore the pointer
-        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Now scatter this to the zipper
@@ -107,7 +107,7 @@ subroutine getForces(forces, npts, sps)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! The values we need are precisely what is in zipper%localVal
-        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call vecGetArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Just copy the received data into the forces array. Just on root proc:
@@ -115,7 +115,7 @@ subroutine getForces(forces, npts, sps)
             forces(iDim, ii + 1:ii + size(localPtr)) = localPtr
         end if
 
-        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call vecRestoreArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
     end do dimLoop
 
@@ -136,7 +136,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(out), dimension(3, npts) :: forces, forcesd
@@ -199,7 +199,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
     ! scatter.
     dimLoop: do iDim = 1, 3
 
-        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecGetArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Copy in the values we already have to the exchange.
@@ -207,7 +207,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
         localPtr = forcesd(iDim, 1:ii)
 
         ! Restore the pointer
-        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Now scatter this to the zipper
@@ -220,7 +220,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! The values we need are precisely what is in zipper%localVal
-        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call vecGetArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Just copy the received data into the forces array. Just on root proc:
@@ -228,7 +228,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
             forcesd(iDim, ii + 1:ii + size(localPtr)) = localPtr
         end if
 
-        call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+        call vecRestoreArray(zipper%localVal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
     end do dimLoop
 
@@ -249,7 +249,7 @@ subroutine getForces_b(forcesd, npts, sps)
     use oversetData, only: zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only: familyExchange, BCFamExchange
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: npts, sps
     real(kind=realType), intent(inout) :: forcesd(3, npts)
@@ -277,7 +277,7 @@ subroutine getForces_b(forcesd, npts, sps)
         ! scatter.
         dimLoop: do iDim = 1, 3
 
-            call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+            call vecGetArray(zipper%localVal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ii = exch%nNodes
@@ -289,7 +289,7 @@ subroutine getForces_b(forcesd, npts, sps)
                 end do
             end if
 
-            call vecGetArrayF90(zipper%localVal, localPtr, ierr)
+            call vecRestoreArray(zipper%localVal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Zero the vector we are scatting into:
@@ -305,7 +305,7 @@ subroutine getForces_b(forcesd, npts, sps)
                                exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecGetArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Accumulate the scatted values onto forcesd
@@ -313,7 +313,7 @@ subroutine getForces_b(forcesd, npts, sps)
             forcesd(iDim, 1:ii) = forcesd(iDim, 1:ii) + localPtr
 
             ! Restore the pointer
-            call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+            call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
         end do dimLoop
@@ -362,7 +362,7 @@ subroutine surfaceCellCenterToNode(exch)
     use utils, only: setPointers, EChk
     use sorting, only: famInList
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
     type(familyExchange) :: exch
@@ -374,7 +374,7 @@ subroutine surfaceCellCenterToNode(exch)
 
     ! We assume that normalization factor is already computed
     sps = exch%sps
-    call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecGetArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     localPtr = zero
 
@@ -407,7 +407,7 @@ subroutine surfaceCellCenterToNode(exch)
         end do
     end do
 
-    call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Globalize the current face based value
@@ -436,7 +436,7 @@ subroutine surfaceCellCenterToNode(exch)
                        exch%nodeValLocal, INSERT_VALUES, SCATTER_REVERSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecGetArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ii = 0
@@ -461,7 +461,7 @@ subroutine surfaceCellCenterToNode(exch)
         end do
     end do
 
-    call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
 end subroutine surfaceCellCenterToNode
@@ -474,7 +474,7 @@ subroutine computeWeighting(exch)
     use utils, only: setPointers, EChk
     use sorting, only: famInList
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     type(familyExchange) :: exch
     integer(kind=intType) :: sps
@@ -485,7 +485,7 @@ subroutine computeWeighting(exch)
 
     sps = exch%sps
 
-    call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecGetArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     localPtr = zero
@@ -520,7 +520,7 @@ subroutine computeWeighting(exch)
         end do
     end do
 
-    call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Globalize the face value
@@ -539,7 +539,7 @@ subroutine computeWeighting(exch)
     ! instead of dividing. Note that we check dividing by zero and just
     ! set those to zero.
 
-    call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecGetArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     do i = 1, size(localPtr)
         if (localPtr(i) == zero) then
@@ -549,7 +549,7 @@ subroutine computeWeighting(exch)
         end if
     end do
 
-    call vecRestoreArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecRestoreArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
 end subroutine computeWeighting
@@ -620,7 +620,7 @@ subroutine computeNodalTractions_d(sps)
     use surfaceFamilies, only: BCFamExchange, familyExchange
     use utils, only: setPointers, setPointers_d, EChk
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
     integer(kind=intType), intent(in) :: sps
     integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
@@ -644,10 +644,10 @@ subroutine computeNodalTractions_d(sps)
     call VecDuplicate(exch%sumGlobal, tmp, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecGetArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(nodeValLocald, localPtrd, ierr)
+    call vecGetArray(nodeValLocald, localPtrd, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     localPtrd = zero
@@ -686,10 +686,10 @@ subroutine computeNodalTractions_d(sps)
             end if
         end do
     end do
-    call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecRestoreArrayF90(nodeValLocald, localPtrd, ierr)
+    call vecRestoreArray(nodeValLocald, localPtrd, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Globalize the area
@@ -719,28 +719,28 @@ subroutine computeNodalTractions_d(sps)
     ! Now compute the inverse of the weighting so that we can multiply
     ! instead of dividing. Here we need the original value too:
 
-    call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecGetArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(sumGlobald, localPtrd, ierr)
+    call vecGetArray(sumGlobald, localPtrd, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     localPtrd = -(localPtrd / localPtr**2)
     localPtr = one / localPtr
 
-    call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecRestoreArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecRestoreArrayF90(sumGlobald, localPtrd, ierr)
+    call vecRestoreArray(sumGlobald, localPtrd, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Now do each of the three dimensions for the pressure and viscous forces
     dimLoop: do iDim = 1, 6
 
-        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecGetArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call vecGetArrayF90(nodeValLocald, localPtrd, ierr)
+        call vecGetArray(nodeValLocald, localPtrd, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         localPtr = zero
@@ -783,10 +783,10 @@ subroutine computeNodalTractions_d(sps)
             end do
         end do
 
-        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call vecRestoreArrayF90(nodeValLocald, localPtrd, ierr)
+        call vecRestoreArray(nodeValLocald, localPtrd, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Globalize the current force
@@ -839,7 +839,7 @@ subroutine computeNodalTractions_d(sps)
                            nodeValLocald, INSERT_VALUES, SCATTER_REVERSE, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call vecGetArrayF90(nodeValLocald, localPtrd, ierr)
+        call vecGetArray(nodeValLocald, localPtrd, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -866,7 +866,7 @@ subroutine computeNodalTractions_d(sps)
             end do
         end do
 
-        call vecRestoreArrayF90(nodeValLocald, localPtrd, ierr)
+        call vecRestoreArray(nodeValLocald, localPtrd, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end do dimLoop
@@ -899,7 +899,7 @@ subroutine computeNodalTractions_b(sps)
     use communication
     use utils, only: EChk, setPointers, setPointers_d
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscvec
     implicit none
 
     integer(kind=intType), intent(in) :: sps
@@ -935,7 +935,7 @@ subroutine computeNodalTractions_b(sps)
     !  Recompute the dual area
     ! ==================================
 
-    call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecGetArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     localPtr = zero
@@ -971,7 +971,7 @@ subroutine computeNodalTractions_b(sps)
         end do
     end do
 
-    call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+    call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Globalize the area
@@ -989,12 +989,12 @@ subroutine computeNodalTractions_b(sps)
     ! Now compute the inverse of the weighting so that we can multiply
     ! instead of dividing.
 
-    call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecGetArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     localPtr = one / localPtr
 
-    call vecRestoreArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecRestoreArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! ==================================
@@ -1007,7 +1007,7 @@ subroutine computeNodalTractions_b(sps)
         ! ====================
         ! Do the forward pass:
         ! ====================
-        call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecGetArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         localPtr = zero
@@ -1045,7 +1045,7 @@ subroutine computeNodalTractions_b(sps)
             end do
         end do
 
-        call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
+        call vecRestoreArray(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Globalize the current force
@@ -1065,7 +1065,7 @@ subroutine computeNodalTractions_b(sps)
         ! ====================
 
         ! Copy the reverse seed into the local values
-        call vecGetArrayF90(nodeValLocal_b, localPtr_b, ierr)
+        call vecGetArray(nodeValLocal_b, localPtr_b, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ii = 0
@@ -1092,7 +1092,7 @@ subroutine computeNodalTractions_b(sps)
             end do bocos
         end do domains
 
-        call vecRestoreArrayF90(nodeValLocal_b, localPtr_b, ierr)
+        call vecRestoreArray(nodeValLocal_b, localPtr_b, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call vecSet(T_b, zero, ierr)
@@ -1142,7 +1142,7 @@ subroutine computeNodalTractions_b(sps)
         ! Copy the values into patches
         ! ============================
 
-        call vecGetArrayF90(nodeValLocal_b, localPtr_b, ierr)
+        call vecGetArray(nodeValLocal_b, localPtr_b, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! ii is the running counter through the pointer array.
@@ -1186,7 +1186,7 @@ subroutine computeNodalTractions_b(sps)
             end do
         end do
 
-        call vecRestoreArrayF90(nodeValLocal_b, localPtr_b, ierr)
+        call vecRestoreArray(nodeValLocal_b, localPtr_b, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end do dimLoop
@@ -1202,20 +1202,20 @@ subroutine computeNodalTractions_b(sps)
 
     ! We will do this by getting pointers
 
-    call vecGetArrayF90(sumGlobal_b, localPtr_b, ierr)
+    call vecGetArray(sumGlobal_b, localPtr_b, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecGetArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Keep in mind localPtr points to sumGlobal which already has
     ! been inversed so we just multiply.
     localPtr_b = -localPtr_b * localPtr**2
 
-    call vecRestoreArrayF90(sumGlobal_b, localPtr_b, ierr)
+    call vecRestoreArray(sumGlobal_b, localPtr_b, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecRestoreArrayF90(exch%sumGlobal, localPtr, ierr)
+    call vecRestoreArray(exch%sumGlobal, localPtr, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Push back to the local patches
@@ -1227,7 +1227,7 @@ subroutine computeNodalTractions_b(sps)
                        nodeValLocal_b, INSERT_VALUES, SCATTER_REVERSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call vecGetArrayF90(nodeValLocal_b, localPtr_b, ierr)
+    call vecGetArray(nodeValLocal_b, localPtr_b, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! ii is the running counter through the pointer array.
@@ -1264,7 +1264,7 @@ subroutine computeNodalTractions_b(sps)
         end do
     end do
 
-    call vecRestoreArrayF90(nodeValLocal_b, localPtr_b, ierr)
+    call vecRestoreArray(nodeValLocal_b, localPtr_b, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Remove temporary petsc vecs

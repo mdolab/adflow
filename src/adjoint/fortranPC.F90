@@ -664,7 +664,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        ! PetSC has its own PCMat that we have to redirect here
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments
@@ -680,7 +681,7 @@ contains
         print *, 'calling pcmatmult'
         call setPCVec(vecX)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Now we can compute the acutal matrix vector product.
@@ -719,7 +720,7 @@ contains
             end do
         end do
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -734,7 +735,7 @@ contains
         use flowvarrefstate
         use communication
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments
@@ -748,12 +749,12 @@ contains
         ! into the preconditioned vector.
         call vecCopy(vecX, vecY, ierr)
 
-        call VecGetArrayF90(vecY, yPtr, ierr)
+        call VecGetArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Do something useful here....
 
-        call VecRestoreArrayF90(vecY, yPtr, ierr)
+        call VecRestoreArray(vecY, yPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine myShellPCApply
@@ -767,7 +768,7 @@ contains
         use flowVarRefState
         use utils, only: EChk, setPointers
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp, PetScPCMat => PCMat
         implicit none
 
         ! PETSc Arguments

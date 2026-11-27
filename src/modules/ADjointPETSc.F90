@@ -5,7 +5,7 @@ module ADjointPETSc
     !
     use constants
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petscksp
     implicit none
 
     Mat dRdWT, dRdWPreT

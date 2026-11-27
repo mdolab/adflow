@@ -2391,7 +2391,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setPointers, EChk, terminate
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscvec
         implicit none
 
         ! Input/Output
@@ -2477,7 +2477,7 @@ contains
 
         ! Get the local vector pointer. Only the root proc actually has
         ! values.
-        call vecGetArrayF90(cgnsVec, localPtr, ierr)
+        call vecGetArray(cgnsVec, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Convert back to integer.
@@ -2485,7 +2485,7 @@ contains
             blkList(i) = int(localPtr(i))
         end do
 
-        call vecRestoreArrayF90(cgnsVec, localPtr, ierr)
+        call vecRestoreArray(cgnsVec, localPtr, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine getOversetIblank

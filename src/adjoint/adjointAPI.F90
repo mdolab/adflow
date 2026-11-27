@@ -272,6 +272,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petscksp
         implicit none
 
         ! Input Variables
@@ -279,7 +281,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
         real(kind=realType) :: val
@@ -298,9 +300,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -355,6 +356,8 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
+#include <petsc/finclude/petsc.h>
+        use petscksp
         implicit none
 
         ! Input Variables
@@ -362,7 +365,7 @@ contains
         real(kind=realType), dimension(ndof), intent(in) :: inVec
         real(kind=realType), dimension(ndof), intent(out) :: outVec
         real(kind=realType), intent(in) :: relativeTolerance
-        integer(kind=intTYpe) :: adjointConvergedReason
+        KSPConvergedReason adjointConvergedReason
         ! Working variables
         integer(kind=intType) :: ierr, nn, sps
 
@@ -380,9 +383,8 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set desired realtive tolerance
@@ -433,7 +435,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -460,7 +462,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -487,7 +489,7 @@ contains
         use communication, only: adflow_comm_world
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -679,7 +681,7 @@ contains
         use adjointUtils, only: allocDerivativeValues, zeroADSeeds
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input Parameters
@@ -774,9 +776,8 @@ contains
         L2Rel = min(L2Rel, 0.9)
 
         ! Reset normType to default in case the globalPrecon function has been called
-        ! by the user. -1 is KSP_NORM_DEFAULT, which isn't in the fortran
-        ! header for some reason
-        call KSPSetNormType(adjointKSP, -1, ierr)
+        ! by the user.
+        call KSPSetNormType(adjointKSP, KSP_NORM_DEFAULT, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the tolerances
@@ -872,7 +873,7 @@ contains
         use communication
         use amg, only: setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         !     Local variables.
@@ -925,7 +926,7 @@ contains
         ! Setup monitor if necessary:
         if (setMonitor) then
             ! PETSC_NULL_CONTEXT doesn't exit...
-            call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
+            call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
                                PETSC_NULL_FUNCTION, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -941,7 +942,7 @@ contains
         use communication
         use utils, only: setPointers, EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! Input params
@@ -1019,7 +1020,7 @@ contains
         use inputTimeSpectral
         use utils, only: EChk
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Arguments
@@ -1031,15 +1032,18 @@ contains
         real(kind=realType), pointer :: wb_pointer(:)
 
 #ifndef USE_COMPLEX
-        call VecGetArrayReadF90(vecX, dwb_pointer, ierr)
+        call VecGetArrayRead(vecX, dwb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, wb_pointer, ierr)
+        call VecGetArray(VecY, wb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call computeMatrixFreeProductBwdFast(dwb_pointer, wb_pointer, size(wb_pointer))
 
-        call VecRestoreArrayF90(vecX, dwb_pointer, ierr)
+        call VecRestoreArrayRead(vecX, dwb_pointer, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call VecRestoreArray(VecY, wb_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -1068,7 +1072,7 @@ contains
         use masterRoutines, only: master_d
 #endif
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         ! PETSc Arguments
@@ -1086,10 +1090,10 @@ contains
 
 #ifndef USE_COMPLEX
 
-        call VecGetArrayReadF90(vecX, wd_pointer, ierr)
+        call VecGetArrayRead(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecGetArrayF90(VecY, dwd_pointer, ierr)
+        call VecGetArray(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (.not. derivVarsAllocated) then
@@ -1117,10 +1121,10 @@ contains
 
         deallocate (xvDot, Fdot)
 
-        call VecRestoreArrayReadF90(vecX, wd_pointer, ierr)
+        call VecRestoreArrayRead(vecX, wd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        call VecRestoreArrayF90(VecY, dwd_pointer, ierr)
+        call VecRestoreArray(VecY, dwd_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ierr = 0
@@ -1144,7 +1148,7 @@ contains
         use adjointUtils, only: myMatCreate, destroyPETScVars, statePreAllocation
         use amg, only: setupAMG
 #include <petsc/finclude/petsc.h>
-        use petsc
+        use petscksp
         implicit none
 
         !     Local variables.
@@ -1198,7 +1202,7 @@ contains
         else
             ! Setup matrix-free dRdwT
             call MatCreateShell(ADFLOW_COMM_WORLD, nDimW, nDimW, PETSC_DETERMINE, &
-                                PETSC_DETERMINE, matfreectx, dRdwT, ierr)
+                                PETSC_DETERMINE, matfreectx(1), dRdwT, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the shell operation for doing matrix vector multiplies
