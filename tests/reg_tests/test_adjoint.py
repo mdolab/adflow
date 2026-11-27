@@ -257,7 +257,7 @@ class TestAdjoint(reg_test_classes.RegTest):
             for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
                 self.ap.addDV(dv)
 
-        self.CFDSolver = ADFLOW(options=options, debug=True)
+        self.CFDSolver = ADFLOW(options=options)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
@@ -328,7 +328,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
                 self.ap.addDV(dv)
 
-        self.CFDSolver = ADFLOW_C(options=options, debug=True)
+        self.CFDSolver = ADFLOW_C(options=options)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
