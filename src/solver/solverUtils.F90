@@ -2554,7 +2554,7 @@ contains
             select case (BCFaceID(mm))
 
             case (iMin)
-                ww => w(2, 1:, 1:, :); 
+                ww => w(2, 1:, 1:, :);
                 dd2Wall => d2Wall(2, :, :); rrlv => rlv(2, 1:, 1:)
 
                 !=========================================================

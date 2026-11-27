@@ -99,6 +99,7 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
+
         ! Set model constants
 
         rkwGam1 = rkwBeta1 / rkwBetas - rkwSigw1 * rkwK * rkwK / sqrt(rkwBetas)

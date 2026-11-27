@@ -105,6 +105,7 @@ contains
 
         logical, dimension(:, :), pointer :: flag
 
+
         ! Set model constants
 
         rSSTGam1 = rSSTBeta1 / rSSTBetas &

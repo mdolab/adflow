@@ -502,4 +502,3 @@ void Test_PartGraphmC(int, idxtype *, idxtype *);
 int VerifyPartmC(int, int, idxtype *, idxtype *, idxtype *, idxtype *, int, float *, int, idxtype *);
 void Test_ND(int, idxtype *, idxtype *);
 int VerifyND(int, idxtype *, idxtype *);
-

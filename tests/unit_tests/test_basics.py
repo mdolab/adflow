@@ -80,6 +80,49 @@ class BasicTests(unittest.TestCase):
         CFDSolver = ADFLOW(options=options, debug=False)
         self.verifyOptions(CFDSolver)
 
+    def test_sa_coefficients_default(self):
+        """
+        Test that the default SA turbulence model coefficients are correctly
+        propagated from Python to Fortran.
+        """
+        gridFile = "input_files/cube_4x4x4.cgns"
+        options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
+        CFDSolver = ADFLOW(options=options, debug=False)
+
+        defaults = {
+            "SAKappa": 0.41,
+            "SAcb1": 0.1355,
+            "SAcb2": 0.622,
+            "SAsigma": 0.66666666667,
+            "SAcv1": 7.1,
+            "SAcw2": 0.3,
+            "SAcw3": 2.0,
+            "SAct1": 1.0,
+            "SAct2": 2.0,
+            "SAct3": 1.2,
+            "SAct4": 0.5,
+            "SAcrot": 2.0,
+        }
+        for name, expected in defaults.items():
+            fortranValue = getattr(CFDSolver.adflow.inputphysics, name.lower())
+            np.testing.assert_allclose(fortranValue, expected, rtol=1e-14)
+
+    def test_sa_coefficients_custom(self):
+        """
+        Test that custom SA turbulence model coefficients are correctly
+        propagated from Python to Fortran when set via individual SA options.
+        """
+        gridFile = "input_files/cube_4x4x4.cgns"
+        options = {
+            "gridfile": os.path.join(baseDir, "../../", gridFile),
+            "SAKappa": 0.40,
+            "SAcv1": 7.5,
+        }
+        CFDSolver = ADFLOW(options=options, debug=False)
+
+        np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sakappa, 0.40, rtol=1e-14)
+        np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sacv1, 7.5, rtol=1e-14)
+
 
 if __name__ == "__main__":
     unittest.main()

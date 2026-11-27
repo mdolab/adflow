@@ -46,6 +46,7 @@ contains
         real(kind=realType) :: nuInf, ktmp, uInf2
         real(kind=realType) :: vinf, zinf, tmp1(1), tmp2(1)
 
+
         ! Compute the dimensional viscosity from Sutherland's law
         muInfDim = muSuthDim &
                    * ((TSuthDim + SSuthDim) / (TInfDim + SSuthDim)) &

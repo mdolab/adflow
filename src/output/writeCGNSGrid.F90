@@ -142,6 +142,7 @@ contains
         integer :: ierr
 
         integer(kind=intType) :: nn, mm, kk, nAvail
+        integer(kind=intType) :: solTrim, extPos
 
         character(len=7) :: intString
 
@@ -199,12 +200,22 @@ contains
             ! Set the names of the files.
 
             do nn = 1, nAvail
-                write (intString, "(i7)") timeStepUnsteady + &
+                write (intString, "(i7.4)") timeStepUnsteady + &
                     nTimeStepsRestart + 1 - nn
                 intString = adjustl(intString)
 
-                gridFileNames(nn) = trim(newGridFile)//"&
-                     &Timestep"//trim(intString)
+                solTrim = len_trim(newGridFile)
+                extPos = 0
+                if (solTrim >= 5) then
+                    if (newGridFile(solTrim - 4:solTrim) == ".cgns") extPos = solTrim - 4
+                end if
+
+                if (extPos > 1) then
+                    gridFileNames(nn) = trim(newGridFile(1:extPos - 1))//"_Timestep"// &
+                                        trim(intString)//".cgns"
+                else
+                    gridFileNames(nn) = trim(newGridFile)//"_Timestep"//trim(intString)
+                end if
             end do
 
             ! Determine the number of grid files to be written.

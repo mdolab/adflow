@@ -43,9 +43,9 @@ def print_func_call(component):
         message += f" for {component.ap.name} problem"
 
     if component.comm.rank == 0:
-        print(f"\n{'='*len(message)}", flush=True)
+        print(f"\n{'=' * len(message)}", flush=True)
         print(message, flush=True)
-        print(f"{'='*len(message)}", flush=True)
+        print(f"{'=' * len(message)}", flush=True)
 
 
 def set_vol_coords(solver, inputs):
@@ -206,7 +206,11 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
         tmp = {}
         for args, _ in ap_vars:
             name = args[0]
-            tmp[name] = inputs[name]
+            # Ensure values passed to aeroProblem are scalars
+            if np.shape(inputs[name]) == (1,):
+                tmp[name] = inputs[name][0]
+            else:
+                tmp[name] = inputs[name]
 
         ap.setDesignVars(tmp)
         if solver.comm.rank == 0 and print_dict:
@@ -315,7 +319,7 @@ class ADflowMesh(ExplicitComponent):
 
                 # Now go around the face and add a triangle for each adjacent pair
                 # of points. This assumes an ordered connectivity from the
-                # meshwarping
+                # mesh warping
                 for i in range(faceSize):
                     idx = faceNodes[i]
                     p0.append(avgPt)

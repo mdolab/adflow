@@ -282,6 +282,7 @@ contains
         integer :: ierr
 
         integer(kind=intType) :: nn
+        integer(kind=intType) :: solTrim, extPos
 
         character(len=7) :: intString
 
@@ -322,11 +323,21 @@ contains
             ! Unsteady computation. A suffix is added depending on the
             ! time step.
 
-            write (intString, "(i4.4)") timeStepUnsteady + nTimeStepsRestart
+            write (intString, "(i7.4)") timeStepUnsteady + nTimeStepsRestart
             intString = adjustl(intString)
 
-            surfSolFileNames(1) = trim(surfaceSolFile)//"&
-                 &Timestep"//trim(intString)
+            solTrim = len_trim(surfaceSolFile)
+            extPos = 0
+            if (solTrim >= 5) then
+                if (surfaceSolFile(solTrim - 4:solTrim) == ".cgns") extPos = solTrim - 4
+            end if
+
+            if (extPos > 1) then
+                surfSolFileNames(1) = trim(surfaceSolFile(1:extPos - 1))//"_Timestep"// &
+                                      trim(intString)//".cgns"
+            else
+                surfSolFileNames(1) = trim(surfaceSolFile)//"_Timestep"//trim(intString)
+            end if
 
             !===============================================================
 
@@ -361,7 +372,11 @@ contains
         use communication
         use inputIO
         use su_cgns
-        use outputMod
+        ! The "only" list on outputMod is required because without it, ifx 2025.2 and later crash with an internal
+        ! compiler error on the complex build. This is a bug in the intel compiler caused by the internal procedures
+        ! below calling the integer max/min, which complexify extends with a generic interface.
+        use outputMod, only: nBlocksCGNSblock, blocksCGNSblock, nSurfSolToWrite, fileIDs, cgnsBases, &
+                             copyDataBufSinglePrecision, copyDataBufDoublePrecision, storeSurfsolInBuffer
         use utils, only: terminate, convertToLowerCase
         use sorting, only: bsearchStrings
         implicit none

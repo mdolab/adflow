@@ -34,4 +34,3 @@ adflow_build:
 	(cd src_cs/build/ && make -f Makefile1 directories)
 	(cd src_cs/build/ && make -f Makefile1 complexify)
 	(cd src_cs/build/ && make)
-

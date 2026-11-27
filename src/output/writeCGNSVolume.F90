@@ -162,6 +162,7 @@ contains
 
         integer(kind=intType) :: nn, mm, kk, nAvail
         integer(kind=intType) :: iEnd, jEnd, kEnd
+        integer(kind=intType) :: solTrim, extPos
 
         character(len=7) :: intString
 
@@ -221,12 +222,22 @@ contains
             ! Set the names of the files.
 
             do nn = 1, nAvail
-                write (intString, "(i7)") timeStepUnsteady + &
+                write (intString, "(i7.4)") timeStepUnsteady + &
                     nTimeStepsRestart + 1 - nn
                 intString = adjustl(intString)
 
-                volSolFileNames(nn) = trim(solfile)//"&
-                     &Timestep"//trim(intString)
+                solTrim = len_trim(solFile)
+                extPos = 0
+                if (solTrim >= 5) then
+                    if (solFile(solTrim - 4:solTrim) == ".cgns") extPos = solTrim - 4
+                end if
+
+                if (extPos > 1) then
+                    volSolFileNames(nn) = trim(solFile(1:extPos - 1))//"_Timestep"// &
+                                          trim(intString)//".cgns"
+                else
+                    volSolFileNames(nn) = trim(solFile)//"_Timestep"//trim(intString)
+                end if
             end do
 
             ! Determine the number of volume solution files to write.
@@ -775,7 +786,12 @@ contains
         use inputPhysics
         use iteration
         use su_cgns
-        use outputMod
+        ! The "only" list on outputMod is required because without it, ifx 2025.2 and later crash with an internal
+        ! compiler error on the complex build. This is a bug in the intel compiler caused by the internal procedures
+        ! below calling the integer max/min, which complexify extends with a generic interface.
+        use outputMod, only: nBlocksCGNSblock, blocksCGNSblock, nVolSolToWrite, gridFileNames, fileIDs, &
+                             cgnsBases, useLinksInCGNS, copyDataBufSinglePrecision, &
+                             copyDataBufDoublePrecision, storeSolInBuffer, storeOldSolInBuffer
         use utils, only: terminate, setPointers
         implicit none
         !

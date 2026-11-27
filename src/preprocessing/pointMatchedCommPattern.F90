@@ -2977,7 +2977,7 @@ contains
         allocate (tmpBuf(nItemReturn * nHalos), stat=ierr)
         if (ierr /= 0) &
             call terminate("findDonorsRecvBuffer", &
-                           "Memory allocation failure for tmpBuf"); 
+                           "Memory allocation failure for tmpBuf");
         ! Initialize nn and mm to 0. nn is the counter for the incoming
         ! halo information (7 per halo) and mm for the outgoing info
         ! (nItemReturn per halo).

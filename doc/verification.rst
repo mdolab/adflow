@@ -48,8 +48,8 @@ Figure 21 shows the thrust and torque calculations from ADflow and EllipSys3D.
 These results show that ADflow consistently overshoots the EllipSys3D results at all wind speeds.
 
 .. figure:: images/wind_turbine_verification.png
-	
+
 	Figure 21 from :cite:t:`Madsen2019a`
-	
+
 .. bibliography::
     :style: unsrt
