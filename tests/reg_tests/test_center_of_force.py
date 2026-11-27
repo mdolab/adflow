@@ -53,7 +53,7 @@ class TestCenterOfForce(unittest.TestCase):
         )
 
         # Create the solver
-        self.CFDSolver = ADFLOW(options=copy.deepcopy(options), debug=True)
+        self.CFDSolver = ADFLOW(options=copy.deepcopy(options))
         self.ap = copy.deepcopy(ap_tutorial_wing)
         # add the default dvs to the problem
         for dv in defaultAeroDVs:

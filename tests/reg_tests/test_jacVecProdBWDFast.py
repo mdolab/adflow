@@ -58,7 +58,7 @@ class TestJacVecBWDFast(reg_test_classes.RegTest):
         options.update(self.options)
 
         # Create the solver
-        self.CFDSolver = ADFLOW(options=copy.deepcopy(options), debug=True)
+        self.CFDSolver = ADFLOW(options=copy.deepcopy(options))
 
         self.ap = copy.deepcopy(self.aero_prob)
         # add the default dvs to the problem

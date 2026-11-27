@@ -33,9 +33,7 @@ class ADFLOW_C(ADFLOW):
     def __init__(self, *args, **kwargs):
         # Load the compiled module using MExt, allowing multiple
         # imports
-        debug = False
-        if "debug" in kwargs:
-            debug = True
+        debug = kwargs.get("debug", False)
 
         curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
         self.adflow = MExt.MExt("libadflow_cs", curDir, debug=debug)._module

@@ -187,7 +187,7 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
         # add aoa DV
         self.ap.addDV("alpha", name="alpha")
 
-        CFDSolver = ADFLOW_C(options=options, debug=True)
+        CFDSolver = ADFLOW_C(options=options)
 
         self.CFDSolver = CFDSolver
 

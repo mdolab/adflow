@@ -60,7 +60,7 @@ class TestJacVecFwd(reg_test_classes.RegTest):
         options.update(self.options)
 
         # Create the solver
-        self.CFDSolver = ADFLOW(options=copy.deepcopy(options), debug=True)
+        self.CFDSolver = ADFLOW(options=copy.deepcopy(options))
 
         self.ap = copy.deepcopy(self.aero_prob)
         # add the default dvs to the problem
@@ -103,7 +103,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
         options.update(self.options)
 
         # Create the solver
-        self.CFDSolver = ADFLOW(options=copy.deepcopy(options), debug=True)
+        self.CFDSolver = ADFLOW(options=copy.deepcopy(options))
 
         self.ap = copy.deepcopy(self.aero_prob)
         # add the default dvs to the problem
@@ -230,7 +230,7 @@ class TestJacVecFwdCS(reg_test_classes.CmplxRegTest):
         for dv in defaultAeroDVs:
             self.ap.addDV(dv)
 
-        self.CFDSolver = ADFLOW_C(options=options, debug=True)
+        self.CFDSolver = ADFLOW_C(options=options)
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
