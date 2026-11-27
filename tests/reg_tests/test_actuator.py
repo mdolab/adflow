@@ -644,7 +644,7 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         options.update(self.options)
 
         # CFDSolver = ADFLOW(options=options)
-        CFDSolver = ADFLOW_C(options=options, debug=True)
+        CFDSolver = ADFLOW_C(options=options)
 
         CFDSolver.addFunction("mdot", "inlet", name="mdot_in")
         CFDSolver.addFunction("mdot", "outlet", name="mdot_out")
