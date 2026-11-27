@@ -1234,11 +1234,14 @@ python module libadflow
          real(kind=alwaysrealtype) :: adjreltolrel
          real(kind=realtype) :: adjmaxl2dev
          integer(kind=inttype) :: overlap
+         integer(kind=inttype) :: overlapcoarse
          integer(kind=inttype) :: adjmonstep
          integer(kind=inttype) :: filllevel
+         integer(kind=inttype) :: filllevelcoarse
          integer(kind=inttype) :: adjmaxiter
          integer(kind=inttype) :: adjrestart
          integer(kind=inttype) :: innerpreconits
+         integer(kind=inttype) :: innerpreconitscoarse
          integer(kind=inttype) :: outerpreconits
          integer(kind=inttype) :: adjamglevels
          integer(kind=inttype) :: adjamgnsmooth

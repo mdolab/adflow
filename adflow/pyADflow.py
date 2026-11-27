@@ -5625,6 +5625,14 @@ class ADFLOW(AeroSolver):
             spacesToAdd = self.adflow.constants.maxstringlen - len(value)
             value = "".join([value, " " * spacesToAdd])
 
+        # Setting an attribute that the f2py module does not have creates a plain Python attribute instead of
+        # failing, so an option whose variable is missing from src/f2py/adflow.pyf would be silently ignored.
+        if not hasattr(module, variable):
+            raise Error(
+                f"Option '{name}' maps to the Fortran variable '{variable}', which the f2py interface does not "
+                "expose. Add the variable to its module in src/f2py/adflow.pyf."
+            )
+
         # Set in the correct module
         setattr(module, variable, value)
 
@@ -6000,7 +6008,7 @@ class ADFLOW(AeroSolver):
             # Common Parameters
             "gridfile": ["io", "gridfile"],
             "storerindlayer": ["io", "storerindlayer"],
-            "nsavevolume": ["io", "nsavevolume"],
+            "nsavevolume": ["iter", "nsavevolume"],
             "nsavesurface": ["iter", "nsavesurface"],
             "viscoussurfacevelocities": ["io", "viscoussurfacevelocities"],
             "solutionprecision": {

@@ -3,6 +3,7 @@ import os
 import numpy as np
 from adflow import ADFLOW
 from adflow import ADFLOW_C
+from adflow.pyADflow import Error
 
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +43,10 @@ class BasicTests(unittest.TestCase):
 
             # Fetch the variable value from the module
             fortranValue = getattr(module, variable)
+
+            # f2py returns Fortran module variables as arrays. Anything else means the variable is missing from the
+            # f2py interface and setattr stored the value in a Python attribute that Fortran never sees.
+            self.assertIsInstance(fortranValue, np.ndarray, f"Option {optionName} does not reach Fortran")
 
             # Now check if the set parameter is correct in fortran
             if type(value) is bool:
@@ -122,6 +127,21 @@ class BasicTests(unittest.TestCase):
 
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sakappa, 0.40, rtol=1e-14)
         np.testing.assert_allclose(CFDSolver.adflow.inputphysics.sacv1, 7.5, rtol=1e-14)
+
+    def test_option_without_fortran_variable_raises(self):
+        """
+        Given an option whose mapped Fortran variable is not exposed through the f2py interface,
+        when that option is set,
+        then setOption raises an Error instead of silently storing the value in a Python attribute.
+        """
+        gridFile = "input_files/cube_4x4x4.cgns"
+        options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
+        CFDSolver = ADFLOW(options=options, debug=False)
+        CFDSolver.optionMap["ilufillcoarse"] = ["adjoint", "notafortranvariable"]
+
+        with self.assertRaises(Error):
+            CFDSolver.setOption("ILUFillCoarse", 1)
+        self.assertFalse(hasattr(CFDSolver.adflow.inputadjoint, "notafortranvariable"))
 
 
 if __name__ == "__main__":
