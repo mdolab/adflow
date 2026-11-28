@@ -107,6 +107,7 @@ contains
 
         ! Local variables.
         integer(kind=intType) :: i, j, k, nn, ii
+        real(kind=realType) :: cv13, kar2Inv, cw36, cb3Inv
         real(kind=realType) :: fv1, fv2, ft2
         real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
         real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
@@ -354,6 +355,7 @@ contains
         implicit none
         ! Local variables.
         integer(kind=intType) :: i, j, k, nn, ii
+        real(kind=realType) :: cb3Inv
         real(kind=realType) :: nu
         real(kind=realType) :: fv1, fv2, ft2
         real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
@@ -362,10 +364,7 @@ contains
         real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs
 
 
-        ! Set model constants
-        cv13 = rsaCv1**3
-        kar2Inv = one / (rsaK**2)
-        cw36 = rsaCw3**6
+        ! Set model constant
         cb3Inv = one / rsaCb3
 
         !
@@ -720,6 +719,7 @@ contains
         !  original Spalart-Allmaras model in a decoupled manner using
         !  a diagonal dominant ADI-scheme.
         use blockPointers
+        use constants
         use inputIteration
         use inputPhysics
         use paramTurb
@@ -728,6 +728,7 @@ contains
         implicit none
 
         integer(kind=intType) :: i, j, k, nn, ii
+        real(kind=realType) :: cb3Inv
         real(kind=realType), dimension(2:max(kl, il, jl)) :: bb, cc, dd, ff
         real(kind=realType) :: voli, volmi, volpi, xm, ym, zm, xp, yp, zp
         real(kind=realType) :: xa, ya, za, ttm, ttp, cnud, cam, cap
@@ -740,6 +741,8 @@ contains
         logical, dimension(2:il, 2:jl), target :: flagK2, flagKl
         logical, dimension(:, :), pointer :: flag
 
+        ! Set model constant
+        cb3Inv = one / rsaCb3
 
         ! Initialize the wall function flags to .false.
 
